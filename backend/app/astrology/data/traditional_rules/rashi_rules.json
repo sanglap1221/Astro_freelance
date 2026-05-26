@@ -1,0 +1,50 @@
+{
+  "Mesha": {
+    "varna": "ক্ষত্রিয়",
+    "element": "Agni"
+  },
+  "Vrishabha": {
+    "varna": "বৈশ্য",
+    "element": "Prithvi"
+  },
+  "Mithuna": {
+    "varna": "শূদ্র",
+    "element": "Vayu"
+  },
+  "Karka": {
+    "varna": "ব্রাহ্মণ",
+    "element": "Jala"
+  },
+  "Simha": {
+    "varna": "ক্ষত্রিয়",
+    "element": "Agni"
+  },
+  "Kanya": {
+    "varna": "বৈশ্য",
+    "element": "Prithvi"
+  },
+  "Tula": {
+    "varna": "শূদ্র",
+    "element": "Vayu"
+  },
+  "Vrischika": {
+    "varna": "ব্রাহ্মণ",
+    "element": "Jala"
+  },
+  "Dhanu": {
+    "varna": "ক্ষত্রিয়",
+    "element": "Agni"
+  },
+  "Makara": {
+    "varna": "বৈশ্য",
+    "element": "Prithvi"
+  },
+  "Kumbha": {
+    "varna": "শূদ্র",
+    "element": "Vayu"
+  },
+  "Meena": {
+    "varna": "ব্রাহ্মণ",
+    "element": "Jala"
+  }
+}

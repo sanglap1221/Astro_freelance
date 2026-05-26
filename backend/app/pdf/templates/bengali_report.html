@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>জীবন জিজ্ঞাসা - রাশিফল</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
+    :root {
+      --brand-red: #d32f2f;
+      --brand-blue: #1565c0;
+      --ink-black: #111;
+      --border-color: #2c3e50;
+      --bg-color: #fff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #f0f0f0;
+      color: var(--ink-black);
+      font-family: 'Noto Sans Bengali', sans-serif;
+      font-size: 11px;
+      line-height: 1.4;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 10mm auto;
+      background: var(--bg-color);
+      padding: 10mm;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .a4-page { margin: 0; padding: 0; box-shadow: none; border: none; min-height: auto; width: 100%; }
+    }
+
+    .form-wrapper {
+      border: 1.5px solid var(--border-color);
+      width: 100%;
+    }
+
+    .header-section {
+      text-align: center;
+      padding: 15px 10px;
+      border-bottom: 1.5px solid var(--border-color);
+      position: relative;
+    }
+
+    .form-number {
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      font-weight: bold;
+      color: var(--border-color);
+    }
+
+    .header-title {
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--brand-red);
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    .row {
+      display: flex;
+      border-bottom: 1.5px solid var(--border-color);
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .col {
+      padding: 8px 12px;
+      border-right: 1.5px solid var(--border-color);
+    }
+
+    .col:last-child {
+      border-right: none;
+    }
+
+    .col-30 { width: 30%; }
+    .col-40 { width: 40%; }
+    .col-50 { width: 50%; }
+
+    .highlight-blue {
+      color: var(--brand-blue);
+      font-weight: 700;
+    }
+
+    .data-value {
+      font-weight: 600;
+      color: #333;
+      border-bottom: 1px dotted #888;
+      display: inline-block;
+      min-width: 50px;
+    }
+
+    .info-line {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: baseline;
+    }
+
+    .info-line label {
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+
+    .kundli-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: var(--ink-black);
+    }
+
+    .chart-house-number {
+      font-size: 14px;
+      fill: #9333ea;
+      font-weight: 800;
+    }
+
+    .chart-planet {
+      font-size: 13px;
+      fill: #1e1b4b;
+      font-weight: 900;
+    }
+
+    .svg-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .dasha-title-box {
+      border: 1px solid var(--border-color);
+      display: inline-block;
+      padding: 3px 8px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: var(--brand-blue);
+    }
+
+    .dasha-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .dasha-table td,
+    .dasha-table th {
+      border: 1px solid var(--border-color);
+      padding: 2px 3px;
+      vertical-align: top;
+      line-height: 1.05;
+    }
+
+    .dasha-table th {
+      color: var(--brand-blue);
+      font-weight: 700;
+      text-align: left;
+      background: #f4f4f4;
+    }
+
+    .dasha-table tr.active-row td {
+      background: #fff9c4;
+      font-weight: 700;
+    }
+
+    .antardasha-header-row td {
+      background: #e3f0ff;
+      font-weight: 700;
+      color: var(--brand-blue);
+    }
+
+    .shorthand-line {
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 11px;
+      text-align: left;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+
+    .pl-name {
+      display: inline-block;
+      width: 50px;
+      font-weight: bold;
+      color: var(--ink-black);
+    }
+
+    .pl-colon {
+      display: inline-block;
+      width: 15px;
+      text-align: center;
+      color: var(--ink-black);
+    }
+
+    .pl-val {
+      display: inline-block;
+      font-weight: 600;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+{% set user = customer %}
+{% set astrology = summary %}
+{% set gan = astrology.gan or '-' %}
+{% set varna = astrology.varna or '-' %}
+{% set subho_bar = astrology.shubh_bar or '-' %}
+{% set subho_rong = astrology.shubh_rong or '-' %}
+{% set subho_sonkha = astrology.shubh_sonkha or '-' %}
+{% set namer_adokkhyor = astrology.namer_adokkhyor or '-' %}
+{% set current_pada_syllable = astrology.current_pada_syllable or namer_adokkhyor %}
+{% set all_nakshatra_syllables = astrology.all_nakshatra_syllables or [namer_adokkhyor] %}
+<div class="a4-page">
+  <div class="form-wrapper">
+    <div class="header-section">
+      <div class="form-number">{{ report_no }}</div>
+      <h1 class="header-title">জীবন জিজ্ঞাসা</h1>
+      <div style="position: absolute; top: 15px; right: 15px; text-align: center;">
+        <svg width="40" height="40" viewBox="0 0 40 40">
+          <polygon points="20,0 40,20 20,40 0,20" fill="none" stroke="#1565c0" stroke-width="2"/>
+          <line x1="0" y1="20" x2="40" y2="20" stroke="#1565c0" stroke-width="1"/>
+          <line x1="20" y1="0" x2="20" y2="40" stroke="#1565c0" stroke-width="1"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ── TOP INFO ROW ─────────────────────────────────────────── -->
+    <div class="row">
+      <div class="col col-30">
+        <div class="info-line"><span class="highlight-blue">জ্যোতিষী: এস. ঘোষ</span></div>
+        <div style="font-size: 10px; margin-bottom: 8px;">জ্যোতিষ সম্রাট, স্বর্ণপদক প্রাপ্ত<br>(এম.এ), এম.বি.পি.পি</div>
+        <div class="info-line">মোবা : <span class="data-value">৯১৫৩০৮৭৮৭০</span></div>
+        <div class="info-line" style="margin-left: 32px;"><span class="data-value">৯৭৩২৮৩০৩৫৩</span></div>
+        <div style="color: var(--brand-red); font-weight: bold; font-size: 10px; margin-top: 5px;">ONLINE দেখার করা হয়।</div>
+      </div>
+
+      <div class="col col-40">
+        <div class="info-line"><label>নাম:</label> <span class="data-value" style="width: 80%;">{{ user.name }}</span></div>
+        <div class="info-line"><label>পিতার নাম:</label> <span class="data-value" style="width: 70%;">{{ user.father_name | default('-', true) }}</span></div>
+        <div class="info-line"><label>ইংরেজী জন্ম তাং:</label> <span class="data-value" style="width: 60%;">{{ user.dob | default('-', true) }}</span></div>
+        {# বাংলা তারিখ — the report generation date in Bengali digits #}
+        <div class="info-line"><label>বাংলা তারিখ:</label> <span class="data-value" style="width: 65%;">{{ generated_at | default('-', true) }}</span></div>
+        <div class="info-line"><label>জন্ম সময়:</label> <span class="data-value" style="width: 70%;">{{ user.time | default('-', true) }}</span></div>
+        {# বার — weekday of birth, NOT place name #}
+        <div class="info-line"><label>বার:</label> <span class="data-value" style="width: 85%;">{{ user.weekday | default('-', true) }}</span></div>
+      </div>
+
+      <div class="col col-30">
+        <div style="color: var(--brand-red); font-weight: bold; margin-bottom: 5px;">বিঃ দ্রঃ - গ্রহ-রত্নের<br>যোগাযোগ কেন্দ্র।</div>
+        <div style="font-size: 10px; color: var(--brand-blue);">
+          বাড়িতে : প্রতিদিন - (শনি, মঙ্গল<br>
+          ব্যতীত) সন্ধ্যা ৭:০০টা থেকে ১০টা<br>
+          এবং রবিবার সকাল ১১থেকে ১:০০ মি:।<br>
+          (রাজস্থান মার্বেলের পাশে)<br>
+          পশ্চিমপাড়া, বনগাঁ, উত্তর ২৪ পরগণা।
+        </div>
+        <div class="info-line" style="margin-top: 5px;"><label>তারিখ:</label> <span class="data-value" style="width: 70%;">{{ generated_at | default('-', true) }}</span></div>
+      </div>
+    </div>
+
+    <!-- ── PLANET LIST | KUNDLI | SUMMARY ─────────────────────── -->
+    <div class="row">
+      <!-- Left: planet shorthand list (Bengali format) -->
+      <div class="col col-30">
+        <div class="kundli-title">—ঃ গ্রহাবস্থান ঃ—</div>
+        {% for item in shorthand_planets %}
+          {% set parts = item.display.split(' : ') %}
+          {% if parts|length > 1 %}
+            <div class="shorthand-line">
+              <span class="pl-name">{{ parts[0] }}</span>
+              <span class="pl-colon">:</span>
+              <span class="pl-val">{{ parts[1] }}</span>
+            </div>
+          {% else %}
+            <div class="shorthand-line">{{ item.display }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Centre: Rashi Chakra (North-Indian diamond) -->
+      <div class="col col-40">
+        {% if show_kundli is not defined or show_kundli %}
+        <div class="kundli-title">—ঃ রাশি চক্র ঃ—</div>
+        <div class="svg-container">
+          <svg width="200" height="200" viewBox="0 0 300 300">
+            <rect x="0" y="0" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" stroke-width="2.5" rx="8"/>
+            
+            <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" stroke-width="2"/>
+            <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" stroke-width="2"/>
+            <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" stroke-width="2"/>
+            <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" stroke-width="2"/>
+
+            <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" stroke-width="2"/>
+            <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" stroke-width="2"/>
+            <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" stroke-width="2"/>
+            <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" stroke-width="2"/>
+
+            <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
+            <text x="150" y="155" text-anchor="middle" font-size="14px" font-weight="900" fill="#581c87">রাশি চক্র</text>
+
+            {% set chart_positions = [
+              (150, 85, 150, 35, 1),
+              (78, 45, 75, 25, 2),
+              (22, 80, 30, 50, 3),
+              (50, 185, 50, 135, 4),
+              (22, 225, 30, 235, 5),
+              (78, 280, 75, 255, 6),
+              (150, 285, 150, 235, 7),
+              (222, 280, 225, 255, 8),
+              (278, 225, 275, 235, 9),
+              (250, 185, 250, 135, 10),
+              (222, 30, 230, 45, 11),
+              (278, 80, 270, 65, 12)
+            ] %}
+            {% for num_x, num_y, planets_x, planets_y, house_no in chart_positions %}
+            {% set house = house_chart[house_no - 1] %}
+            <text x="{{ num_x }}" y="{{ num_y }}" text-anchor="middle" class="chart-house-number">{{ house.house_bn }}</text>
+            {% if house.planets %}
+              {% for planet_name in house.planets %}
+              <text x="{{ planets_x }}" y="{{ planets_y + loop.index0 * 12 }}" text-anchor="middle" class="chart-planet">{{ planet_name }}</text>
+              {% endfor %}
+            {% endif %}
+            {% endfor %}
+          </svg>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Right: summary column (all Bengali) -->
+      <div class="col col-30">
+        <div class="info-line"><label class="highlight-blue">রাশি-</label> <span class="data-value" style="width: 60%;">{{ astrology.rashi | default('-', true) }}</span></div>
+        <div class="info-line"><label class="highlight-blue">লগ্ন-</label> <span class="data-value" style="width: 60%;">{{ astrology.lagna | default('-', true) }}</span></div>
+        <div class="info-line"><label class="highlight-blue">নক্ষত্র-</label> <span class="data-value" style="width: 60%;">{{ astrology.nakshatra | default('-', true) }}</span></div>
+        <div class="info-line"><label class="highlight-blue">গণ-</label> <span class="data-value" style="width: 60%;">{{ gan }}</span></div>
+        <div class="info-line"><label class="highlight-blue">বর্ণ-</label> <span class="data-value" style="width: 60%;">{{ varna }}</span></div>
+        {% if show_lucky_info is not defined or show_lucky_info %}
+        <div class="info-line" style="margin-top: 10px;"><label class="highlight-blue">শুভ বার-</label> <span class="data-value" style="width: 65%;">{{ subho_bar }}</span></div>
+        <div class="info-line"><label class="highlight-blue">শুভ রং-</label> <span class="data-value" style="width: 65%;">{{ subho_rong }}</span></div>
+        <div class="info-line"><label class="highlight-blue">শুভ সংখ্যা-</label> <span class="data-value" style="width: 50%;">{{ subho_sonkha }}</span></div>
+        {% endif %}
+        <div class="info-line"><label class="highlight-blue">শুভ নামের অক্ষর-</label> <span class="data-value" style="width: 48%;">{{ current_pada_syllable }}</span></div>
+      </div>
+    </div>
+
+    <!-- ── DASHA | ANTARDASHA ──────────────────────────────────── -->
+    <div class="row">
+      <!-- Mahadasha — ALL 9 rows, NO truncation -->
+      <div class="col col-50">
+        {% if show_mahadasha is not defined or show_mahadasha %}
+        <div class="dasha-title-box">বিংশোত্তরী দশা :</div>
+        <table class="dasha-table">
+          <thead>
+            <tr>
+              <th style="width:38%">দশা</th>
+              <th style="width:12%">বছর</th>
+              <th style="width:25%">শুরু</th>
+              <th style="width:25%">শেষ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {# All 9 mahadashas — Bengali digits, Bengali planet names #}
+            {% for dasha in dasha_list %}
+            <tr{% if dasha.is_active %} class="active-row"{% endif %}>
+              <td>{{ dasha.planet_bn | default(dasha.planet, true) }}</td>
+              <td>{{ dasha.years | default('-', true) }}</td>
+              <td>{{ dasha.start | default('-', true) }}</td>
+              <td>{{ dasha.end | default('-', true) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+
+      <!-- Antardasha — current mahadasha only, compact traditional view -->
+      <div class="col col-50">
+        {% if show_antardasha is not defined or show_antardasha %}
+        <div class="dasha-title-box">
+          বিংশোত্তরী অন্তর্দশা :
+          {% if antardasha_list %}
+            ({{ antardasha_list[0].major_bn }} মহাদশা)
+          {% endif %}
+        </div>
+        <table class="dasha-table">
+          <thead>
+            <tr>
+              <th style="width:34%">মহা/অন্তর</th>
+              <th style="width:33%">শুরু</th>
+              <th style="width:33%">শেষ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {# Single current mahadasha group with all 9 subperiods #}
+            {% for group in antardasha_list[:1] %}
+              {% for sub in group.subperiods %}
+              <tr>
+                <td>{{ group.major_bn | default(group.major_lord, true) }} / {{ sub.lord_bn | default(sub.lord, true) }}</td>
+                <td>{{ sub.start | default('-', true) }}</td>
+                <td>{{ sub.end | default('-', true) }}</td>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

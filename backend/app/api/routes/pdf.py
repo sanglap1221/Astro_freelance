@@ -1,0 +1,40 @@
+from typing import Any
+from fastapi import APIRouter, HTTPException
+
+from app.pdf.generate_pdf import generate_pdf_report, build_report_context, render_pdf_from_context
+from app.schemas import PdfRequest, PdfResponse
+
+router = APIRouter(tags=["pdf"])
+
+
+@router.post("/generate-pdf", response_model=PdfResponse)
+def generate_pdf(payload: PdfRequest) -> PdfResponse:
+    try:
+        result = generate_pdf_report(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return PdfResponse(pdf_url=result.pdf_url)
+
+
+@router.post("/api/calculate-report")
+def calculate_report(payload: PdfRequest) -> dict[str, Any]:
+    try:
+        context = build_report_context(payload)
+        # Add default layout toggles so the frontend gets them
+        context["show_kundli"] = True
+        context["show_mahadasha"] = True
+        context["show_antardasha"] = True
+        context["show_lucky_info"] = True
+        return context
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/render-pdf", response_model=PdfResponse)
+def render_pdf(payload: dict[str, Any]) -> PdfResponse:
+    try:
+        pdf_url = render_pdf_from_context(payload)
+        return PdfResponse(pdf_url=pdf_url)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

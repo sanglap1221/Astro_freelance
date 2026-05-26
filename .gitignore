@@ -1,0 +1,13 @@
+.dist/
+.vscode/
+.venv/
+backend/.venv311/
+backend/venv/
+backend/generated/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/.vercel/
+__pycache__/
+*.pyc
