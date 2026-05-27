@@ -40,6 +40,8 @@ PLANET_ABBR_BN = {
     "Ketu": "কে",
 }
 
+PLANET_DISPLAY_ORDER = ["Moon", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Rahu", "Ketu"]
+
 WEEKDAYS_MAP = {
     "Sun": "রবিবার",
     "Mon": "সোমবার",
@@ -140,18 +142,34 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     }
 
     # 7. Formulate shorthand_planets
-    planet_order = ["Moon", "Saturn", "Venus", "Sun", "Mars", "Jupiter", "Mercury", "Rahu", "Ketu"]
-    sorted_planets = sorted(chart.planets, key=lambda p: planet_order.index(p.name) if p.name in planet_order else 99)
+    sorted_planets = sorted(
+        chart.planets,
+        key=lambda p: PLANET_DISPLAY_ORDER.index(p.name) if p.name in PLANET_DISPLAY_ORDER else 99,
+    )
 
     shorthand_planets = []
     for p in sorted_planets:
         display_str = format_sign_dms_bn(p.longitude)
         compact_str = format_sign_compact_bn(p.longitude)
+        # Build a 1-based sign index + DMS string for PDF display (e.g. "2 | ২৬° ৩৫′ ৫৯″")
+        lon_norm = p.longitude % 360.0
+        sign_index_1b = int(lon_norm // 30) + 1
+        pos_in_sign = lon_norm % 30.0
+        deg = int(pos_in_sign)
+        rem = (pos_in_sign - deg) * 60.0
+        mins = int(rem)
+        secs = int((rem - mins) * 60.0)
+        deg_bn = to_bengali_digits(f"{deg:02d}")
+        min_bn = to_bengali_digits(f"{mins:02d}")
+        sec_bn = to_bengali_digits(f"{secs:02d}")
+        compact_indexed = f"{sign_index_1b} | {deg_bn}° {min_bn}′ {sec_bn}″"
+
         shorthand_planets.append({
             "short": PLANETS_BN.get(p.name, p.name),
             "full": p.name,
             "display": display_str,
             "compact": compact_str,
+            "compact_indexed": compact_indexed,
         })
 
     # 8. Formulate house_chart

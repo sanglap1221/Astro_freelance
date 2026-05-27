@@ -10,6 +10,8 @@ from app.schemas import ChartRequest, ChartResponse, PlanetPosition
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
+PLANET_DISPLAY_ORDER = ["Moon", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Rahu", "Ketu"]
+
 
 @router.post("/generate-chart", response_model=ChartResponse)
 def generate_chart(payload: ChartRequest) -> ChartResponse:
@@ -59,6 +61,9 @@ def generate_chart(payload: ChartRequest) -> ChartResponse:
                 display_bn=format_sign_dms_bn(planet.longitude),
                 display_compact_bn=format_sign_compact_bn(planet.longitude),
             )
-            for planet in chart.planets
+            for planet in sorted(
+                chart.planets,
+                key=lambda planet: PLANET_DISPLAY_ORDER.index(planet.name) if planet.name in PLANET_DISPLAY_ORDER else 99,
+            )
         ],
     )

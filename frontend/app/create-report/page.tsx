@@ -33,6 +33,8 @@ const chartPositions = [
   { x: 150, y: 30, houseNo: 12 },
 ];
 
+const PLANET_DISPLAY_ORDER = ["Moon", "Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Rahu", "Ketu"];
+
 const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 
 function toEnglishDigits(text: string): string {
@@ -168,15 +170,25 @@ export default function CreateReportPage() {
     });
   };
 
-  const updateShorthandPlanet = (index: number, field: "display" | "compact", val: string) => {
+  const updateShorthandPlanet = (planetName: string, field: "display" | "compact", val: string) => {
     if (!reportState) return;
     const nextShorthands = [...reportState.shorthand_planets];
-    nextShorthands[index] = { ...nextShorthands[index], [field]: normalizeEditorInput(val) };
+    const planetIndex = nextShorthands.findIndex((planet) => planet.full === planetName);
+    if (planetIndex < 0) return;
+    nextShorthands[planetIndex] = { ...nextShorthands[planetIndex], [field]: normalizeEditorInput(val) };
     setReportState({
       ...reportState,
       shorthand_planets: nextShorthands,
     });
   };
+
+  const sortedShorthandPlanets = reportState
+    ? [...reportState.shorthand_planets].sort(
+        (left, right) =>
+          (PLANET_DISPLAY_ORDER.indexOf(left.full) === -1 ? 99 : PLANET_DISPLAY_ORDER.indexOf(left.full)) -
+          (PLANET_DISPLAY_ORDER.indexOf(right.full) === -1 ? 99 : PLANET_DISPLAY_ORDER.indexOf(right.full)),
+      )
+    : [];
 
   const updateHouseChartItem = (index: number, text: string) => {
     if (!reportState) return;
@@ -402,32 +414,19 @@ export default function CreateReportPage() {
                   <div className="p-2 flex flex-col gap-1.5">
                     <span className="font-bold text-indigo-800 text-[9.5px] border-b border-slate-200 pb-0.5 mb-0.5">গ্রহাবস্থান (Planetary Positions)</span>
                     <div className="grid gap-1.5">
-                      {reportState.shorthand_planets.map((pl, idx) => (
-                        <div key={idx} className="grid grid-cols-[72px_1fr] gap-1.5 items-start">
+                      {sortedShorthandPlanets.map((pl) => (
+                        <div key={pl.full} className="grid grid-cols-[72px_1fr] gap-1.5 items-start">
                           <span className="font-bold text-slate-700 text-[9px] shrink-0 text-right pr-1" title={pl.full}>
                             {pl.full} :
                           </span>
                           <div className="grid gap-1">
-                            <div className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
-                              Bengali display
-                            </div>
+                            {/* Bengali display label removed to save space */}
                             <input
                               className="border border-slate-200 bg-slate-50/50 px-2 py-0.5 rounded text-[9.5px] w-full focus:bg-white focus:outline-none font-semibold"
                               value={toEnglishDigits(pl.display)}
-                              onChange={(e) => updateShorthandPlanet(idx, "display", e.target.value)}
+                              onChange={(e) => updateShorthandPlanet(pl.full, "display", e.target.value)}
                             />
-                            {pl.compact && (
-                              <div className="text-[8px] font-semibold uppercase tracking-wide text-amber-500">
-                                Compact 0-based display
-                              </div>
-                            )}
-                            {pl.compact && (
-                              <input
-                                className="border border-amber-200 bg-amber-50/60 px-2 py-0.5 rounded text-[9px] w-full focus:bg-white focus:outline-none"
-                                value={toEnglishDigits(pl.compact)}
-                                onChange={(e) => updateShorthandPlanet(idx, "compact", e.target.value)}
-                              />
-                            )}
+                            {/* compact field removed from editor UI per user preference */}
                           </div>
                         </div>
                       ))}

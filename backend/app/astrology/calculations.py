@@ -174,37 +174,37 @@ DASHA_SEQUENCE = [
 ]
 
 # ---------------------------------------------------------------------------
-# GANA — from Nakshatra
+# GANA — from Nakshatra (0-based index)
 # ---------------------------------------------------------------------------
-NAKSHATRA_GANA = [
-    "Deva",   # 0  Ashwini
-    "Manav",  # 1  Bharani
-    "Raksha", # 2  Krittika
-    "Deva",   # 3  Rohini
-    "Deva",   # 4  Mrigashira
-    "Manav",  # 5  Ardra
-    "Deva",   # 6  Punarvasu
-    "Deva",   # 7  Pushya
-    "Raksha", # 8  Ashlesha
-    "Raksha", # 9  Magha
-    "Manav",  # 10 Purva Phalguni
-    "Manav",  # 11 Uttara Phalguni
-    "Deva",   # 12 Hasta
-    "Raksha", # 13 Chitra
-    "Deva",   # 14 Swati
-    "Raksha", # 15 Vishakha
-    "Deva",   # 16 Anuradha
-    "Raksha", # 17 Jyeshtha
-    "Raksha", # 18 Mula
-    "Manav",  # 19 Purva Ashadha
-    "Manav",  # 20 Uttara Ashadha
-    "Deva",   # 21 Shravana
-    "Raksha", # 22 Dhanishtha
-    "Deva",   # 23 Shatabhisha
-    "Manav",  # 24 Purva Bhadrapada
-    "Deva",   # 25 Uttara Bhadrapada
-    "Deva",   # 26 Revati
-]
+GAN_MAP_BN = {
+    0: "দেব",    # Ashvini
+    1: "নর",     # Bharani
+    2: "রাক্ষস", # Krittika
+    3: "নর",     # Rohini
+    4: "দেব",    # Mrigashira
+    5: "নর",     # Ardra
+    6: "দেব",    # Punarvasu
+    7: "দেব",    # Pushya
+    8: "রাক্ষস",  # Ashlesha
+    9: "রাক্ষস",  # Magha
+    10: "নর",    # Purva Phalguni
+    11: "নর",    # Uttara Phalguni
+    12: "দেব",   # Hasta
+    13: "রাক্ষস", # Chitra
+    14: "দেব",   # Swati
+    15: "রাক্ষস", # Vishakha
+    16: "দেব",   # Anuradha
+    17: "রাক্ষস", # Jyeshtha
+    18: "রাক্ষস", # Mula
+    19: "নর",    # Purva Ashadha
+    20: "নর",    # Uttara Ashadha
+    21: "দেব",   # Shravana
+    22: "রাক্ষস", # Dhanishtha
+    23: "রাক্ষস", # Shatabhisha
+    24: "নর",    # Purva Bhadrapada
+    25: "নর",    # Uttara Bhadrapada
+    26: "দেব",   # Revati
+}
 
 # ---------------------------------------------------------------------------
 # VARNA — from Moon Rashi lord
@@ -222,8 +222,8 @@ PLANET_VARNA = {
     "Moon":    "Vaishya",
     "Mars":    "Kshatriya",
     "Mercury": "Shudra",
-    "Jupiter": "Brahmin",
-    "Venus":   "Brahmin",
+    "Jupiter": "Vipra",
+    "Venus":   "Vipra",
     "Saturn":  "Shudra",
     "Rahu":    "Shudra",
     "Ketu":    "Shudra",
@@ -231,9 +231,47 @@ PLANET_VARNA = {
 
 VARNA_BN = {
     "Brahmin":   "ব্রাহ্মণ",
+    "Vipra":     "বিপ্র",
     "Kshatriya": "ক্ষত্রিয়",
     "Vaishya":   "বৈশ্য",
     "Shudra":    "শূদ্র",
+}
+
+VARNA_MAP_BN = {
+    0: "ক্ষত্রিয়",  # Ashvini
+    1: "ক্ষত্রিয়",  # Bharani
+    2: "বৈশ্য",      # Krittika
+    3: "বৈশ্য",      # Rohini
+    4: "শূদ্র",      # Mrigashira
+    5: "বৈশ্য",      # Ardra
+    6: "বৈশ্য",      # Punarvasu
+    7: "বিপ্র",      # Pushya
+    8: "বিপ্র",      # Ashlesha
+    9: "ক্ষত্রিয়",  # Magha
+    10: "ক্ষত্রিয়", # Purva Phalguni
+    11: "শূদ্র",     # Uttara Phalguni
+    12: "শূদ্র",     # Hasta
+    13: "শূদ্র",     # Chitra
+    14: "শূদ্র",     # Swati
+    15: "বিপ্র",     # Vishakha
+    16: "বিপ্র",     # Anuradha
+    17: "বিপ্র",     # Jyeshtha
+    18: "ক্ষত্রিয়",  # Mula
+    19: "ক্ষত্রিয়",  # Purva Ashadha
+    20: "শূদ্র",     # Uttara Ashadha
+    21: "শূদ্র",     # Shravana
+    22: "বৈশ্য",     # Dhanishtha
+    23: "বৈশ্য",     # Shatabhisha
+    24: "বিপ্র",      # Purva Bhadrapada
+    25: "বিপ্র",      # Uttara Bhadrapada
+    26: "বিপ্র",      # Revati
+}
+
+SPLIT_NAKSHATRA_VARNA_OVERRIDES_BN = {
+    2: {
+        0: "ক্ষত্রিয়",
+        1: "বৈশ্য",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -516,12 +554,10 @@ def _normalize(lon: float) -> float:
 
 
 def _resolve_ayanamsa_mode(ayanamsa_mode: str, custom_ayanamsa_degrees: Optional[float]) -> tuple[str, Optional[int], Optional[float], bool]:
-    # Lock the engine to PM Bagchi / Surya Siddhanta sidereal mode per product decision.
-    # Always use the Swiss Ephemeris sidereal Surya Siddhanta constant and
-    # allow swisseph to compute sidereal positions (not manual offset).
+    # Lock the engine to Lahiri sidereal mode so the backend matches the book.
     return (
-        "PM Bagchi / Surya Siddhanta Workflow",
-        swe.SIDM_SURYASIDDHANTA,
+        "Lahiri Workflow",
+        swe.SIDM_LAHIRI,
         None,
         False,
     )
@@ -741,16 +777,45 @@ def _load_traditional_rule(filename: str) -> dict:
     return _TRADITIONAL_RULES[filename]
 
 
+def get_gan(nakshatra_index: int) -> str:
+    """Get Gan from the hardcoded 0-based Nakshatra table."""
+    return GAN_MAP_BN.get(int(nakshatra_index), "দেব")
+
+
 def get_traditional_gana(nakshatra_name: str) -> str:
-    """Get traditional Gana for Nakshatra from static rule file."""
-    rules = _load_traditional_rule("nakshatra_rules.json")
-    return rules.get(nakshatra_name, {}).get("gana", "দেব")
+    """Backward-compatible wrapper for Nakshatra-name callers."""
+    try:
+        return get_gan(NAKSHATRAS.index(nakshatra_name))
+    except ValueError:
+        return "দেব"
+
+
+def get_varna(nakshatra_index: int, rashi_sign_idx: int | None = None) -> str:
+    """Get Varna from the hardcoded 0-based Nakshatra table, with border overrides."""
+    index = int(nakshatra_index)
+    if rashi_sign_idx is not None:
+        overrides = SPLIT_NAKSHATRA_VARNA_OVERRIDES_BN.get(index)
+        if overrides is not None:
+            return overrides.get(int(rashi_sign_idx), VARNA_MAP_BN.get(index, "শূদ্র"))
+    return VARNA_MAP_BN.get(index, "শূদ্র")
 
 
 def get_traditional_varna(rashi_name: str) -> str:
-    """Get traditional Varna for Rashi from static rule file."""
-    rules = _load_traditional_rule("rashi_rules.json")
-    return rules.get(rashi_name, {}).get("varna", "শূদ্র")
+    """Backward-compatible wrapper for callers that still pass a Rashi name."""
+    return {
+        "Mesha": "ক্ষত্রিয়",
+        "Vrishabha": "বৈশ্য",
+        "Mithuna": "শূদ্র",
+        "Karka": "বিপ্র",
+        "Simha": "ক্ষত্রিয়",
+        "Kanya": "শূদ্র",
+        "Tula": "শূদ্র",
+        "Vrischika": "বিপ্র",
+        "Dhanu": "ক্ষত্রিয়",
+        "Makara": "বৈশ্য",
+        "Kumbha": "শূদ্র",
+        "Meena": "বিপ্র",
+    }.get(rashi_name, "শূদ্র")
 
 
 def get_traditional_syllables(nakshatra_name: str) -> list[str]:
@@ -784,7 +849,7 @@ def get_traditional_lucky_info(rashi_name: str, nakshatra_name: str) -> tuple[li
 # ===========================================================================
 
 def _calc_nakshatra(moon_longitude: float) -> NakshatraResult:
-    """Calculate nakshatra from Moon's sidereal longitude using traditional rule files."""
+    """Calculate nakshatra from Moon's sidereal longitude using the hardcoded 0-based table."""
     NAK_SPAN = 360.0 / 27.0          # 13.3333...°
     PADA_SPAN = NAK_SPAN / 4.0       # 3.3333...°
 
@@ -794,9 +859,9 @@ def _calc_nakshatra(moon_longitude: float) -> NakshatraResult:
 
     nak_name = NAKSHATRAS[idx]
     lord = NAKSHATRA_LORD_ORDER[idx % 9]
-    
-    # Traditional Gana and Syllables lookup
-    gana = get_traditional_gana(nak_name)
+    gana = get_gan(idx)
+
+    # Traditional syllable lookup remains file-backed for now.
     all_syllables = get_traditional_syllables(nak_name)
     syllable = all_syllables[pada - 1]
 
@@ -933,25 +998,9 @@ def _calc_antardasha(
 # ===========================================================================
 
 def _calc_lucky_fields(lagna_sign_idx: int, rashi_sign_idx: int, nakshatra: NakshatraResult):
-    """Calculate Shubha Vara, Rang, Sankhya, Varna based on traditional Moon Rashi & Nakshatra."""
-    # Varna — based directly on Moon Rashi (Janma Rashi) element type:
-    # 0, 4, 8: Kshatriya (Fire); 1, 5, 9: Vaishya (Earth); 2, 6, 10: Shudra (Air); 3, 7, 11: Brahmin (Water)
-    RASHI_VARNA = {
-        0: "Kshatriya",
-        1: "Vaishya",
-        2: "Shudra",
-        3: "Brahmin",
-        4: "Kshatriya",
-        5: "Vaishya",
-        6: "Shudra",
-        7: "Brahmin",
-        8: "Kshatriya",
-        9: "Vaishya",
-        10: "Shudra",
-        11: "Brahmin",
-    }
-    varna = RASHI_VARNA[rashi_sign_idx]
-    varna_bn = VARNA_BN[varna]
+    """Calculate Shubha Vara, Rang, Sankhya, Varna using Nakshatra-first lookup tables."""
+    varna = get_varna(nakshatra.index, rashi_sign_idx)
+    varna_bn = VARNA_BN.get(varna, varna)
 
     # Janma Rashi lord and Nakshatra lord
     rashi_lord = SIGN_LORD[rashi_sign_idx]
@@ -1152,12 +1201,8 @@ def calculate_chart(
             pflags = flags | swe.FLG_TRUEPOS
         data = swe.calc_ut(jd, pid, pflags)
         lon = project_longitude(data[0][0])
-        # Moon handling: compute and apply a dynamic PM Bagchi offset when enabled.
         if pname == "Moon":
-            swe_moon = lon
-            dyn_offset, dyn_trace = _compute_pm_bagchi_dynamic_offset(birth_dt, swe_moon)
-            lon = _normalize(swe_moon - dyn_offset)
-            moon_correction_trace = {"enabled": True, "source": "dynamic_formula", **dyn_trace}
+            moon_correction_trace = {"enabled": False, "source": "swiss_ephemeris_true"}
         speed = data[0][3]
         is_retro = speed < 0.0 and pname not in ("Rahu", "Ketu")
         # Rahu/Ketu are always technically retrograde in mean node mode — don't flag them
