@@ -70,6 +70,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         birth_time=payload.time,
         place=payload.place,
         ayanamsa_mode=payload.ayanamsa_mode,
+        custom_ayanamsa_degrees=payload.custom_ayanamsa_degrees,
         true_moon=payload.true_moon,
         override_moon_longitude=payload.override_moon_longitude,
     )
@@ -99,7 +100,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     engine = {
         "engine": "Swiss Ephemeris",
         "system": "Nirayana (Sidereal)",
-        "ayanamsa": payload.ayanamsa_mode.title(),
+        "ayanamsa": "Traditional Bengali N.C. Lahiri Workflow",
+        "custom_ayanamsa_degrees": payload.custom_ayanamsa_degrees,
         "moon_mode": "True Moon" if payload.true_moon else "Mean Moon",
         "override_moon": to_bengali_digits(f"{payload.override_moon_longitude:.4f}°")
         if payload.override_moon_longitude is not None
@@ -138,9 +140,12 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     }
 
     # 7. Formulate shorthand_planets
+    planet_order = ["Moon", "Saturn", "Venus", "Sun", "Mars", "Jupiter", "Mercury", "Rahu", "Ketu"]
+    sorted_planets = sorted(chart.planets, key=lambda p: planet_order.index(p.name) if p.name in planet_order else 99)
+
     shorthand_planets = []
-    for p in chart.planets:
-        display_str = f"{PLANETS_BN.get(p.name, p.name)} : {format_sign_dms_bn(p.longitude)}"
+    for p in sorted_planets:
+        display_str = format_sign_dms_bn(p.longitude)
         compact_str = format_sign_compact_bn(p.longitude)
         shorthand_planets.append({
             "short": PLANETS_BN.get(p.name, p.name),

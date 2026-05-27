@@ -6,6 +6,7 @@ export type ReportInput = {
   place: string;
   mobile?: string;
   ayanamsa_mode?: string;
+  custom_ayanamsa_degrees?: string;
   true_moon?: boolean;
   override_moon_longitude?: string;
 };
@@ -54,6 +55,7 @@ export interface EngineMetadata {
   engine: string;
   system: string;
   ayanamsa: string;
+  custom_ayanamsa_degrees?: number;
   moon_mode: string;
   override_moon?: string;
 }

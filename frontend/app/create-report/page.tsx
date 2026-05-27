@@ -15,8 +15,6 @@ const initialValue: ReportInput = {
   time: "14:42",
   place: "Kolkata",
   mobile: "",
-  ayanamsa_mode: "lahiri",
-  true_moon: true,
   override_moon_longitude: "",
 };
 
@@ -410,11 +408,19 @@ export default function CreateReportPage() {
                             {pl.full} :
                           </span>
                           <div className="grid gap-1">
+                            <div className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                              Bengali display
+                            </div>
                             <input
                               className="border border-slate-200 bg-slate-50/50 px-2 py-0.5 rounded text-[9.5px] w-full focus:bg-white focus:outline-none font-semibold"
                               value={toEnglishDigits(pl.display)}
                               onChange={(e) => updateShorthandPlanet(idx, "display", e.target.value)}
                             />
+                            {pl.compact && (
+                              <div className="text-[8px] font-semibold uppercase tracking-wide text-amber-500">
+                                Compact 0-based display
+                              </div>
+                            )}
                             {pl.compact && (
                               <input
                                 className="border border-amber-200 bg-amber-50/60 px-2 py-0.5 rounded text-[9px] w-full focus:bg-white focus:outline-none"

@@ -300,7 +300,11 @@
               <span class="pl-val">{{ parts[1] }}</span>
             </div>
           {% else %}
-            <div class="shorthand-line">{{ item.display }}</div>
+            <div class="shorthand-line">
+              <span class="pl-name">{{ item.short }}</span>
+              <span class="pl-colon">:</span>
+              <span class="pl-val">{{ item.display }}</span>
+            </div>
           {% endif %}
         {% endfor %}
       </div>

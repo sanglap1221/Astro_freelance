@@ -8,7 +8,8 @@ class ChartRequest(BaseModel):
     dob: date
     time: time
     place: str = Field(min_length=1)
-    ayanamsa_mode: str = "lahiri"
+    ayanamsa_mode: str = "traditional"
+    custom_ayanamsa_degrees: float | None = None
     true_moon: bool = True
     override_moon_longitude: float | None = None
     override_ascendant_longitude: float | None = None
@@ -49,7 +50,8 @@ class PdfRequest(BaseModel):
     time: time
     place: str = Field(min_length=1)
     mobile: str | None = None
-    ayanamsa_mode: str = "lahiri"
+    ayanamsa_mode: str = "traditional"
+    custom_ayanamsa_degrees: float | None = None
     true_moon: bool = True
     override_moon_longitude: float | None = None
 

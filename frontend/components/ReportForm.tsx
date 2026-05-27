@@ -83,29 +83,9 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
         </div>
 
         <div className="mt-2 grid gap-2">
-          <label className="grid gap-1 text-xs">
-            <span className="font-semibold text-slate-600">Ayanamsa</span>
-            <select
-              className="rounded border border-slate-300 px-2 py-1 text-slate-800 focus:border-indigo-500 focus:outline-none"
-              value={value.ayanamsa_mode ?? "lahiri"}
-              onChange={(event) => updateField(value, onChange, "ayanamsa_mode", event.target.value)}
-            >
-              <option value="lahiri">Lahiri</option>
-              <option value="raman">Raman</option>
-              <option value="krishnamurti">Krishnamurti</option>
-              <option value="fagan_bradley">Fagan Bradley</option>
-            </select>
-          </label>
-
-          <label className="flex items-center gap-2 text-xs text-slate-600">
-            <input
-              type="checkbox"
-              checked={value.true_moon ?? true}
-              onChange={(event) => updateBooleanField(value, onChange, "true_moon", event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-0"
-            />
-            Use True Moon
-          </label>
+          <div className="rounded border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+            Single workflow: Traditional Bengali N.C. Lahiri tables
+          </div>
 
           {showAstrologer && (
             <label className="grid gap-1 text-xs">

@@ -7,8 +7,6 @@ export async function calculateReport(data: ReportInput): Promise<ReportState> {
   const overrideMoon = overrideMoonRaw ? Number(overrideMoonRaw) : undefined;
   const payload = {
     ...data,
-    ayanamsa_mode: data.ayanamsa_mode ?? "lahiri",
-    true_moon: data.true_moon ?? true,
     override_moon_longitude: Number.isFinite(overrideMoon) ? overrideMoon : undefined,
   };
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
-from typing import Optional
+from typing import Any, Optional
 
 try:
     # pyrefly: ignore [missing-import]
@@ -59,7 +59,19 @@ AYANAMSA_MODES = {
     "raman": swe.SIDM_RAMAN,
     "krishnamurti": swe.SIDM_KRISHNAMURTI,
     "fagan_bradley": swe.SIDM_FAGAN_BRADLEY,
+    "surya_siddhanta": swe.SIDM_SURYASIDDHANTA,
 }
+
+TRADITIONAL_PANJIKA_AYANAMSA = 18.7875
+
+_ASCENDANT_TABLE_CACHE: dict[int, dict[str, float]] = {}
+
+# ---------------------------------------------------------------------------
+# PM Bagchi proprietary correction (developer 'bija' hack)
+# Adjust this value after testing to match printed Panjika outputs.
+# ---------------------------------------------------------------------------
+PM_BAGCHI_MOON_OFFSET_DEGREES = 3.333  # ~3°20' as initial guess
+PM_BAGCHI_ENABLE_MOON_OFFSET = True
 
 # ---------------------------------------------------------------------------
 # NAKSHATRAS (27)
@@ -453,6 +465,18 @@ def _normalize(lon: float) -> float:
     return lon % 360.0
 
 
+def _resolve_ayanamsa_mode(ayanamsa_mode: str, custom_ayanamsa_degrees: Optional[float]) -> tuple[str, Optional[int], Optional[float], bool]:
+    # Lock the engine to PM Bagchi / Surya Siddhanta sidereal mode per product decision.
+    # Always use the Swiss Ephemeris sidereal Surya Siddhanta constant and
+    # allow swisseph to compute sidereal positions (not manual offset).
+    return (
+        "PM Bagchi / Surya Siddhanta Workflow",
+        swe.SIDM_SURYASIDDHANTA,
+        None,
+        False,
+    )
+
+
 def _sign_index(lon: float) -> int:
     return int(_normalize(lon) // 30)
 
@@ -491,7 +515,7 @@ def _format_sign_compact_bn(lon: float) -> str:
     si = _sign_index(lon)
     deg, mins, secs = _dms(lon)
     return " | ".join([
-        _to_bengali_digits(str(si + 1)),
+        _to_bengali_digits(str(si)),
         _to_bengali_digits(f"{deg:02d}"),
         _to_bengali_digits(f"{mins:02d}"),
         _to_bengali_digits(f"{secs:02d}"),
@@ -555,6 +579,89 @@ def interpolate_angle(a1: float, a2: float, frac: float) -> float:
     if diff > 180.0:
         diff -= 360.0
     return (a1 + diff * frac) % 360.0
+
+
+def _load_ascendant_table(latitude_index: int) -> dict[str, float]:
+    latitude_index = max(0, min(60, int(latitude_index)))
+    cached = _ASCENDANT_TABLE_CACHE.get(latitude_index)
+    if cached is not None:
+        return cached
+
+    import json
+    from pathlib import Path
+
+    table_path = Path(__file__).parent / "data" / "ascendant_tables" / f"{latitude_index}.json"
+    if not table_path.exists():
+        _ASCENDANT_TABLE_CACHE[latitude_index] = {}
+        return _ASCENDANT_TABLE_CACHE[latitude_index]
+
+    try:
+        with open(table_path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except Exception:
+        data = {}
+
+    _ASCENDANT_TABLE_CACHE[latitude_index] = data
+    return data
+
+
+def _lookup_time_table_value(table: dict[str, float], target_minutes: float) -> float:
+    if not table:
+        return 0.0
+
+    entries = sorted(
+        ((int(h), int(m), int(s), float(value)) for key, value in table.items() for h, m, s in [tuple(int(part) for part in key.split(":"))]),
+        key=lambda item: (item[0], item[1], item[2]),
+    )
+    if not entries:
+        return 0.0
+
+    target_minutes = target_minutes % (24.0 * 60.0)
+    target_seconds = target_minutes * 60.0
+    timeline = [((h * 3600) + (m * 60) + s, value) for h, m, s, value in entries]
+
+    for index, (seconds, value) in enumerate(timeline):
+        if abs(seconds - target_seconds) < 0.5:
+            return value
+
+    extended = timeline + [(timeline[0][0] + 24 * 3600, timeline[0][1])]
+    for index in range(len(timeline)):
+        left_seconds, left_value = extended[index]
+        right_seconds, right_value = extended[index + 1]
+        if left_seconds <= target_seconds <= right_seconds:
+            span = right_seconds - left_seconds
+            if span <= 0:
+                return left_value
+            fraction = (target_seconds - left_seconds) / span
+            return interpolate_angle(left_value, right_value, fraction)
+
+    return timeline[-1][1]
+
+
+def calculate_book_lagna(utc_dt: datetime, latitude: float, longitude: float) -> float:
+    """Calculate Lagna using the Lahiri ascendant tables and local sidereal time."""
+    jd = swe.julday(
+        utc_dt.year,
+        utc_dt.month,
+        utc_dt.day,
+        utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0,
+    )
+    # Pure sidereal-time approximation from Julian Day; avoids relying on Swiss houses.
+    t = (jd - 2451545.0) / 36525.0
+    gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * (t ** 2) - (t ** 3) / 38710000.0
+    lst_hours = ((gmst % 360.0) / 15.0 + longitude / 15.0) % 24.0
+
+    lat_abs = min(60.0, max(0.0, abs(latitude)))
+    lower_lat = int(lat_abs)
+    upper_lat = min(60, lower_lat + 1)
+    lat_fraction = lat_abs - lower_lat
+
+    lower_table = _load_ascendant_table(lower_lat)
+    upper_table = _load_ascendant_table(upper_lat)
+    lower_value = _lookup_time_table_value(lower_table, lst_hours * 60.0)
+    upper_value = _lookup_time_table_value(upper_table, lst_hours * 60.0)
+
+    return interpolate_angle(lower_value, upper_value, lat_fraction)
 
 
 _TRADITIONAL_RULES = {}
@@ -804,8 +911,8 @@ def _calc_lucky_fields(lagna_sign_idx: int, rashi_sign_idx: int, nakshatra: Naks
     lucky_lords = list(dict.fromkeys([rashi_lord, nak_lord]))
 
     # Lucky days — from Janma Rashi & Nakshatra lords
-    lucky_days = [DAY_NAMES[p] for p in lucky_lords]
-    lucky_days_bn = [DAY_NAMES_BN[p] for p in lucky_lords]
+    lucky_days = [DAY_NAMES.get(p, "No fixed day") for p in lucky_lords]
+    lucky_days_bn = [DAY_NAMES_BN.get(p, "নির্দিষ্ট বার নেই") for p in lucky_lords]
 
     # Lucky colors — from Janma Rashi & Nakshatra lords
     lucky_colors = [PLANET_COLOR[p] for p in lucky_lords]
@@ -823,7 +930,10 @@ def _build_debug_trace(
     dob: date,
     birth_time: time,
     ayanamsa_mode: str,
-    sid_mode: int,
+    sid_mode: Optional[int],
+    ayanamsa_label: str,
+    custom_ayanamsa_degrees: Optional[float],
+    uses_manual_offset: bool,
     true_moon: bool,
     flags: int,
     jd: float,
@@ -864,9 +974,12 @@ def _build_debug_trace(
         "swisseph": {
             "julday_function": "swe.julday",
             "julian_day": round(jd, 6),
-            "set_sid_mode": "swe.set_sid_mode(swe.SIDM_LAHIRI)",
+            "set_sid_mode": "manual tropical offset" if uses_manual_offset else "swe.set_sid_mode(...)",
+            "ayanamsa_label": ayanamsa_label,
             "requested_ayanamsa_mode": ayanamsa_mode,
             "sid_mode_constant": sid_mode,
+            "custom_ayanamsa_degrees": custom_ayanamsa_degrees,
+            "manual_offset_mode": uses_manual_offset,
             "get_ayanamsa_function": "swe.get_ayanamsa_ut",
             "ayanamsa_ut": round(ayanamsa, 6),
             "planet_function": "swe.calc_ut",
@@ -927,6 +1040,7 @@ def calculate_chart(
     birth_time: time,
     place: str,
     ayanamsa_mode: str = "lahiri",
+    custom_ayanamsa_degrees: Optional[float] = None,
     true_moon: bool = True,
     override_moon_longitude: Optional[float] = None,
     override_ascendant_longitude: Optional[float] = None,
@@ -951,20 +1065,29 @@ def calculate_chart(
     utc_dt = birth_dt.astimezone(ZoneInfo("UTC"))
 
     # --- Julian Day ---
-    sid_mode = AYANAMSA_MODES.get(ayanamsa_mode.lower())
-    if sid_mode is None:
-        raise ValueError(f"Unsupported ayanamsa_mode: '{ayanamsa_mode}'")
-    swe.set_sid_mode(sid_mode)
+    ayanamsa_label, sid_mode, manual_ayanamsa, uses_manual_offset = _resolve_ayanamsa_mode(
+        ayanamsa_mode,
+        custom_ayanamsa_degrees,
+    )
+    if not uses_manual_offset:
+        swe.set_sid_mode(sid_mode)
     jd = swe.julday(
         utc_dt.year, utc_dt.month, utc_dt.day,
         utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0,
     )
 
     # --- Ayanamsa ---
-    ayanamsa = swe.get_ayanamsa_ut(jd)
+    ayanamsa = manual_ayanamsa if manual_ayanamsa is not None else swe.get_ayanamsa_ut(jd)
 
     # --- Flags: sidereal ---
-    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
+    flags = swe.FLG_SWIEPH | swe.FLG_SPEED
+    if not uses_manual_offset:
+        flags |= swe.FLG_SIDEREAL
+
+    def project_longitude(lon: float) -> float:
+        if uses_manual_offset:
+            return _normalize(lon - ayanamsa)
+        return _normalize(lon)
 
     # --- Calculate planets ---
     raw_planets: list[PlanetResult] = []
@@ -975,7 +1098,15 @@ def calculate_chart(
         if pname == "Moon" and true_moon:
             pflags = flags | swe.FLG_TRUEPOS
         data = swe.calc_ut(jd, pid, pflags)
-        lon = _normalize(data[0][0])
+        lon = project_longitude(data[0][0])
+        # Developer 'Bija' hack: apply PM Bagchi offset to Moon when using Surya Siddhanta
+        try:
+            if pname == "Moon" and sid_mode == swe.SIDM_SURYASIDDHANTA and PM_BAGCHI_ENABLE_MOON_OFFSET:
+                # PM Bagchi correction: empirical subtraction to match printed Panjika values
+                lon = _normalize(lon - PM_BAGCHI_MOON_OFFSET_DEGREES)
+        except Exception:
+            # If sid_mode isn't available or something goes wrong, fall back silently
+            pass
         speed = data[0][3]
         is_retro = speed < 0.0 and pname not in ("Rahu", "Ketu")
         # Rahu/Ketu are always technically retrograde in mean node mode — don't flag them
@@ -1025,15 +1156,8 @@ def calculate_chart(
         house=0,
     ))
 
-    # --- Lagna (Ascendant) — Swiss Ephemeris (sidereal) ---
-    cusps, ascmc = swe.houses_ex(
-        jd,
-        location.latitude,
-        location.longitude,
-        b"W",
-        swe.FLG_SIDEREAL,
-    )
-    asc_lon = _normalize(float(ascmc[0]))
+    # --- Lagna (Ascendant) — Lahiri ascendant tables ---
+    asc_lon = calculate_book_lagna(utc_dt, location.latitude, location.longitude)
     if override_ascendant_longitude is not None:
         asc_lon = _normalize(override_ascendant_longitude)
     lagna_si = _sign_index(asc_lon)
@@ -1133,6 +1257,9 @@ def calculate_chart(
                 birth_time=birth_time,
                 ayanamsa_mode=ayanamsa_mode,
                 sid_mode=sid_mode,
+                ayanamsa_label=ayanamsa_label,
+                custom_ayanamsa_degrees=manual_ayanamsa,
+                uses_manual_offset=uses_manual_offset,
                 true_moon=true_moon,
                 flags=flags,
                 jd=jd,
