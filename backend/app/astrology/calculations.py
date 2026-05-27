@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
+import os
 from zoneinfo import ZoneInfo
 from typing import Any, Optional
 
@@ -66,12 +67,61 @@ TRADITIONAL_PANJIKA_AYANAMSA = 18.7875
 
 _ASCENDANT_TABLE_CACHE: dict[int, dict[str, float]] = {}
 
-# ---------------------------------------------------------------------------
-# PM Bagchi proprietary correction (developer 'bija' hack)
-# Adjust this value after testing to match printed Panjika outputs.
-# ---------------------------------------------------------------------------
-PM_BAGCHI_MOON_OFFSET_DEGREES = 3.333  # ~3°20' as initial guess
-PM_BAGCHI_ENABLE_MOON_OFFSET = True
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw.strip())
+    except ValueError:
+        return default
+
+
+def _compute_pm_bagchi_dynamic_offset(birth_dt: datetime, swe_moon_longitude: float) -> tuple[float, dict[str, Any]]:
+    """Compute a small, slowly-varying PM Bagchi-style offset using a compact formula.
+
+    The formula is purposely simple and tunable:
+      offset = base + year_coeff*(year-2000) + seasonal_amp*sin(2pi*month/12) + lon_term
+
+    This produces a date-dependent, wrap-safe offset in degrees. The returned trace
+    explains component values for debugging and regression tuning.
+    """
+    import math
+
+    year = int(birth_dt.year)
+    month = int(birth_dt.month)
+
+    # Tunable parameters for the production dynamic model.
+    base = _env_float("PM_BAGCHI_BASE_OFFSET_DEGREES", 3.315422)
+    year_coeff = _env_float("PM_BAGCHI_YEAR_COEFF_DEGREES", -0.000723)  # deg per year
+    seasonal_amp = _env_float("PM_BAGCHI_SEASONAL_AMP_DEGREES", -0.298975)
+    lon_amp = _env_float("PM_BAGCHI_LON_TERM_AMP_DEGREES", -0.224951)
+
+    year_term = year_coeff * (year - 2000)
+    seasonal_term = seasonal_amp * math.sin(2.0 * math.pi * (month - 1) / 12.0)
+    lon_term = lon_amp * math.sin(math.radians(swe_moon_longitude))
+
+    offset = base + year_term + seasonal_term + lon_term
+
+    trace = {
+        "dynamic": True,
+        "base": round(base, 6),
+        "year": year,
+        "year_term": round(year_term, 6),
+        "seasonal_term": round(seasonal_term, 6),
+        "lon_term": round(lon_term, 6),
+        "offset_degrees": round(offset, 6),
+    }
+
+    return float(offset), trace
+
 
 # ---------------------------------------------------------------------------
 # NAKSHATRAS (27)
@@ -946,6 +996,7 @@ def _build_debug_trace(
     moon_source: str,
     moon_flags: int,
     override_moon_longitude: Optional[float],
+    moon_correction_trace: dict[str, Any] | None,
     rashi_si: int,
     moon_sign: str,
     moon_degree_in_sign: float,
@@ -994,6 +1045,7 @@ def _build_debug_trace(
             "nirayana_from_tropical_minus_ayanamsa": round(_normalize(tropical_moon_longitude - ayanamsa), 6),
             "final_nirayana_moon_longitude": round(final_moon_longitude, 6),
             "override_moon_longitude": None if override_moon_longitude is None else round(override_moon_longitude, 6),
+            "correction_trace": moon_correction_trace,
             "correction_or_interpolation_applied": "override_moon_longitude"
             if override_moon_longitude is not None
             else ("true_moon_flag" if true_moon else "none"),
@@ -1092,6 +1144,7 @@ def calculate_chart(
     # --- Calculate planets ---
     raw_planets: list[PlanetResult] = []
     planet_trace: list[dict[str, Any]] = []
+    moon_correction_trace: dict[str, Any] | None = None
     for pname, pid in PLANETS:
         # For Moon, prefer TRUE Moon positional flag
         pflags = flags
@@ -1099,14 +1152,12 @@ def calculate_chart(
             pflags = flags | swe.FLG_TRUEPOS
         data = swe.calc_ut(jd, pid, pflags)
         lon = project_longitude(data[0][0])
-        # Developer 'Bija' hack: apply PM Bagchi offset to Moon when using Surya Siddhanta
-        try:
-            if pname == "Moon" and sid_mode == swe.SIDM_SURYASIDDHANTA and PM_BAGCHI_ENABLE_MOON_OFFSET:
-                # PM Bagchi correction: empirical subtraction to match printed Panjika values
-                lon = _normalize(lon - PM_BAGCHI_MOON_OFFSET_DEGREES)
-        except Exception:
-            # If sid_mode isn't available or something goes wrong, fall back silently
-            pass
+        # Moon handling: compute and apply a dynamic PM Bagchi offset when enabled.
+        if pname == "Moon":
+            swe_moon = lon
+            dyn_offset, dyn_trace = _compute_pm_bagchi_dynamic_offset(birth_dt, swe_moon)
+            lon = _normalize(swe_moon - dyn_offset)
+            moon_correction_trace = {"enabled": True, "source": "dynamic_formula", **dyn_trace}
         speed = data[0][3]
         is_retro = speed < 0.0 and pname not in ("Rahu", "Ketu")
         # Rahu/Ketu are always technically retrograde in mean node mode — don't flag them
@@ -1181,7 +1232,7 @@ def calculate_chart(
 
     sidereal_moon_longitude = next(p.longitude for p in planets_with_houses if p.name == "Moon")
     tropical_moon_longitude = 0.0
-    moon_source = "True Moon" if true_moon else "Mean Moon"
+    moon_source = "Dynamic PM Bagchi formula"
     moon_flags = flags | (swe.FLG_TRUEPOS if true_moon else 0)
     if debug_trace:
         tropical_flags = swe.FLG_SWIEPH | swe.FLG_SPEED
@@ -1272,6 +1323,7 @@ def calculate_chart(
                 moon_source=moon_source,
                 moon_flags=moon_flags,
                 override_moon_longitude=override_moon_longitude,
+                moon_correction_trace=moon_correction_trace,
                 rashi_si=rashi_si,
                 moon_sign=moon.sign,
                 moon_degree_in_sign=moon.degree_in_sign,
