@@ -11,6 +11,8 @@ class ChartRequest(BaseModel):
     ayanamsa_mode: str = "traditional"
     custom_ayanamsa_degrees: float | None = None
     true_moon: bool = True
+    true_node: bool = True
+    planet_overrides: dict[str, float] | None = None
     override_moon_longitude: float | None = None
     override_ascendant_longitude: float | None = None
 
@@ -53,6 +55,8 @@ class PdfRequest(BaseModel):
     ayanamsa_mode: str = "traditional"
     custom_ayanamsa_degrees: float | None = None
     true_moon: bool = True
+    true_node: bool = True
+    planet_overrides: dict[str, float] | None = None
     override_moon_longitude: float | None = None
 
 

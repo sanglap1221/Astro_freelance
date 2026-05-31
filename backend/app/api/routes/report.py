@@ -22,6 +22,8 @@ def generate_chart(payload: ChartRequest) -> ChartResponse:
             payload.place,
             ayanamsa_mode=payload.ayanamsa_mode,
             true_moon=payload.true_moon,
+            true_node=payload.true_node,
+            planet_overrides=payload.planet_overrides,
             override_moon_longitude=payload.override_moon_longitude,
             override_ascendant_longitude=payload.override_ascendant_longitude,
         )

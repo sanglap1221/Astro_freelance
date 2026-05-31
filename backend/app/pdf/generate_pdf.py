@@ -74,6 +74,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         ayanamsa_mode=payload.ayanamsa_mode,
         custom_ayanamsa_degrees=payload.custom_ayanamsa_degrees,
         true_moon=payload.true_moon,
+        true_node=payload.true_node,
+        planet_overrides=payload.planet_overrides,
         override_moon_longitude=payload.override_moon_longitude,
     )
 
@@ -105,6 +107,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "ayanamsa": "Traditional Bengali N.C. Lahiri Workflow",
         "custom_ayanamsa_degrees": payload.custom_ayanamsa_degrees,
         "moon_mode": "True Moon" if payload.true_moon else "Mean Moon",
+        "true_node": payload.true_node,
+        "planet_overrides": payload.planet_overrides,
         "override_moon": to_bengali_digits(f"{payload.override_moon_longitude:.4f}°")
         if payload.override_moon_longitude is not None
         else None,
@@ -153,7 +157,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         compact_str = format_sign_compact_bn(p.longitude)
         # Build a 1-based sign index + DMS string for PDF display (e.g. "2 | ২৬° ৩৫′ ৫৯″")
         lon_norm = p.longitude % 360.0
-        sign_index_1b = int(lon_norm // 30) + 1
+        sign_index_0b = int(lon_norm // 30)
         pos_in_sign = lon_norm % 30.0
         deg = int(pos_in_sign)
         rem = (pos_in_sign - deg) * 60.0
@@ -162,7 +166,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         deg_bn = to_bengali_digits(f"{deg:02d}")
         min_bn = to_bengali_digits(f"{mins:02d}")
         sec_bn = to_bengali_digits(f"{secs:02d}")
-        compact_indexed = f"{sign_index_1b} | {deg_bn}° {min_bn}′ {sec_bn}″"
+        sign_index_bn = to_bengali_digits(str(sign_index_0b))
+        compact_indexed = f"{sign_index_bn} | {deg_bn}° {min_bn}′ {sec_bn}″"
 
         shorthand_planets.append({
             "short": PLANETS_BN.get(p.name, p.name),
