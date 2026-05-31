@@ -15,6 +15,8 @@ const initialValue: ReportInput = {
   time: "14:42",
   place: "Kolkata",
   mobile: "",
+  true_node: true,
+  planet_overrides: {},
   override_moon_longitude: "",
 };
 
@@ -45,9 +47,44 @@ function toBengaliDigits(text: string): string {
   return text.replace(/[0-9]/g, (digit) => BN_DIGITS[Number(digit)]);
 }
 
+function parsePlanetOverride(compactValue: string): number | null {
+  const numericParts = toEnglishDigits(compactValue).match(/\d+/g)?.map((part) => Number(part)) ?? [];
+  if (numericParts.length < 3) {
+    return null;
+  }
+
+  const [signIndex, degrees, minutes, seconds = 0] = numericParts;
+  if (![signIndex, degrees, minutes, seconds].every(Number.isFinite)) {
+    return null;
+  }
+
+  return signIndex * 30 + degrees + minutes / 60 + seconds / 3600;
+}
+
+function buildPlanetOverrides(planets: ReportState["shorthand_planets"]): Record<string, number> {
+  return planets.reduce<Record<string, number>>((accumulator, planet) => {
+    const longitude = parsePlanetOverride(planet.compact_indexed ?? planet.compact ?? "");
+    if (longitude !== null) {
+      accumulator[planet.full] = longitude;
+    }
+    return accumulator;
+  }, {});
+}
+
 function normalizeEditorInput(text: string): string {
   // Users can type standard keyboard digits; keep state Bengali-friendly for PDF rendering.
   return toBengaliDigits(text);
+}
+
+function buildRequestPayload(formValue: ReportInput, reportState: ReportState | null): ReportInput {
+  const planetOverrides = reportState?.planet_overrides ?? (reportState ? buildPlanetOverrides(reportState.shorthand_planets) : formValue.planet_overrides ?? {});
+
+  return {
+    ...formValue,
+    true_node: formValue.true_node ?? reportState?.true_node ?? true,
+    planet_overrides: planetOverrides,
+    override_moon_longitude: formValue.override_moon_longitude?.trim() || undefined,
+  };
 }
 
 export default function CreateReportPage() {
@@ -68,8 +105,12 @@ export default function CreateReportPage() {
     setError("");
     setPdfUrl("");
     try {
-      const state = await calculateReport(formValue);
-      setReportState(state);
+      const state = await calculateReport(buildRequestPayload(formValue, null));
+      setReportState({
+        ...state,
+        true_node: formValue.true_node ?? true,
+        planet_overrides: buildPlanetOverrides(state.shorthand_planets),
+      });
       
       // Determine default active planet
       const activeDasha = state.dasha_list.find((d) => d.is_active);
@@ -94,17 +135,23 @@ export default function CreateReportPage() {
     setRendering(true);
     setError("");
     try {
-      // Re-order antardasha_list so that the active planet's group is at index 0
-      const activePlanetVal = activePlanet || (reportState.dasha_list.find((d) => d.is_active)?.planet || reportState.dasha_list[0].planet);
+      const requestPayload = buildRequestPayload(formValue, reportState);
+      const recalculatedState = await calculateReport(requestPayload);
+
+      const activePlanetVal = activePlanet || (recalculatedState.dasha_list.find((d) => d.is_active)?.planet || recalculatedState.dasha_list[0].planet);
       const orderedAntardashas = [
-        ...reportState.antardasha_list.filter((g) => groupKey(g) === activePlanetVal),
-        ...reportState.antardasha_list.filter((g) => groupKey(g) !== activePlanetVal)
+        ...recalculatedState.antardasha_list.filter((g) => groupKey(g) === activePlanetVal),
+        ...recalculatedState.antardasha_list.filter((g) => groupKey(g) !== activePlanetVal),
       ];
-      
+
       const stateToRender: ReportState = {
-        ...reportState,
+        ...recalculatedState,
+        true_node: requestPayload.true_node ?? recalculatedState.true_node ?? true,
+        planet_overrides: requestPayload.planet_overrides ?? buildPlanetOverrides(recalculatedState.shorthand_planets),
         antardasha_list: orderedAntardashas,
       };
+
+      setReportState(stateToRender);
 
       const result = await renderPdf(stateToRender);
       setPdfUrl(result.pdf_url);
@@ -170,7 +217,7 @@ export default function CreateReportPage() {
     });
   };
 
-  const updateShorthandPlanet = (planetName: string, field: "display" | "compact", val: string) => {
+  const updateShorthandPlanet = (planetName: string, field: "display" | "compact_indexed", val: string) => {
     if (!reportState) return;
     const nextShorthands = [...reportState.shorthand_planets];
     const planetIndex = nextShorthands.findIndex((planet) => planet.full === planetName);
@@ -179,6 +226,7 @@ export default function CreateReportPage() {
     setReportState({
       ...reportState,
       shorthand_planets: nextShorthands,
+      planet_overrides: buildPlanetOverrides(nextShorthands),
     });
   };
 
@@ -420,13 +468,17 @@ export default function CreateReportPage() {
                             {pl.full} :
                           </span>
                           <div className="grid gap-1">
-                            {/* Bengali display label removed to save space */}
                             <input
                               className="border border-slate-200 bg-slate-50/50 px-2 py-0.5 rounded text-[9.5px] w-full focus:bg-white focus:outline-none font-semibold"
                               value={toEnglishDigits(pl.display)}
                               onChange={(e) => updateShorthandPlanet(pl.full, "display", e.target.value)}
                             />
-                            {/* compact field removed from editor UI per user preference */}
+                            <input
+                              className="border border-amber-200 bg-amber-50/70 px-2 py-0.5 rounded text-[9px] w-full focus:bg-white focus:outline-none font-medium"
+                              value={toEnglishDigits(pl.compact_indexed ?? pl.compact ?? "")}
+                              onChange={(e) => updateShorthandPlanet(pl.full, "compact_indexed", e.target.value)}
+                            />
+                            <span className="text-[8px] text-slate-500">Edit this field with the Panjika value used for PDF override.</span>
                           </div>
                         </div>
                       ))}
@@ -579,6 +631,14 @@ export default function CreateReportPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500">Moon Mode</span>
                           <span className="font-semibold text-slate-800">{reportState.engine.moon_mode}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Rahu Node</span>
+                          <span className="font-semibold text-slate-800">{formValue.true_node ? "True" : "Mean"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Planet Overrides</span>
+                          <span className="font-semibold text-slate-800">{Object.keys(reportState.planet_overrides ?? {}).length}</span>
                         </div>
                         {reportState.engine.override_moon && (
                           <div className="flex items-center justify-between">

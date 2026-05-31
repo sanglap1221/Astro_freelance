@@ -84,45 +84,6 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
-def _compute_pm_bagchi_dynamic_offset(birth_dt: datetime, swe_moon_longitude: float) -> tuple[float, dict[str, Any]]:
-    """Compute a small, slowly-varying PM Bagchi-style offset using a compact formula.
-
-    The formula is purposely simple and tunable:
-      offset = base + year_coeff*(year-2000) + seasonal_amp*sin(2pi*month/12) + lon_term
-
-    This produces a date-dependent, wrap-safe offset in degrees. The returned trace
-    explains component values for debugging and regression tuning.
-    """
-    import math
-
-    year = int(birth_dt.year)
-    month = int(birth_dt.month)
-
-    # Tunable parameters for the production dynamic model.
-    base = _env_float("PM_BAGCHI_BASE_OFFSET_DEGREES", 3.315422)
-    year_coeff = _env_float("PM_BAGCHI_YEAR_COEFF_DEGREES", -0.000723)  # deg per year
-    seasonal_amp = _env_float("PM_BAGCHI_SEASONAL_AMP_DEGREES", -0.298975)
-    lon_amp = _env_float("PM_BAGCHI_LON_TERM_AMP_DEGREES", -0.224951)
-
-    year_term = year_coeff * (year - 2000)
-    seasonal_term = seasonal_amp * math.sin(2.0 * math.pi * (month - 1) / 12.0)
-    lon_term = lon_amp * math.sin(math.radians(swe_moon_longitude))
-
-    offset = base + year_term + seasonal_term + lon_term
-
-    trace = {
-        "dynamic": True,
-        "base": round(base, 6),
-        "year": year,
-        "year_term": round(year_term, 6),
-        "seasonal_term": round(seasonal_term, 6),
-        "lon_term": round(lon_term, 6),
-        "offset_degrees": round(offset, 6),
-    }
-
-    return float(offset), trace
-
-
 # ---------------------------------------------------------------------------
 # NAKSHATRAS (27)
 # Each nakshatra = 360/27 = 13°20' = 13.3333...°
@@ -1263,6 +1224,11 @@ def calculate_chart(
     raw_planets: list[PlanetResult] = []
     planet_trace: list[dict[str, Any]] = []
     moon_correction_trace: dict[str, Any] | None = None
+    import math
+
+    jd_midnight_utc = math.floor(jd + 0.5) - 0.5
+    fraction_of_day = jd - jd_midnight_utc
+
     for pname, pid in PLANETS:
         override_lon = normalized_overrides.get(pname)
         planet_pid = pid
@@ -1281,9 +1247,15 @@ def calculate_chart(
 
             # Rahu can be switched between mean and true node without affecting Ketu's derivation.
             planet_pid = swe.TRUE_NODE if (pname == "Rahu" and true_node) else pid
-            data = swe.calc_ut(jd, planet_pid, pflags)
-            lon = project_longitude(data[0][0])
-            speed = data[0][3]
+            pos_today = swe.calc_ut(jd_midnight_utc, planet_pid, pflags)[0]
+            pos_tomorrow = swe.calc_ut(jd_midnight_utc + 1.0, planet_pid, pflags)[0]
+
+            lon_today = pos_today[0]
+            lon_tomorrow = pos_tomorrow[0]
+            lon_interpolated = interpolate_angle(lon_today, lon_tomorrow, fraction_of_day)
+
+            lon = project_longitude(lon_interpolated)
+            speed = pos_today[3]
             is_retro = speed < 0.0 and pname not in ("Rahu", "Ketu")
             if pname == "Moon":
                 moon_correction_trace = {"enabled": False, "source": "swiss_ephemeris_true"}
@@ -1364,7 +1336,7 @@ def calculate_chart(
 
     sidereal_moon_longitude = next(p.longitude for p in planets_with_houses if p.name == "Moon")
     tropical_moon_longitude = 0.0
-    moon_source = "Dynamic PM Bagchi formula"
+    moon_source = "Swiss Ephemeris true moon"
     moon_flags = flags | (swe.FLG_TRUEPOS if true_moon else 0)
     if debug_trace:
         tropical_flags = swe.FLG_SWIEPH | swe.FLG_SPEED
@@ -1606,94 +1578,4 @@ def print_chart(result: ChartResult) -> None:
             dur = f"{ad.duration_years}y {ad.duration_months}m {ad.duration_days}d"
             print(f"  {ad.planet:<12} {str(ad.start_date):<14} {str(ad.end_date):<14} {dur}")
     print("=" * 65)
-
-
-# ===========================================================================
-# EXPERIMENTAL / DEBUGGING: ENGINE COMPARISON TOOL
-# ===========================================================================
-
-def compare_planetary_engines(dob: date, birth_time: time, place: str):
-    """
-    Safely compare planetary longitudes across different mathematical engines
-    without affecting the production chart pipeline.
-    """
-    location = resolve_location(place)
-    tz = ZoneInfo(location.timezone)
-    birth_dt = datetime.combine(dob, birth_time, tzinfo=tz)
-    utc_dt = birth_dt.astimezone(ZoneInfo("UTC"))
-
-    jd = swe.julday(
-        utc_dt.year, utc_dt.month, utc_dt.day,
-        utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0,
-    )
-
-    test_planets = [
-        ("Moon", swe.MOON),
-        ("Saturn", swe.SATURN),
-        ("Jupiter", swe.JUPITER),
-        ("Mars", swe.MARS),
-        ("Sun", swe.SUN),
-        ("Venus", swe.VENUS),
-        ("Mercury", swe.MERCURY),
-        ("Rahu", swe.MEAN_NODE),
-    ]
-
-    results = {pname: {} for pname, _ in test_planets}
-
-    # ---------------------------------------------------------
-    # MODE A: Production Lahiri (True Moon)
-    # ---------------------------------------------------------
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
-    for pname, pid in test_planets:
-        pflags = swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL
-        if pname == "Moon":
-            pflags |= swe.FLG_TRUEPOS
-
-        data = swe.calc_ut(jd, pid, pflags)
-        results[pname]["Lahiri"] = _format_sign_dms_bn(_normalize(data[0][0]))
-
-    rahu_lahiri_lon = swe.calc_ut(jd, swe.MEAN_NODE, swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL)[0][0]
-    results["Ketu"] = {"Lahiri": _format_sign_dms_bn(_normalize(rahu_lahiri_lon + 180.0))}
-
-    # ---------------------------------------------------------
-    # MODE B: Pure Surya Siddhanta
-    # ---------------------------------------------------------
-    swe.set_sid_mode(swe.SIDM_SURYASIDDHANTA)
-    for pname, pid in test_planets:
-        pflags = swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL
-
-        data = swe.calc_ut(jd, pid, pflags)
-        results[pname]["Surya_Siddhanta"] = _format_sign_dms_bn(_normalize(data[0][0]))
-
-    rahu_ss_lon = swe.calc_ut(jd, swe.MEAN_NODE, swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL)[0][0]
-    results["Ketu"]["Surya_Siddhanta"] = _format_sign_dms_bn(_normalize(rahu_ss_lon + 180.0))
-
-    # ---------------------------------------------------------
-    # MODE C: PM Bagchi Experimental (sandbox only)
-    # ---------------------------------------------------------
-    experimental_bija_offset = 0.00
-
-    swe.set_sid_mode(swe.SIDM_SURYASIDDHANTA)
-    for pname, pid in test_planets:
-        pflags = swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL
-
-        data = swe.calc_ut(jd, pid, pflags)
-        raw_lon = data[0][0]
-        experimental_lon = _normalize(raw_lon + experimental_bija_offset)
-
-        results[pname]["PM_Bagchi_Exp"] = _format_sign_dms_bn(experimental_lon)
-
-    rahu_exp_lon = swe.calc_ut(jd, swe.MEAN_NODE, swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL)[0][0]
-    results["Ketu"]["PM_Bagchi_Exp"] = _format_sign_dms_bn(_normalize(rahu_exp_lon + 180.0))
-
-    print("=" * 75)
-    print(f" ENGINE COMPARISON REPORT: {dob.strftime('%d %B %Y')} at {birth_time} ({place})")
-    print("=" * 75)
-    print(f" {'Planet':<10} | {'Mode A: Lahiri':<20} | {'Mode B: Surya Sid.':<20} | {'Mode C: Exp. Bagchi':<20}")
-    print("-" * 75)
-
-    for pname, modes in results.items():
-        print(f" {pname:<10} | {modes['Lahiri']:<20} | {modes['Surya_Siddhanta']:<20} | {modes['PM_Bagchi_Exp']:<20}")
-    print("=" * 75)
-    print()
 

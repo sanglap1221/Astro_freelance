@@ -87,6 +87,19 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
             Single workflow: Traditional Bengali N.C. Lahiri tables
           </div>
 
+          <label className="flex items-center justify-between rounded border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+            <div>
+              <span className="font-semibold">True Rahu / Mean Rahu</span>
+              <p className="text-[11px] text-slate-500">Enable true node calculations for Rahu.</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={value.true_node ?? true}
+              onChange={(event) => updateBooleanField(value, onChange, "true_node", event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-0"
+            />
+          </label>
+
           {showAstrologer && (
             <label className="grid gap-1 text-xs">
               <span className="font-semibold text-slate-600">Override Moon Longitude (deg)</span>

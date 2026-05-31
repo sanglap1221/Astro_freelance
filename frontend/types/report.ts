@@ -8,6 +8,8 @@ export type ReportInput = {
   ayanamsa_mode?: string;
   custom_ayanamsa_degrees?: string;
   true_moon?: boolean;
+  true_node?: boolean;
+  planet_overrides?: Record<string, number>;
   override_moon_longitude?: string;
 };
 
@@ -49,6 +51,7 @@ export interface ShorthandPlanet {
   full: string;
   display: string;
   compact?: string;
+  compact_indexed?: string;
 }
 
 export interface EngineMetadata {
@@ -57,6 +60,7 @@ export interface EngineMetadata {
   ayanamsa: string;
   custom_ayanamsa_degrees?: number;
   moon_mode: string;
+  true_node?: boolean;
   override_moon?: string;
 }
 
@@ -103,6 +107,8 @@ export interface ReportState {
   engine: EngineMetadata;
   summary: AstrologyState;
   shorthand_planets: ShorthandPlanet[];
+  planet_overrides?: Record<string, number>;
+  true_node?: boolean;
   kundli_grid: KundliCell[][];
   house_chart: HouseChartItem[];
   dasha_list: DashaRow[];
