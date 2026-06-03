@@ -11,3 +11,12 @@ frontend/.turbo/
 frontend/.vercel/
 __pycache__/
 *.pyc
+
+# Local Environment Variables
+backend/.env
+
+# Test and verification scripts
+backend/scripts/test_storage.py
+backend/scripts/test_dynamic_location.py
+backend/tmp_check_moons.py
+

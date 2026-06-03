@@ -101,15 +101,26 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
           </label>
 
           {showAstrologer && (
-            <label className="grid gap-1 text-xs">
-              <span className="font-semibold text-slate-600">Override Moon Longitude (deg)</span>
-              <input
-                className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-slate-800 focus:border-amber-500 focus:outline-none"
-                placeholder="e.g. 86.874739"
-                value={value.override_moon_longitude ?? ""}
-                onChange={(event) => updateField(value, onChange, "override_moon_longitude", event.target.value)}
-              />
-            </label>
+            <>
+              <label className="grid gap-1 text-xs">
+                <span className="font-semibold text-slate-600">Override Moon Longitude (deg)</span>
+                <input
+                  className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-slate-800 focus:border-amber-500 focus:outline-none"
+                  placeholder="e.g. 86.874739"
+                  value={value.override_moon_longitude ?? ""}
+                  onChange={(event) => updateField(value, onChange, "override_moon_longitude", event.target.value)}
+                />
+              </label>
+              <label className="grid gap-1 text-xs">
+                <span className="font-semibold text-slate-600">Override Ascendant Longitude (deg)</span>
+                <input
+                  className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-slate-800 focus:border-amber-500 focus:outline-none"
+                  placeholder="e.g. 35.0"
+                  value={value.override_ascendant_longitude ?? ""}
+                  onChange={(event) => updateField(value, onChange, "override_ascendant_longitude", event.target.value)}
+                />
+              </label>
+            </>
           )}
         </div>
       </div>

@@ -11,6 +11,7 @@ export type ReportInput = {
   true_node?: boolean;
   planet_overrides?: Record<string, number>;
   override_moon_longitude?: string;
+  override_ascendant_longitude?: string;
 };
 
 export type GeneratedReport = {
@@ -30,6 +31,7 @@ export interface CustomerState {
 export interface AstrologyState {
   rashi: string;
   lagna: string;
+  lagna_sign_index?: number;
   nakshatra: string;
   nakshatra_pada: string;
   nakshatra_lord: string;
@@ -52,6 +54,8 @@ export interface ShorthandPlanet {
   display: string;
   compact?: string;
   compact_indexed?: string;
+  is_retrograde?: boolean;
+  is_combust?: boolean;
 }
 
 export interface EngineMetadata {
@@ -74,6 +78,7 @@ export interface KundliCell {
 export interface HouseChartItem {
   house: number;
   house_bn: string;
+  is_lagna_house?: boolean;
   planets: string[];
   planets_text: string;
 }
@@ -100,6 +105,15 @@ export interface AntardashaGroup {
   subperiods: AntardashaSubperiod[];
 }
 
+export interface AntardashaDisplayRow {
+  major_lord: string;
+  major_bn: string;
+  lord: string;
+  lord_bn: string;
+  start: string;
+  end: string;
+}
+
 export interface ReportState {
   report_no: string;
   generated_at: string;
@@ -113,8 +127,11 @@ export interface ReportState {
   house_chart: HouseChartItem[];
   dasha_list: DashaRow[];
   antardasha_list: AntardashaGroup[];
+  antardasha_display_rows?: AntardashaDisplayRow[];
   show_kundli?: boolean;
   show_mahadasha?: boolean;
   show_antardasha?: boolean;
   show_lucky_info?: boolean;
+  planet_nudges?: Record<string, { dx: number; dy: number }>;
+  planet_coords?: Record<string, { x: number; y: number }>;
 }

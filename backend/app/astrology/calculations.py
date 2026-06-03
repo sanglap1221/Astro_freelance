@@ -136,68 +136,68 @@ DASHA_SEQUENCE = [
 
 # ---------------------------------------------------------------------------
 # TRADITIONAL KOSHTI BOOK RULES (36 CONDITIONS)
-# Maps (rashi_index, nakshatra_index) -> {"gan": "...", "varna": "...", "alt_varna": "..."}
+# Maps (rashi_index, nakshatra_index) -> {"gan": "...", "varna": "..."}
 # ---------------------------------------------------------------------------
-BOOK_KOSHTI_RULES: dict[tuple[int, int], dict[str, str | None]] = {
-    # Mesha (0)
-    (0, 0): {"gan": "দেবগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (0, 1): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (0, 2): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
+BOOK_KOSHTI_RULES: dict[tuple[int, int], dict[str, str]] = {
+    # ১. মেষ রাশি (Mesha - Index 0)
+    (0, 0): {"gan": "দেবগণ", "varna": "ক্ষত্রিয়বর্ণ"},     # অশ্বিনী
+    (0, 1): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ"},     # ভরণী
+    (0, 2): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ"},   # কৃত্তিকা
 
-    # Vrishabha (1)
-    (1, 2): {"gan": "রাক্ষসগণ", "varna": "বৈশ্যবর্ণ", "alt_varna": "শূদ্রবর্ণ"},
-    (1, 3): {"gan": "নরগণ", "varna": "বৈশ্যবর্ণ", "alt_varna": "শূদ্রবর্ণ"},
-    (1, 4): {"gan": "দেবগণ", "varna": "বৈশ্যবর্ণ", "alt_varna": "শূদ্রবর্ণ"},
+    # ২. বৃষ রাশি (Vrishabha - Index 1)
+    (1, 2): {"gan": "রাক্ষসগণ", "varna": "বৈশ্যবর্ণ"},     # কৃত্তিকা
+    (1, 3): {"gan": "নরগণ", "varna": "বৈশ্যবর্ণ"},     # রোহিণী
+    (1, 4): {"gan": "দেবগণ", "varna": "বৈশ্যবর্ণ"},     # মৃগশিরা
 
-    # Mithuna (2)
-    (2, 4): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (2, 5): {"gan": "নরগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (2, 6): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
+    # ৩. মিথুন রাশি (Mithuna - Index 2)
+    (2, 4): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ"},     # মৃগশিরা
+    (2, 5): {"gan": "নরগণ", "varna": "শূদ্রবর্ণ"},     # আর্দ্রা
+    (2, 6): {"gan": "দেবগণ", "varna": "বৈশ্যবর্ণ"},    # পুনর্বসু
 
-    # Karka (3)
-    (3, 6): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
-    (3, 7): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
-    (3, 8): {"gan": "রাক্ষসগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
+    # ৪. কর্কট রাশি (Karka - Index 3)
+    (3, 6): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ"},     # পুনর্বসু
+    (3, 7): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ"},     # পুষ্যা
+    (3, 8): {"gan": "রাক্ষসগণ", "varna": "বিপ্রবর্ণ"},   # অশ্লেষা
 
-    # Simha (4)
-    (4, 9): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": None},
-    (4, 10): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": None},
-    (4, 11): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": None},
+    # ৫. সিংহ রাশি (Simha - Index 4)
+    (4, 9): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ"},   # মঘা
+    (4, 10): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ"},    # পূর্বফাল্গুনী
+    (4, 11): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ"},    # উত্তরফাল্গুনী
 
-    # Kanya (5)
-    (5, 11): {"gan": "নরগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (5, 12): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (5, 13): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
+    # ৬. কন্যা রাশি (Kanya - Index 5)
+    (5, 11): {"gan": "নরগণ", "varna": "শূদ্রবর্ণ"},     # উত্তরফাল্গুনী
+    (5, 12): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ"},     # হস্তা
+    (5, 13): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ"},  # চিত্রা (শূদ্রবর্ণ, মতান্তরে ক্ষত্রিয় -> নিচে ক্ষত্রিয় অগ্রাধিকার)
 
-    # Tula (6)
-    (6, 13): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "ক্ষত্রিয়বর্ণ"},
-    (6, 14): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "ক্ষত্রিয়বর্ণ"},
-    (6, 15): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "ক্ষত্রিয়বর্ণ"},
+    # ৭. তুলা রাশি (Tula - Index 6)
+    (6, 13): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ"},     # চিত্রা (শূদ্রবর্ণ, মতান্তরে ক্ষত্রিয় -> ওপরে শূদ্র অগ্রাধিকার)
+    (6, 14): {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ"},     # স্বাতী
+    (6, 15): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ"},  # বিশাখা (শূদ্রবর্ণ, মতান্তরে ক্ষত্রিয় -> নিচে ক্ষত্রিয় অগ্রাধিকার)
 
-    # Vrischika (7)
-    (7, 15): {"gan": "রাক্ষসগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
-    (7, 16): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
-    (7, 17): {"gan": "রাক্ষসগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
+    # ৮. বৃশ্চিক রাশি (Vrischika - Index 7)
+    (7, 15): {"gan": "রাক্ষসগণ", "varna": "বিপ্রবর্ণ"},    # বিশাখা
+    (7, 16): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ"},     # অনুরাধা
+    (7, 17): {"gan": "রাক্ষসগণ", "varna": "বিপ্রবর্ণ"},   # জ্যেষ্ঠা
 
-    # Dhanu (8)
-    (8, 18): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": None},
-    (8, 19): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": None},
-    (8, 20): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ", "alt_varna": None},
+    # ৯. ধনু রাশি (Dhanu - Index 8)
+    (8, 18): {"gan": "রাক্ষসগণ", "varna": "ক্ষত্রিয়বর্ণ"},   # মূলা
+    (8, 19): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ"},    # পূর্বাষাঢ়া
+    (8, 20): {"gan": "নরগণ", "varna": "ক্ষত্রিয়বর্ণ"},    # উত্তরাষাঢ়া
 
-    # Makara (9)
-    (9, 20): {"gan": "নরগণ", "varna": "বৈশ্যবর্ণ", "alt_varna": "শূদ্রবর্ণ"},
-    (9, 21): {"gan": "দেবগণ", "varna": "বৈশ্যবর্ণ", "alt_varna": "শূদ্রবর্ণ"},
-    (9, 22): {"gan": "রাক্ষসগণ", "varna": "বৈশ্যবর্ণ", "alt_varna": "শূদ্রবর্ণ"},
+    # ১০. মকর রাশি (Makara - Index 9)
+    (9, 20): {"gan": "নরগণ", "varna": "বৈশ্যবর্ণ"},     # উত্তরাষাঢ়া
+    (9, 21): {"gan": "দেবগণ", "varna": "বৈশ্যবর্ণ"},     # শ্রবণা
+    (9, 22): {"gan": "রাক্ষসগণ", "varna": "বৈশ্যবর্ণ"},   # ধনিষ্ঠা
 
-    # Kumbha (10)
-    (10, 22): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (10, 23): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
-    (10, 24): {"gan": "নরগণ", "varna": "শূদ্রবর্ণ", "alt_varna": "বৈশ্যবর্ণ"},
+    # ১১. কুম্ভ রাশি (Kumbha - Index 10)
+    (10, 22): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ"},   # ধনিষ্ঠা
+    (10, 23): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ"},   # শতভিষা
+    (10, 24): {"gan": "নরগণ", "varna": "শূদ্রবর্ণ"},     # পূর্বভাদ্রপদ
 
-    # Meena (11)
-    (11, 24): {"gan": "নরগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
-    (11, 25): {"gan": "নরগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
-    (11, 26): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ", "alt_varna": None},
+    # ১২. মীন রাশি (Meena - Index 11)
+    (11, 24): {"gan": "নরগণ", "varna": "বিপ্রবর্ণ"},     # পূর্বভাদ্রপদ
+    (11, 25): {"gan": "নরগণ", "varna": "বিপ্রবর্ণ"},     # উত্তরভাদ্রপদ
+    (11, 26): {"gan": "দেবগণ", "varna": "বিপ্রবর্ণ"},     # রেবতী
 }
 
 # ---------------------------------------------------------------------------
@@ -401,6 +401,7 @@ class PlanetResult:
     minutes_in_sign: int      # minutes portion
     seconds_in_sign: int      # seconds portion
     is_retrograde: bool       # True if retrograde
+    is_combust: bool          # True if combust with Sun
     house: int                # 1-based house number (from lagna)
 
 
@@ -479,6 +480,7 @@ class ChartResult:
     # --- Dasha ---
     current_dasha_balance: tuple   # (planet, remaining_years, months, days)
     mahadasha_list: list[DashaPeriod]
+    current_antardashas: list[dict[str, Any]] = field(default_factory=list)
     debug_trace: dict[str, Any] | None = None
 
 
@@ -486,11 +488,19 @@ class ChartResult:
 # HELPERS
 # ===========================================================================
 
-def resolve_location(place: str) -> Location:
+def resolve_location(
+    place: str,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+    tz: Optional[str] = None
+) -> Location:
+    if lat is not None and lon is not None:
+        return Location(latitude=float(lat), longitude=float(lon), timezone=tz if tz else "Asia/Kolkata")
+
     key = place.strip().lower()
     cfg = PLACE_CONFIG.get(key)
     if cfg is None:
-        raise ValueError(f"Unsupported place: '{place}'. Add to PLACE_CONFIG.")
+        raise ValueError(f"Unsupported place: '{place}'. Please select a valid location from the search autocomplete panel.")
     return Location(latitude=cfg["lat"], longitude=cfg["lon"], timezone=cfg["timezone"])
 
 
@@ -694,7 +704,9 @@ def calculate_book_lagna(utc_dt: datetime, latitude: float, longitude: float) ->
     lower_value = _lookup_time_table_value(lower_table, lst_hours * 60.0)
     upper_value = _lookup_time_table_value(upper_table, lst_hours * 60.0)
 
-    return interpolate_angle(lower_value, upper_value, lat_fraction)
+    val = interpolate_angle(lower_value, upper_value, lat_fraction)
+    ayanamsa = swe.get_ayanamsa_ut(jd)
+    return (val - ayanamsa) % 360.0
 
 
 _TRADITIONAL_RULES = {}
@@ -728,9 +740,9 @@ def _strip_label_suffix(value: str, suffix: str) -> str:
     return value[:-len(suffix)] if value.endswith(suffix) else value
 
 
-def get_koshti_attributes(rashi_index: int, nakshatra_index: int) -> dict[str, str | None]:
+def get_koshti_attributes(rashi_index: int, nakshatra_index: int) -> dict[str, str]:
     """Looks up the exact Gan and Varna using the 36-condition cross-reference matrix."""
-    default = {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ", "alt_varna": None}
+    default = {"gan": "দেবগণ", "varna": "শূদ্রবর্ণ"}
     return BOOK_KOSHTI_RULES.get((int(rashi_index), int(nakshatra_index)), default)
 
 
@@ -753,69 +765,10 @@ def get_barna(rashi_index: int, nakshatra_index: int) -> str:
     36 Conditions to determine exact Barna based on BOTH Rashi and Nakshatra.
     This fixes the Purva Bhadrapada (Kumbha vs Meena) overlap bug.
     """
-
-    # ---------------- 1. মেষ রাশি (Mesha - Index 0) ----------------
-    if rashi_index == 0 and nakshatra_index == 0: return "ক্ষত্রিয়বর্ণ"  # Ashwini
-    if rashi_index == 0 and nakshatra_index == 1: return "ক্ষত্রিয়বর্ণ"  # Bharani
-    if rashi_index == 0 and nakshatra_index == 2: return "ক্ষত্রিয়বর্ণ"  # Krittika
-
-    # ---------------- 2. বৃষ রাশি (Vrishabha - Index 1) ----------------
-    if rashi_index == 1 and nakshatra_index == 2: return "বৈশ্যবর্ণ"  # Krittika
-    if rashi_index == 1 and nakshatra_index == 3: return "বৈশ্যবর্ণ"  # Rohini
-    if rashi_index == 1 and nakshatra_index == 4: return "বৈশ্যবর্ণ"  # Mrigashira
-
-    # ---------------- 3. মিথুন রাশি (Mithuna - Index 2) ----------------
-    if rashi_index == 2 and nakshatra_index == 4: return "শূদ্রবর্ণ"  # Mrigashira
-    if rashi_index == 2 and nakshatra_index == 5: return "শূদ্রবর্ণ"  # Ardra
-    if rashi_index == 2 and nakshatra_index == 6: return "শূদ্রবর্ণ"  # Punarvasu
-
-    # ---------------- 4. কর্কট রাশি (Karka - Index 3) ----------------
-    if rashi_index == 3 and nakshatra_index == 6: return "বিপ্রবর্ণ"  # Punarvasu
-    if rashi_index == 3 and nakshatra_index == 7: return "বিপ্রবর্ণ"  # Pushya
-    if rashi_index == 3 and nakshatra_index == 8: return "বিপ্রবর্ণ"  # Ashlesha
-
-    # ---------------- 5. সিংহ রাশি (Simha - Index 4) ----------------
-    if rashi_index == 4 and nakshatra_index == 9: return "ক্ষত্রিয়বর্ণ"  # Magha
-    if rashi_index == 4 and nakshatra_index == 10: return "ক্ষত্রিয়বর্ণ" # Purva Phalguni
-    if rashi_index == 4 and nakshatra_index == 11: return "ক্ষত্রিয়বর্ণ" # Uttara Phalguni
-
-    # ---------------- 6. কন্যা রাশি (Kanya - Index 5) ----------------
-    if rashi_index == 5 and nakshatra_index == 11: return "শূদ্রবর্ণ"  # Uttara Phalguni
-    if rashi_index == 5 and nakshatra_index == 12: return "শূদ্রবর্ণ"  # Hasta
-    if rashi_index == 5 and nakshatra_index == 13: return "শূদ্রবর্ণ"  # Chitra
-
-    # ---------------- 7. তুলা রাশি (Tula - Index 6) ----------------
-    if rashi_index == 6 and nakshatra_index == 13: return "শূদ্রবর্ণ"  # Chitra
-    if rashi_index == 6 and nakshatra_index == 14: return "শূদ্রবর্ণ"  # Swati
-    if rashi_index == 6 and nakshatra_index == 15: return "শূদ্রবর্ণ"  # Vishakha
-
-    # ---------------- 8. বৃশ্চিক রাশি (Vrischika - Index 7) ----------------
-    if rashi_index == 7 and nakshatra_index == 15: return "বিপ্রবর্ণ"  # Vishakha
-    if rashi_index == 7 and nakshatra_index == 16: return "বিপ্রবর্ণ"  # Anuradha
-    if rashi_index == 7 and nakshatra_index == 17: return "বিপ্রবর্ণ"  # Jyeshtha
-
-    # ---------------- 9. ধনু রাশি (Dhanu - Index 8) ----------------
-    if rashi_index == 8 and nakshatra_index == 18: return "ক্ষত্রিয়বর্ণ"  # Mula
-    if rashi_index == 8 and nakshatra_index == 19: return "ক্ষত্রিয়বর্ণ"  # Purva Ashadha
-    if rashi_index == 8 and nakshatra_index == 20: return "ক্ষত্রিয়বর্ণ"  # Uttara Ashadha
-
-    # ---------------- 10. মকর রাশি (Makara - Index 9) ----------------
-    if rashi_index == 9 and nakshatra_index == 20: return "বৈশ্যবর্ণ"  # Uttara Ashadha
-    if rashi_index == 9 and nakshatra_index == 21: return "বৈশ্যবর্ণ"  # Shravana
-    if rashi_index == 9 and nakshatra_index == 22: return "বৈশ্যবর্ণ"  # Dhanishtha
-
-    # ---------------- 11. কুম্ভ রাশি (Kumbha - Index 10) ----------------
-    if rashi_index == 10 and nakshatra_index == 22: return "শূদ্রবর্ণ"  # Dhanishtha
-    if rashi_index == 10 and nakshatra_index == 23: return "শূদ্রবর্ণ"  # Shatabhisha
-    if rashi_index == 10 and nakshatra_index == 24: return "শূদ্রবর্ণ"  # Purva Bhadrapada
-
-    # ---------------- 12. মীন রাশি (Meena - Index 11) ----------------
-    if rashi_index == 11 and nakshatra_index == 24: return "বিপ্রবর্ণ"  # Purva Bhadrapada
-    if rashi_index == 11 and nakshatra_index == 25: return "বিপ্রবর্ণ"  # Uttara Bhadrapada
-    if rashi_index == 11 and nakshatra_index == 26: return "বিপ্রবর্ণ"  # Revati
-
-    # Default fallback
-    return "অজানা বর্ণ"
+    match_key = (int(rashi_index), int(nakshatra_index))
+    if match_key in BOOK_KOSHTI_RULES:
+        return BOOK_KOSHTI_RULES[match_key]["varna"]
+    return "শূদ্রবর্ণ"
 
 
 def get_varna(rashi_index: int, nakshatra_index: int) -> str:
@@ -1154,6 +1107,26 @@ def _build_debug_trace(
     }
 
 
+COMBUSTION_THRESHOLDS = {
+    "Moon": 12.0,
+    "Mars": 17.0,
+    "Mercury": 14.0,
+    "Jupiter": 11.0,
+    "Venus": 10.0,
+    "Saturn": 15.0,
+}
+
+
+def _check_combust(pname: str, planet_lon: float, sun_lon: float) -> bool:
+    if pname not in COMBUSTION_THRESHOLDS:
+        return False
+    threshold = COMBUSTION_THRESHOLDS[pname]
+    diff = abs(planet_lon - sun_lon)
+    if diff > 180.0:
+        diff = 360.0 - diff
+    return diff <= threshold
+
+
 # ===========================================================================
 # MAIN CALCULATE FUNCTION
 # ===========================================================================
@@ -1169,6 +1142,9 @@ def calculate_chart(
     planet_overrides: Optional[dict[str, float]] = None,
     override_moon_longitude: Optional[float] = None,
     override_ascendant_longitude: Optional[float] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    timezone: Optional[str] = None,
     debug_trace: bool = False,
 ) -> ChartResult:
     """
@@ -1182,7 +1158,7 @@ def calculate_chart(
     Returns:
         ChartResult with all fields filled
     """
-    location = resolve_location(place)
+    location = resolve_location(place, latitude, longitude, timezone)
 
     # --- Convert local birth time to UTC ---
     tz = ZoneInfo(location.timezone)
@@ -1229,6 +1205,8 @@ def calculate_chart(
     jd_midnight_utc = math.floor(jd + 0.5) - 0.5
     fraction_of_day = jd - jd_midnight_utc
 
+    sun_lon = None
+
     for pname, pid in PLANETS:
         override_lon = normalized_overrides.get(pname)
         planet_pid = pid
@@ -1236,7 +1214,7 @@ def calculate_chart(
             lon = override_lon
             pflags = flags
             speed = 0.0
-            is_retro = False
+            is_retro = pname in ("Rahu", "Ketu")
             if pname == "Moon":
                 moon_correction_trace = {"enabled": False, "source": "planet_overrides"}
         else:
@@ -1256,10 +1234,17 @@ def calculate_chart(
 
             lon = project_longitude(lon_interpolated)
             speed = pos_today[3]
-            is_retro = speed < 0.0 and pname not in ("Rahu", "Ketu")
+            is_retro = True if pname in ("Rahu", "Ketu") else (speed < 0.0)
             if pname == "Moon":
                 moon_correction_trace = {"enabled": False, "source": "swiss_ephemeris_true"}
-        # Rahu/Ketu are always technically retrograde in mean node mode — don't flag them
+
+        if pname == "Sun":
+            sun_lon = lon
+
+        is_combust = False
+        if sun_lon is not None and pname != "Sun":
+            is_combust = _check_combust(pname, lon, sun_lon)
+
         si = _sign_index(lon)
         deg, mins, secs = _dms(lon)
         raw_planets.append(PlanetResult(
@@ -1271,6 +1256,7 @@ def calculate_chart(
             minutes_in_sign=mins,
             seconds_in_sign=secs,
             is_retrograde=is_retro,
+            is_combust=is_combust,
             house=0,   # placeholder, filled after lagna
         ))
         if debug_trace:
@@ -1286,17 +1272,19 @@ def calculate_chart(
                     "degree_in_sign": round(lon % 30.0, 4),
                     "dms": f"{deg}° {mins:02d}' {secs:02d}\"",
                     "is_retrograde": is_retro,
+                    "is_combust": is_combust,
                     "override_applied": override_lon is not None,
                 }
             )
 
     # --- Ketu = Rahu + 180° ---
     rahu = next(p for p in raw_planets if p.name == "Rahu")
-    ketu_override = normalized_overrides.get("Ketu")
-    if ketu_override is not None:
-        ketu_lon = ketu_override
-    else:
-        ketu_lon = _normalize(rahu.longitude + 180.0)
+    ketu_lon = _normalize(rahu.longitude + 180.0)
+
+    # Opposition check validation
+    opposition_diff = abs(((ketu_lon - rahu.longitude) % 360.0) - 180.0)
+    assert opposition_diff < 0.001, f"Rahu-Ketu opposition failed: Rahu={rahu.longitude}, Ketu={ketu_lon}"
+
     si_k = _sign_index(ketu_lon)
     deg_k, min_k, sec_k = _dms(ketu_lon)
     raw_planets.append(PlanetResult(
@@ -1307,7 +1295,8 @@ def calculate_chart(
         degree_in_sign=round(ketu_lon % 30.0, 4),
         minutes_in_sign=min_k,
         seconds_in_sign=sec_k,
-        is_retrograde=False,
+        is_retrograde=True,  # Ketu is always retrograde
+        is_combust=False,    # Ketu is never combust
         house=0,
     ))
 
@@ -1331,6 +1320,7 @@ def calculate_chart(
             minutes_in_sign=p.minutes_in_sign,
             seconds_in_sign=p.seconds_in_sign,
             is_retrograde=p.is_retrograde,
+            is_combust=p.is_combust,
             house=house,
         ))
 
@@ -1352,6 +1342,7 @@ def calculate_chart(
             if p.name == "Moon":
                 si_o = _sign_index(moon_override_value)
                 deg_o, min_o, sec_o = _dms(moon_override_value)
+                new_combust = _check_combust("Moon", moon_override_value, sun_lon) if sun_lon is not None else False
                 planets_with_houses[idx] = PlanetResult(
                     name=p.name,
                     longitude=round(moon_override_value, 6),
@@ -1361,6 +1352,7 @@ def calculate_chart(
                     minutes_in_sign=min_o,
                     seconds_in_sign=sec_o,
                     is_retrograde=p.is_retrograde,
+                    is_combust=new_combust,
                     house=((si_o - lagna_si) % 12) + 1,
                 )
                 break
@@ -1390,6 +1382,44 @@ def calculate_chart(
     varna, varna_bn, lucky_days, lucky_days_bn, lucky_colors, lucky_colors_bn, lucky_numbers = \
         _calc_lucky_fields(lagna_si, rashi_si, nakshatra)
 
+    # --- Dynamic Antardasha Slicing (9 periods from current date) ---
+    today = datetime.now(ZoneInfo(location.timezone)).date()
+    all_ads = []
+    planet_names_bn = {
+        "Sun": "রবি", "Moon": "চন্দ্র", "Mars": "মঙ্গল", 
+        "Mercury": "বুধ", "Jupiter": "বৃহস্পতি", "Venus": "শুক্র", 
+        "Saturn": "শনি", "Rahu": "রাহু", "Ketu": "কেতু"
+    }
+
+    for md in dasha_list:
+        for ad in md.antardashas:
+            md_bn = planet_names_bn.get(md.planet, md.planet)
+            ad_bn = planet_names_bn.get(ad.planet, ad.planet)
+            dur_str_bn = f"{_to_bengali_digits(str(ad.duration_years))} - {_to_bengali_digits(str(ad.duration_months))} - {_to_bengali_digits(str(ad.duration_days))}"
+            start_date_bn = _to_bengali_digits(ad.start_date.strftime("%Y - %m - %d"))
+            end_date_bn = _to_bengali_digits(ad.end_date.strftime("%Y - %m - %d"))
+            
+            all_ads.append({
+                "mahadasha": md.planet,
+                "mahadasha_bn": md_bn,
+                "antardasha": ad.planet,
+                "antardasha_bn": ad_bn,
+                "start_date": ad.start_date,
+                "end_date": ad.end_date,
+                "start_date_bn": start_date_bn,
+                "end_date_bn": end_date_bn,
+                "duration_bn": dur_str_bn
+            })
+    
+    current_ads = []
+    for i, ad_dict in enumerate(all_ads):
+        if ad_dict["start_date"] <= today < ad_dict["end_date"]:
+            current_ads = all_ads[i:i+9]
+            break
+    
+    if not current_ads:
+        current_ads = all_ads[:9]
+
     return ChartResult(
         dob=dob,
         birth_time=birth_time,
@@ -1417,6 +1447,7 @@ def calculate_chart(
         planets=planets_with_houses,
         current_dasha_balance=balance_info,
         mahadasha_list=dasha_list,
+        current_antardashas=current_ads,
         debug_trace=(
             _build_debug_trace(
                 location=location,
@@ -1567,15 +1598,11 @@ def print_chart(result: ChartResult) -> None:
     print()
 
     print("─" * 65)
-    print("  অন্তর্দশা / ANTARDASHA  (under first Mahadasha)")
+    print("  বর্তমান অন্তর্দশা / CURRENT 9 ANTARDASHAS")
     print("─" * 65)
-    if result.mahadasha_list:
-        first_md = result.mahadasha_list[0]
-        print(f"  Mahadasha: {first_md.planet} ({first_md.start_date} → {first_md.end_date})")
-        print(f"  {'AD Planet':<12} {'Start':<14} {'End':<14} {'Duration'}")
-        print(f"  {'---------':<12} {'-----':<14} {'---':<14} {'--------'}")
-        for ad in first_md.antardashas:
-            dur = f"{ad.duration_years}y {ad.duration_months}m {ad.duration_days}d"
-            print(f"  {ad.planet:<12} {str(ad.start_date):<14} {str(ad.end_date):<14} {dur}")
+    if result.current_antardashas:
+        print(f"  {'MD Planet':<10} {'AD Planet':<10} {'Start Date':<14} {'End Date':<14} {'Duration (bn)'}")
+        print(f"  {'---------':<10} {'---------':<10} {'----------':<14} {'--------':<14} {'-------------'}")
+        for ad in result.current_antardashas:
+            print(f"  {ad['mahadasha']:<10} {ad['antardasha']:<10} {str(ad['start_date']):<14} {str(ad['end_date']):<14} {ad['duration_bn']}")
     print("=" * 65)
-

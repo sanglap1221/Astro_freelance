@@ -1,0 +1,229 @@
+{
+  "Phalguna": {
+    "4": {
+      "gregorian_date": "2018-02-17",
+      "sidereal_lagna_starts": {
+        "Vrischika": "23:46",
+        "Dhanu": "02:06",
+        "Makara": "04:11",
+        "Kumbha": "05:58",
+        "Meena": "07:31",
+        "Mesha": "09:02",
+        "Vrishabha": "10:43",
+        "Mithuna": "12:41",
+        "Karka": "14:55",
+        "Simha": "17:10",
+        "Kanya": "19:22",
+        "Tula": "21:32"
+      },
+      "tropical_lagna_starts": {
+        "Vrischika": "21:58",
+        "Dhanu": "00:17",
+        "Makara": "02:31",
+        "Kumbha": "04:33",
+        "Meena": "06:17",
+        "Mesha": "07:49",
+        "Vrishabha": "09:21",
+        "Mithuna": "11:05",
+        "Karka": "13:07",
+        "Simha": "15:21",
+        "Kanya": "17:36",
+        "Tula": "19:47"
+      }
+    }
+  },
+  "Sravana": {
+    "2": {
+      "gregorian_date": "2006-07-18",
+      "sidereal_lagna_starts": {
+        "Mesha": "23:05",
+        "Vrishabha": "00:49",
+        "Mithuna": "02:47",
+        "Karka": "05:00",
+        "Simha": "07:16",
+        "Kanya": "09:28",
+        "Tula": "11:38",
+        "Vrischika": "13:52",
+        "Dhanu": "16:08",
+        "Makara": "18:13",
+        "Kumbha": "20:00",
+        "Meena": "21:34"
+      },
+      "tropical_lagna_starts": {
+        "Vrishabha": "23:24",
+        "Mithuna": "01:11",
+        "Karka": "03:13",
+        "Simha": "05:28",
+        "Kanya": "07:43",
+        "Tula": "09:54",
+        "Vrischika": "12:04",
+        "Dhanu": "14:19",
+        "Makara": "16:34",
+        "Kumbha": "18:36",
+        "Meena": "20:20",
+        "Mesha": "21:52"
+      }
+    }
+  },
+  "Ashadha": {
+    "31": {
+      "gregorian_date": "2006-07-16",
+      "sidereal_lagna_starts": {
+        "Mesha": "23:12",
+        "Vrishabha": "00:57",
+        "Mithuna": "02:55",
+        "Karka": "05:08",
+        "Simha": "07:24",
+        "Kanya": "09:35",
+        "Tula": "11:46",
+        "Vrischika": "14:00",
+        "Dhanu": "16:15",
+        "Makara": "18:21",
+        "Kumbha": "20:08",
+        "Meena": "21:41"
+      },
+      "tropical_lagna_starts": {
+        "Vrishabha": "23:32",
+        "Mithuna": "01:19",
+        "Karka": "03:21",
+        "Simha": "05:36",
+        "Kanya": "07:51",
+        "Tula": "10:02",
+        "Vrischika": "12:12",
+        "Dhanu": "14:27",
+        "Makara": "16:42",
+        "Kumbha": "18:44",
+        "Meena": "20:28",
+        "Mesha": "22:00"
+      }
+    }
+  },
+  "Chaitra": {
+    "7": {
+      "gregorian_date": "1995-03-22",
+      "sidereal_lagna_starts": {
+        "Dhanu": "23:52",
+        "Makara": "02:02",
+        "Kumbha": "03:49",
+        "Meena": "05:22",
+        "Mesha": "06:53",
+        "Vrishabha": "08:34",
+        "Mithuna": "10:32",
+        "Karka": "12:45",
+        "Simha": "15:01",
+        "Kanya": "17:12",
+        "Tula": "19:22",
+        "Vrischika": "21:36"
+      },
+      "tropical_lagna_starts": {
+        "Dhanu": "22:05",
+        "Makara": "00:23",
+        "Kumbha": "02:25",
+        "Meena": "04:09",
+        "Mesha": "05:41",
+        "Vrishabha": "07:13",
+        "Mithuna": "08:57",
+        "Karka": "10:58",
+        "Simha": "13:13",
+        "Kanya": "15:28",
+        "Tula": "17:39",
+        "Vrischika": "19:50"
+      }
+    },
+    "28": {
+      "gregorian_date": "1991-04-12",
+      "sidereal_lagna_starts": {
+        "Dhanu": "22:29",
+        "Makara": "00:39",
+        "Kumbha": "02:26",
+        "Meena": "04:00",
+        "Mesha": "05:31",
+        "Vrishabha": "07:11",
+        "Mithuna": "09:09",
+        "Karka": "11:22",
+        "Simha": "13:38",
+        "Kanya": "15:49",
+        "Tula": "18:00",
+        "Vrischika": "20:14"
+      },
+      "tropical_lagna_starts": {
+        "Makara": "22:57",
+        "Kumbha": "01:03",
+        "Meena": "02:46",
+        "Mesha": "04:18",
+        "Vrishabha": "05:50",
+        "Mithuna": "07:34",
+        "Karka": "09:36",
+        "Simha": "11:51",
+        "Kanya": "14:06",
+        "Tula": "16:16",
+        "Vrischika": "18:27",
+        "Dhanu": "20:42"
+      }
+    }
+  },
+  "Kartika": {
+    "29": {
+      "gregorian_date": "2024-11-15",
+      "sidereal_lagna_starts": {
+        "Simha": "23:19",
+        "Kanya": "01:34",
+        "Tula": "03:44",
+        "Vrischika": "05:59",
+        "Dhanu": "08:14",
+        "Makara": "10:20",
+        "Kumbha": "12:07",
+        "Meena": "13:40",
+        "Mesha": "15:11",
+        "Vrishabha": "16:52",
+        "Mithuna": "18:50",
+        "Karka": "21:03"
+      },
+      "tropical_lagna_starts": {
+        "Kanya": "23:45",
+        "Tula": "01:59",
+        "Vrischika": "04:10",
+        "Dhanu": "06:25",
+        "Makara": "08:40",
+        "Kumbha": "10:42",
+        "Meena": "12:25",
+        "Mesha": "13:57",
+        "Vrishabha": "15:29",
+        "Mithuna": "17:13",
+        "Karka": "19:15",
+        "Simha": "21:30"
+      }
+    },
+    "11": {
+      "gregorian_date": "2023-10-29",
+      "sidereal_lagna_starts": {
+        "Karka": "22:13",
+        "Simha": "00:33",
+        "Kanya": "02:44",
+        "Tula": "04:54",
+        "Vrischika": "07:08",
+        "Dhanu": "09:24",
+        "Makara": "11:29",
+        "Kumbha": "13:16",
+        "Meena": "14:50",
+        "Mesha": "16:21",
+        "Vrishabha": "18:01",
+        "Mithuna": "20:00"
+      },
+      "tropical_lagna_starts": {
+        "Simha": "22:40",
+        "Kanya": "00:59",
+        "Tula": "03:09",
+        "Vrischika": "05:20",
+        "Dhanu": "07:35",
+        "Makara": "09:50",
+        "Kumbha": "11:52",
+        "Meena": "13:35",
+        "Mesha": "15:07",
+        "Vrishabha": "16:39",
+        "Mithuna": "18:23",
+        "Karka": "20:25"
+      }
+    }
+  }
+}

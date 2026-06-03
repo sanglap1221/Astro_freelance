@@ -26,6 +26,9 @@ def generate_chart(payload: ChartRequest) -> ChartResponse:
             planet_overrides=payload.planet_overrides,
             override_moon_longitude=payload.override_moon_longitude,
             override_ascendant_longitude=payload.override_ascendant_longitude,
+            latitude=payload.latitude,
+            longitude=payload.longitude,
+            timezone=payload.timezone,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -62,6 +65,8 @@ def generate_chart(payload: ChartRequest) -> ChartResponse:
                 ),
                 display_bn=format_sign_dms_bn(planet.longitude),
                 display_compact_bn=format_sign_compact_bn(planet.longitude),
+                is_retrograde=planet.is_retrograde,
+                is_combust=planet.is_combust,
             )
             for planet in sorted(
                 chart.planets,

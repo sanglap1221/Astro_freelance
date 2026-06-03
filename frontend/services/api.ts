@@ -1,6 +1,6 @@
 import type { ReportInput, ReportState } from "../types/report";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export async function calculateReport(data: ReportInput): Promise<ReportState> {
   const overrideMoonRaw = data.override_moon_longitude?.trim();
@@ -40,5 +40,8 @@ export async function renderPdf(state: ReportState): Promise<{ pdf_url: string }
     throw new Error(payload?.detail ?? "PDF rendering failed");
   }
 
-  return (await response.json()) as { pdf_url: string };
+  const blob = await response.blob();
+  const pdf_url = URL.createObjectURL(blob);
+  return { pdf_url };
 }
+
