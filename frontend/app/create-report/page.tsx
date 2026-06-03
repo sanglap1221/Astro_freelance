@@ -1351,23 +1351,69 @@ export default function CreateReportPage() {
                       e.preventDefault();
                       const iframe = document.querySelector("iframe");
                       if (iframe && iframe.contentWindow) {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        if (iframeDoc) {
-                          const dobFormatted = formValue.dob
-                            ? formValue.dob.split('-').reverse().join('.')
-                            : "";
-                          const title = dobFormatted
-                            ? `${formValue.name} (${dobFormatted})`
-                            : formValue.name;
-                          iframeDoc.title = title;
-                        }
+                        const originalTitle = document.title;
+                        document.title = "Print Astrological Report";
                         iframe.contentWindow.focus();
                         iframe.contentWindow.print();
+                        setTimeout(() => {
+                          document.title = originalTitle;
+                        }, 1000);
+                      }
+                    }}
+                    id="btn-print-report"
+                  >
+                    Print Report
+                  </button>
+                  <button
+                    className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1 cursor-pointer"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      const iframe = document.querySelector("iframe");
+                      if (iframe && iframe.contentWindow) {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const element = iframeDoc?.querySelector(".a4-page");
+                        if (!element) return;
+
+                        const dobFormatted = formValue.dob
+                          ? formValue.dob.split('-').reverse().join('.')
+                          : "";
+                        const filename = dobFormatted
+                          ? `${formValue.name} (${dobFormatted}).pdf`
+                          : `${formValue.name}.pdf`;
+
+                        setRendering(true);
+                        try {
+                          const html2pdf = (await import("html2pdf.js")).default;
+                          const opt = {
+                            margin: 0,
+                            filename: filename,
+                            image: { type: "jpeg", quality: 0.98 },
+                            html2canvas: {
+                              scale: 2,
+                              useCORS: true,
+                              logging: false,
+                            },
+                            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                          };
+                          await html2pdf().set(opt).from(element).save();
+                        } catch (err) {
+                          console.error("Direct PDF download failed, falling back to print", err);
+                          // Fallback to print method if html2pdf fails
+                          const originalTitle = document.title;
+                          document.title = filename.replace(".pdf", "");
+                          iframe.contentWindow.focus();
+                          iframe.contentWindow.print();
+                          setTimeout(() => {
+                            document.title = originalTitle;
+                          }, 1000);
+                        } finally {
+                          setRendering(false);
+                        }
                       }
                     }}
                     id="btn-download-pdf"
                   >
-                    Print / Save PDF
+                    Download PDF
                   </button>
                 </div>
               )}
