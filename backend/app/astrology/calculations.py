@@ -377,6 +377,13 @@ PLACE_CONFIG = {
     "bangalore": {"lat": 12.9716, "lon": 77.5946, "timezone": "Asia/Kolkata"},
     "hyderabad": {"lat": 17.3850, "lon": 78.4867, "timezone": "Asia/Kolkata"},
     "pune":      {"lat": 18.5204, "lon": 73.8567, "timezone": "Asia/Kolkata"},
+    "gujrat":      {"lat": 23.0225, "lon": 72.5714, "timezone": "Asia/Kolkata"},
+    "gujarat":     {"lat": 23.0225, "lon": 72.5714, "timezone": "Asia/Kolkata"},
+    "ahmedabad":   {"lat": 23.0225, "lon": 72.5714, "timezone": "Asia/Kolkata"},
+    "surat":       {"lat": 21.1702, "lon": 72.8311, "timezone": "Asia/Kolkata"},
+    "vadodara":    {"lat": 22.3072, "lon": 73.1812, "timezone": "Asia/Kolkata"},
+    "rajkot":      {"lat": 22.3039, "lon": 70.8022, "timezone": "Asia/Kolkata"},
+    "gandhinagar": {"lat": 23.2156, "lon": 72.6369, "timezone": "Asia/Kolkata"},
 }
 
 
@@ -488,6 +495,47 @@ class ChartResult:
 # HELPERS
 # ===========================================================================
 
+def geocode_online(place: str) -> Optional[tuple[float, float, str]]:
+    """Query Nominatim API directly over the wire to get lat, lon and default to Asia/Kolkata timezone."""
+    import urllib.request
+    import urllib.parse
+    import json
+    
+    # 1. Search primarily in India
+    try:
+        headers = {"User-Agent": "AstroReportGenerator/1.0"}
+        query = urllib.parse.quote(place)
+        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1&countrycodes=in"
+        req = urllib.request.Request(url, headers=headers)
+        
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            if data:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+                return lat, lon, "Asia/Kolkata"
+    except Exception:
+        pass
+        
+    # 2. Search globally as a fallback
+    try:
+        headers = {"User-Agent": "AstroReportGenerator/1.0"}
+        query = urllib.parse.quote(place)
+        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1"
+        req = urllib.request.Request(url, headers=headers)
+        
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            if data:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+                return lat, lon, "Asia/Kolkata"
+    except Exception:
+        pass
+        
+    return None
+
+
 def resolve_location(
     place: str,
     lat: Optional[float] = None,
@@ -499,9 +547,16 @@ def resolve_location(
 
     key = place.strip().lower()
     cfg = PLACE_CONFIG.get(key)
-    if cfg is None:
-        raise ValueError(f"Unsupported place: '{place}'. Please select a valid location from the search autocomplete panel.")
-    return Location(latitude=cfg["lat"], longitude=cfg["lon"], timezone=cfg["timezone"])
+    if cfg is not None:
+        return Location(latitude=cfg["lat"], longitude=cfg["lon"], timezone=cfg["timezone"])
+
+    # Fallback to dynamic online geocoding lookup
+    geo = geocode_online(place)
+    if geo is not None:
+        flat, flon, ftz = geo
+        return Location(latitude=flat, longitude=flon, timezone=ftz)
+
+    raise ValueError(f"Unsupported place: '{place}'. Please select a valid location from the search autocomplete panel.")
 
 
 def _normalize(lon: float) -> float:

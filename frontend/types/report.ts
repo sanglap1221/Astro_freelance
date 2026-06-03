@@ -12,6 +12,9 @@ export type ReportInput = {
   planet_overrides?: Record<string, number>;
   override_moon_longitude?: string;
   override_ascendant_longitude?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
 };
 
 export type GeneratedReport = {
