@@ -59,9 +59,21 @@ def render_pdf(payload: dict[str, Any]) -> StreamingResponse:
 @router.post("/api/download-report")
 def download_report(payload: dict[str, Any]) -> StreamingResponse:
     try:
+        import urllib.parse
         pdf_buf = render_pdf_to_memory(payload)
+        
+        customer = payload.get("customer", {})
+        name = customer.get("name", "report").strip()
+        dob = customer.get("dob", "").strip().replace("-", ".")
+        
+        if dob:
+            filename = f"{name} ({dob}).pdf"
+        else:
+            filename = f"{name}.pdf"
+            
+        safe_filename = urllib.parse.quote(filename)
         headers = {
-            "Content-Disposition": 'attachment; filename="report.pdf"'
+            "Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"
         }
         return StreamingResponse(pdf_buf, media_type="application/pdf", headers=headers)
     except Exception as exc:

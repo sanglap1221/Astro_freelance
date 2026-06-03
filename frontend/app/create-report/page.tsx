@@ -1348,7 +1348,18 @@ export default function CreateReportPage() {
                   <a
                     className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1"
                     href={fullPdfUrl}
-                    download
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const filename = formValue.dob
+                        ? `${formValue.name} (${formValue.dob.split('-').reverse().join('.')}).pdf`
+                        : `${formValue.name}.pdf`;
+                      const link = document.createElement("a");
+                      link.href = fullPdfUrl;
+                      link.download = filename;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
                     id="btn-download-pdf"
                   >
                     Download
@@ -1366,7 +1377,7 @@ export default function CreateReportPage() {
               )}
 
               {fullPdfUrl ? (
-                <PdfViewer pdfUrl={fullPdfUrl} />
+                <PdfViewer pdfUrl={fullPdfUrl + "#toolbar=0"} />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 gap-2">
                   <svg width="48" height="48" className="h-12 w-12 text-slate-300 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
