@@ -1371,7 +1371,7 @@ export default function CreateReportPage() {
                       const iframe = document.querySelector("iframe");
                       if (iframe && iframe.contentWindow) {
                         const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        const element = iframeDoc?.querySelector(".a4-page");
+                        const element = iframeDoc?.querySelector(".a4-page") as HTMLElement;
                         if (!element) return;
 
                         const dobFormatted = formValue.dob
@@ -1394,7 +1394,7 @@ export default function CreateReportPage() {
                               logging: false,
                             },
                             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-                          };
+                          } as const;
                           await html2pdf().set(opt).from(element).save();
                         } catch (err) {
                           console.error("Direct PDF download failed, falling back to print", err);
