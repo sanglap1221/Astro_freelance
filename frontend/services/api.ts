@@ -40,7 +40,8 @@ export async function renderPdf(state: ReportState): Promise<{ pdf_url: string }
     throw new Error(payload?.detail ?? "PDF rendering failed");
   }
 
-  const blob = await response.blob();
+  const data = await response.json() as { html: string };
+  const blob = new Blob([data.html], { type: "text/html" });
   const pdf_url = URL.createObjectURL(blob);
   return { pdf_url };
 }

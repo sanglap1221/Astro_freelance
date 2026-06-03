@@ -48,10 +48,16 @@ def calculate_report(payload: PdfRequest) -> dict[str, Any]:
 
 
 @router.post("/api/render-pdf")
-def render_pdf(payload: dict[str, Any]) -> StreamingResponse:
+def render_pdf(payload: dict[str, Any]) -> dict[str, str]:
     try:
-        pdf_buf = render_pdf_to_memory(payload)
-        return StreamingResponse(pdf_buf, media_type="application/pdf")
+        from jinja2 import Environment, FileSystemLoader
+        from pathlib import Path
+        
+        templates_dir = Path(__file__).parent.parent.parent / "pdf" / "templates"
+        env = Environment(loader=FileSystemLoader(str(templates_dir)))
+        template = env.get_template("bengali_report.html")
+        html_content = template.render(**payload)
+        return {"html": html_content}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

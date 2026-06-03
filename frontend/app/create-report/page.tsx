@@ -1332,7 +1332,7 @@ export default function CreateReportPage() {
           <section className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 flex flex-col w-full">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3 px-2">
               <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">
-                3. PDF Preview
+                3. Report Preview
               </h2>
               {fullPdfUrl && (
                 <div className="flex gap-2">
@@ -1345,25 +1345,30 @@ export default function CreateReportPage() {
                   >
                     Open View
                   </a>
-                  <a
-                    className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1"
-                    href={fullPdfUrl}
+                  <button
+                    className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1 cursor-pointer"
                     onClick={(e) => {
                       e.preventDefault();
-                      const filename = formValue.dob
-                        ? `${formValue.name} (${formValue.dob.split('-').reverse().join('.')}).pdf`
-                        : `${formValue.name}.pdf`;
-                      const link = document.createElement("a");
-                      link.href = fullPdfUrl;
-                      link.download = filename;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      const iframe = document.querySelector("iframe");
+                      if (iframe && iframe.contentWindow) {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (iframeDoc) {
+                          const dobFormatted = formValue.dob
+                            ? formValue.dob.split('-').reverse().join('.')
+                            : "";
+                          const title = dobFormatted
+                            ? `${formValue.name} (${dobFormatted})`
+                            : formValue.name;
+                          iframeDoc.title = title;
+                        }
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                      }
                     }}
                     id="btn-download-pdf"
                   >
-                    Download
-                  </a>
+                    Print / Save PDF
+                  </button>
                 </div>
               )}
             </div>
@@ -1372,12 +1377,12 @@ export default function CreateReportPage() {
               {rendering && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-slate-600 gap-3">
                   <LoadingSpinner />
-                  <span className="text-xs font-medium tracking-wide">Compiling PDF report...</span>
+                  <span className="text-xs font-medium tracking-wide">Compiling report preview...</span>
                 </div>
               )}
 
               {fullPdfUrl ? (
-                <PdfViewer pdfUrl={fullPdfUrl + "#toolbar=0"} />
+                <PdfViewer pdfUrl={fullPdfUrl} />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 gap-2">
                   <svg width="48" height="48" className="h-12 w-12 text-slate-300 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
