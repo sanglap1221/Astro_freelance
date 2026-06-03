@@ -320,8 +320,11 @@ def render_pdf_from_context(context: dict[str, Any]) -> str:
         browser = p.chromium.launch(headless=True)
         try:
             page = browser.new_page()
-            # Set HTML content and wait until network is idle (to download fonts)
-            page.set_content(html_content, wait_until="networkidle")
+            page.set_content(html_content)
+            try:
+                page.evaluate("document.fonts.ready")
+            except Exception:
+                pass
             
             # Print PDF
             page.pdf(
@@ -355,8 +358,11 @@ def render_pdf_to_memory(context: dict[str, Any]) -> BytesIO:
         browser = p.chromium.launch(headless=True)
         try:
             page = browser.new_page()
-            # Set HTML content and wait until network is idle (to download fonts)
-            page.set_content(html_content, wait_until="networkidle")
+            page.set_content(html_content)
+            try:
+                page.evaluate("document.fonts.ready")
+            except Exception:
+                pass
             
             # Print PDF in-memory (no path argument)
             pdf_bytes = page.pdf(
