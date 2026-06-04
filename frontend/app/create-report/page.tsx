@@ -1368,37 +1368,44 @@ export default function CreateReportPage() {
                     className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1 cursor-pointer"
                     onClick={async (e) => {
                       e.preventDefault();
-                      const iframe = document.querySelector("iframe");
-                      if (iframe && iframe.contentWindow) {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        const element = iframeDoc?.querySelector(".a4-page") as HTMLElement;
-                        if (!element) return;
+                      if (!reportState) return;
 
-                        const dobFormatted = formValue.dob
-                          ? formValue.dob.split('-').reverse().join('.')
-                          : "";
-                        const filename = dobFormatted
-                          ? `${formValue.name} (${dobFormatted}).pdf`
-                          : `${formValue.name}.pdf`;
+                      const dobFormatted = formValue.dob
+                        ? formValue.dob.split('-').reverse().join('.')
+                        : "";
+                      const filename = dobFormatted
+                        ? `${formValue.name} (${dobFormatted}).pdf`
+                        : `${formValue.name}.pdf`;
 
-                        setRendering(true);
-                        try {
-                          const html2pdf = (await import("html2pdf.js")).default;
-                          const opt = {
-                            margin: 0,
-                            filename: filename,
-                            image: { type: "jpeg", quality: 0.98 },
-                            html2canvas: {
-                              scale: 2,
-                              useCORS: true,
-                              logging: false,
-                            },
-                            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-                          } as const;
-                          await html2pdf().set(opt).from(element).save();
-                        } catch (err) {
-                          console.error("Direct PDF download failed, falling back to print", err);
-                          // Fallback to print method if html2pdf fails
+                      setRendering(true);
+                      try {
+                        const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+                        const response = await fetch(`${API}/api/download-report`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify(reportState),
+                        });
+
+                        if (!response.ok) {
+                          throw new Error("Server-side PDF generation failed");
+                        }
+
+                        const blob = await response.blob();
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = downloadUrl;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(downloadUrl);
+                      } catch (err) {
+                        console.error("Direct PDF download failed, falling back to print", err);
+                        // Fallback to print method if API download fails
+                        const iframe = document.querySelector("iframe");
+                        if (iframe && iframe.contentWindow) {
                           const originalTitle = document.title;
                           document.title = filename.replace(".pdf", "");
                           iframe.contentWindow.focus();
@@ -1406,9 +1413,9 @@ export default function CreateReportPage() {
                           setTimeout(() => {
                             document.title = originalTitle;
                           }, 1000);
-                        } finally {
-                          setRendering(false);
                         }
+                      } finally {
+                        setRendering(false);
                       }
                     }}
                     id="btn-download-pdf"
