@@ -3,5 +3,5 @@ type PdfViewerProps = {
 };
 
 export function PdfViewer({ pdfUrl }: PdfViewerProps) {
-  return <iframe src={pdfUrl} className="h-[80vh] w-full border" title="PDF preview" />;
+  return <iframe src={pdfUrl} className="w-full h-[320mm] border-0" title="PDF preview" />;
 }

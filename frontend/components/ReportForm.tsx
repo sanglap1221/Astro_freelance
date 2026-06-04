@@ -10,6 +10,20 @@ type ReportFormProps = {
   onSubmit: () => void;
 };
 
+/* ─── Preset Locations ─── */
+const PRESET_LOCATIONS: { display_name: string; lat: string; lon: string }[] = [
+  { display_name: "Kolkata, West Bengal", lat: "22.5726", lon: "88.3639" },
+  { display_name: "Bongaon, West Bengal", lat: "23.0434", lon: "88.8235" },
+  { display_name: "Habra, West Bengal", lat: "22.8321", lon: "88.6315" },
+  { display_name: "Barasat, West Bengal", lat: "22.7200", lon: "88.4801" },
+  { display_name: "Barrackpore, West Bengal", lat: "22.7658", lon: "88.3784" },
+  { display_name: "Howrah, West Bengal", lat: "22.5958", lon: "88.2636" },
+  { display_name: "Durgapur, West Bengal", lat: "23.5204", lon: "87.3119" },
+  { display_name: "Siliguri, West Bengal", lat: "26.7271", lon: "88.3953" },
+  { display_name: "New Delhi, Delhi", lat: "28.6139", lon: "77.2090" },
+  { display_name: "Mumbai, Maharashtra", lat: "19.0760", lon: "72.8777" },
+];
+
 function updateField(
   current: ReportInput,
   onChange: (value: ReportInput) => void,
@@ -33,16 +47,29 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
   const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [showingPresets, setShowingPresets] = useState(false);
 
   const handlePlaceChange = async (query: string) => {
     updateField(value, onChange, "place", query);
     
     if (query.trim().length < 3) {
-      setSuggestions([]);
-      setShowDropdown(false);
+      // Show filtered presets if user typed 1-2 chars
+      if (query.trim().length > 0) {
+        const filtered = PRESET_LOCATIONS.filter((p) =>
+          p.display_name.toLowerCase().includes(query.trim().toLowerCase())
+        );
+        setSuggestions(filtered);
+        setShowDropdown(filtered.length > 0);
+        setShowingPresets(true);
+      } else {
+        setSuggestions(PRESET_LOCATIONS);
+        setShowDropdown(true);
+        setShowingPresets(true);
+      }
       return;
     }
 
+    setShowingPresets(false);
     setIsSearching(true);
     try {
       const res = await fetch(
@@ -65,10 +92,25 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
     }
   };
 
+  const handlePlaceFocus = () => {
+    if (value.place.trim().length < 3) {
+      // Show presets on focus when field is empty or has short text
+      const query = value.place.trim().toLowerCase();
+      const filtered = query.length > 0
+        ? PRESET_LOCATIONS.filter((p) => p.display_name.toLowerCase().includes(query))
+        : PRESET_LOCATIONS;
+      setSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+      setShowingPresets(true);
+    } else if (suggestions.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
   const handleSelectSuggestion = (sug: { display_name: string; lat: string; lon: string }) => {
     const parts = sug.display_name.split(",");
     const cityName = parts[0]?.trim();
-    const stateName = parts[parts.length - 3]?.trim() || parts[1]?.trim();
+    const stateName = parts[parts.length - 1]?.trim() || parts[1]?.trim();
     const shortName = stateName ? `${cityName}, ${stateName}` : cityName;
 
     onChange({
@@ -79,6 +121,7 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
       timezone: "Asia/Kolkata", // Default timezone for India
     });
     setShowDropdown(false);
+    setShowingPresets(false);
   };
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -86,90 +129,166 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
     onSubmit();
   }
 
+  const inputClasses = "w-full px-3 py-2.5 text-sm bg-white border border-[#e3d0ab] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#800020] focus:border-transparent transition-all placeholder:text-slate-400";
+  const labelClasses = "block text-xs font-semibold text-slate-600 mb-1";
+
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3.5">
+      {/* Name */}
       <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-700">Name</span>
-        <input className="rounded border border-slate-300 px-3 py-2 text-slate-800 focus:border-indigo-500 focus:outline-none" value={value.name} onChange={(event) => updateField(value, onChange, "name", event.target.value)} required />
+        <span className={labelClasses}>
+          Name / নাম <span className="text-red-500">*</span>
+        </span>
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
+            <i className="fa-solid fa-user"></i>
+          </span>
+          <input
+            className={`${inputClasses} pl-9`}
+            value={value.name}
+            onChange={(event) => updateField(value, onChange, "name", event.target.value)}
+            placeholder="Enter Full Name"
+            required
+          />
+        </div>
       </label>
 
+      {/* Father's Name */}
       <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-700">Father's Name</span>
-        <input className="rounded border border-slate-300 px-3 py-2 text-slate-800 focus:border-indigo-500 focus:outline-none" value={value.father_name ?? ""} onChange={(event) => updateField(value, onChange, "father_name", event.target.value)} />
+        <span className={labelClasses}>Father&apos;s Name / পিতার নাম</span>
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
+            <i className="fa-solid fa-user-friends"></i>
+          </span>
+          <input
+            className={`${inputClasses} pl-9`}
+            value={value.father_name ?? ""}
+            onChange={(event) => updateField(value, onChange, "father_name", event.target.value)}
+            placeholder="Enter Father's Name"
+          />
+        </div>
       </label>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-700">DOB</span>
-        <input type="date" className="rounded border border-slate-300 px-3 py-2 text-slate-800 focus:border-indigo-500 focus:outline-none" value={value.dob} onChange={(event) => updateField(value, onChange, "dob", event.target.value)} required />
-      </label>
-
-      <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-700">Time</span>
-        <input type="time" className="rounded border border-slate-300 px-3 py-2 text-slate-800 focus:border-indigo-500 focus:outline-none" value={value.time} onChange={(event) => updateField(value, onChange, "time", event.target.value)} required />
-      </label>
-
-      <div className="relative grid gap-1 text-sm">
-        <span className="font-semibold text-slate-700">Place</span>
-        <input
-          className="rounded border border-slate-300 px-3 py-2 text-slate-800 focus:border-indigo-500 focus:outline-none w-full"
-          value={value.place}
-          onChange={(event) => handlePlaceChange(event.target.value)}
-          onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
-          onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
-          required
-        />
-        {isSearching && (
-          <span className="absolute right-3 top-9 text-[11px] text-slate-400">Searching...</span>
-        )}
-        {showDropdown && (
-          <ul className="absolute z-50 left-0 right-0 top-[68px] mt-1 max-h-60 overflow-auto rounded border border-slate-200 bg-white py-1 shadow-lg text-slate-700 text-xs">
-            {suggestions.map((sug, idx) => (
-              <li
-                key={idx}
-                onClick={() => handleSelectSuggestion(sug)}
-                className="cursor-pointer px-3 py-2 hover:bg-slate-100 transition-colors"
-              >
-                {sug.display_name}
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* DOB and Time Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label className="grid gap-1 text-sm">
+          <span className={labelClasses}>Date of Birth / জন্ম তারিখ</span>
+          <input
+            type="date"
+            className={inputClasses}
+            value={value.dob}
+            onChange={(event) => updateField(value, onChange, "dob", event.target.value)}
+            required
+          />
+        </label>
+        <label className="grid gap-1 text-sm">
+          <span className={labelClasses}>Time / জন্ম সময়</span>
+          <input
+            type="time"
+            className={inputClasses}
+            value={value.time}
+            onChange={(event) => updateField(value, onChange, "time", event.target.value)}
+            required
+          />
+        </label>
       </div>
 
-      <label className="grid gap-1 text-sm">
-        <span className="font-semibold text-slate-700">Mobile</span>
-        <input className="rounded border border-slate-300 px-3 py-2 text-slate-800 focus:border-indigo-500 focus:outline-none" value={value.mobile ?? ""} onChange={(event) => updateField(value, onChange, "mobile", event.target.value)} />
-      </label>
+      {/* Place and Mobile Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Place with Presets */}
+        <div className="relative grid gap-1 text-sm">
+          <span className={labelClasses}>Place of Birth / জন্মস্থান</span>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
+              <i className="fa-solid fa-map-marker-alt"></i>
+            </span>
+            <input
+              className={`${inputClasses} pl-8`}
+              value={value.place}
+              onChange={(event) => handlePlaceChange(event.target.value)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
+              onFocus={handlePlaceFocus}
+              placeholder="City"
+              required
+            />
+            {isSearching && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.6875rem] text-slate-400">
+                <i className="fa-solid fa-spinner fa-spin"></i>
+              </span>
+            )}
+          </div>
+          {showDropdown && (
+            <ul className="absolute z-50 left-0 right-0 top-[4.25rem] mt-1 max-h-60 overflow-auto rounded-xl border border-[#e3d0ab] bg-white py-1 shadow-xl text-slate-700 text-xs">
+              {showingPresets && (
+                <li className="px-3 py-1.5 text-[0.625rem] font-bold text-amber-700 bg-amber-50/60 uppercase tracking-wider border-b border-[#e3d0ab]/50">
+                  📍 Quick Select
+                </li>
+              )}
+              {suggestions.map((sug, idx) => (
+                <li
+                  key={idx}
+                  onClick={() => handleSelectSuggestion(sug)}
+                  className="cursor-pointer px-3 py-2.5 hover:bg-amber-50 transition-colors flex items-center gap-2 border-b border-[#f3e9d2] last:border-0"
+                >
+                  {showingPresets && (
+                    <span className="text-amber-600 text-[0.6875rem]">
+                      <i className="fa-solid fa-location-dot"></i>
+                    </span>
+                  )}
+                  <span className="font-medium">{sug.display_name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-      <div className="rounded border border-slate-200 bg-slate-50 px-3 py-3 text-sm">
+        {/* Mobile */}
+        <label className="grid gap-1 text-sm">
+          <span className={labelClasses}>Mobile / মোবাইল নম্বর</span>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
+              <i className="fa-solid fa-phone"></i>
+            </span>
+            <input
+              className={`${inputClasses} pl-8`}
+              value={value.mobile ?? ""}
+              onChange={(event) => updateField(value, onChange, "mobile", event.target.value)}
+              placeholder="Mobile Number"
+            />
+          </div>
+        </label>
+      </div>
+
+      {/* Engine Settings */}
+      <div className="rounded-xl border border-[#e3d0ab] bg-[#fdfcf9] px-3 py-3 text-sm">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-slate-700">Engine Settings</span>
+          <span className="font-semibold text-slate-700 text-xs">Engine Settings</span>
           <label className="flex items-center gap-2 text-xs text-slate-600">
             <input
               type="checkbox"
               checked={showAstrologer}
               onChange={(event) => setShowAstrologer(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-0"
+              className="h-4 w-4 rounded border-[#e3d0ab] text-[#800020] focus:ring-0"
             />
             Astrologer review mode
           </label>
         </div>
 
         <div className="mt-2 grid gap-2">
-          <div className="rounded border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+          <div className="rounded-lg border border-[#e3d0ab] bg-white px-3 py-2 text-xs text-slate-600">
             Single workflow: Traditional Bengali N.C. Lahiri tables
           </div>
 
-          <label className="flex items-center justify-between rounded border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+          <label className="flex items-center justify-between rounded-lg border border-[#e3d0ab] bg-white px-3 py-2 text-xs text-slate-700">
             <div>
               <span className="font-semibold">True Rahu / Mean Rahu</span>
-              <p className="text-[11px] text-slate-500">Enable true node calculations for Rahu.</p>
+              <p className="text-[0.6875rem] text-slate-500">Enable true node calculations for Rahu.</p>
             </div>
             <input
               type="checkbox"
               checked={value.true_node ?? true}
               onChange={(event) => updateBooleanField(value, onChange, "true_node", event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-0"
+              className="h-4 w-4 rounded border-[#e3d0ab] text-[#800020] focus:ring-0"
             />
           </label>
 
@@ -178,7 +297,7 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
               <label className="grid gap-1 text-xs">
                 <span className="font-semibold text-slate-600">Override Moon Longitude (deg)</span>
                 <input
-                  className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-slate-800 focus:border-amber-500 focus:outline-none"
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-slate-800 focus:border-[#800020] focus:outline-none"
                   placeholder="e.g. 86.874739"
                   value={value.override_moon_longitude ?? ""}
                   onChange={(event) => updateField(value, onChange, "override_moon_longitude", event.target.value)}
@@ -187,7 +306,7 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
               <label className="grid gap-1 text-xs">
                 <span className="font-semibold text-slate-600">Override Ascendant Longitude (deg)</span>
                 <input
-                  className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-slate-800 focus:border-amber-500 focus:outline-none"
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-slate-800 focus:border-[#800020] focus:outline-none"
                   placeholder="e.g. 35.0"
                   value={value.override_ascendant_longitude ?? ""}
                   onChange={(event) => updateField(value, onChange, "override_ascendant_longitude", event.target.value)}
@@ -198,8 +317,15 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
         </div>
       </div>
 
-      <button type="submit" disabled={loading} className="mt-2 rounded bg-indigo-600 px-4 py-2.5 font-medium text-white transition-all hover:bg-indigo-750 disabled:opacity-60">
-        {loading ? "Calculating..." : "Load Birth Details"}
+      {/* CTA Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="mt-1 w-full py-3 bg-gradient-to-r from-[#800020] to-[#590219] hover:from-[#590219] hover:to-[#400112] text-white font-semibold rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2 btn-press disabled:opacity-60"
+      >
+        <span>{loading ? "Calculating..." : "Generate Kundli / কোষ্ঠী তৈরি করুন"}</span>
+        {!loading && <i className="fa-solid fa-arrow-right text-xs animate-pulse"></i>}
+        {loading && <i className="fa-solid fa-spinner fa-spin text-xs"></i>}
       </button>
     </form>
   );

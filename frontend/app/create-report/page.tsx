@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { PdfViewer } from "../../components/PdfViewer";
 import { ReportForm } from "../../components/ReportForm";
-import { calculateReport, renderPdf } from "../../services/api";
+import { calculateReport, renderPdf, API } from "../../services/api";
 import type { ReportInput, ReportState, CustomerState, AstrologyState, DashaRow } from "../../types/report";
 
 const initialValue: ReportInput = {
@@ -81,7 +81,7 @@ function buildRequestPayload(formValue: ReportInput, reportState: ReportState | 
   const planetOverrides = {
     ...(reportState ? buildPlanetOverrides(reportState.shorthand_planets) : {}),
     ...(reportState?.planet_overrides || {}),
-    ...(formValue.planet_overrides || {}) // Drag & Drop হওয়া সর্বশেষ পজিশনকে প্রাধান্য দেওয়া হবে
+    ...(formValue.planet_overrides || {}) // Drag & Drop হওয়া সর্বশেষ পজিশনকে প্রাধান্য দেওয়া হবে
   };
   const overrideAscendantRaw = formValue.override_ascendant_longitude?.trim();
   const overrideAscendant = overrideAscendantRaw ? Number(overrideAscendantRaw) : undefined;
@@ -211,6 +211,7 @@ export default function CreateReportPage() {
   const [reportState, setReportState] = useState<ReportState | null>(null);
   const [activePlanet, setActivePlanet] = useState<string>("");
   const [pdfUrl, setPdfUrl] = useState("");
+  const [compiledPdfUrl, setCompiledPdfUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState("");
@@ -287,7 +288,8 @@ export default function CreateReportPage() {
 
       // Immediately render default PDF
       const result = await renderPdf(stateWithCoords);
-      setPdfUrl(result.pdf_url);
+      setPdfUrl(result.preview_url);
+      setCompiledPdfUrl(result.compiled_pdf_url);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Calculation failed");
     } finally {
@@ -328,7 +330,8 @@ export default function CreateReportPage() {
       setReportState(stateToRender);
 
       const result = await renderPdf(stateToRender);
-      setPdfUrl(result.pdf_url);
+      setPdfUrl(result.preview_url);
+      setCompiledPdfUrl(result.compiled_pdf_url);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "PDF rendering failed");
     } finally {
@@ -449,7 +452,7 @@ export default function CreateReportPage() {
       nextHouseChart[targetHouseIdx] = { ...nextHouseChart[targetHouseIdx], planets: added, planets_text: added.join("\n") };
     }
 
-    // গ্রহের নাম অনুযায়ী ব্যাকএন্ডের জন্য Shorthand এবং Overrides আপডেট করা
+    // গ্রহের নাম অনুযায়ী ব্যাকএন্ডের জন্য Shorthand এবং Overrides আপডেট করা
     const ABBR_TO_FULL: Record<string, string> = {
       "র": "Sun", "রবি": "Sun", "চ": "Moon", "চন্দ্র": "Moon",
       "ম": "Mars", "মঙ্গল": "Mars", "বু": "Mercury", "বুধ": "Mercury",
@@ -574,751 +577,592 @@ export default function CreateReportPage() {
     });
   };
 
+  /* ═══════════════════════════════════════════════════════════════════
+     JSX — Premium "Astro Freelance Workspace" UI
+     ═══════════════════════════════════════════════════════════════════ */
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Top Premium Navbar */}
-      <header className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-amber-400">
-              Astro FreeLance Workspace
-            </h1>
-            <p className="text-xs text-slate-300 font-light mt-0.5">
-              Professional Astrological Report System — WYSIWYG Editor with dynamic subperiod loaders
-            </p>
+    <main className="min-h-screen flex flex-col justify-start relative" style={{ fontFamily: "'Inter', 'Hind Siliguri', sans-serif", background: "#f7f5f0", color: "#334155" }}>
+
+      {/* ── Background Decorative Mandalas ── */}
+      <div className="absolute top-0 left-0 w-[30vw] h-[30vw] min-w-[15rem] min-h-[15rem] bg-amber-100 opacity-20 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-[30vw] h-[30vw] min-w-[15rem] min-h-[15rem] bg-red-100 opacity-20 rounded-full blur-3xl pointer-events-none translate-x-1/2 translate-y-1/2" />
+
+      {/* ── Header / Branding ── */}
+      <header className="no-print w-full py-3 px-3 sm:px-6 border-b flex items-center justify-between shadow-sm z-30" style={{ borderColor: "#ebdcb9", background: "#fdfcf7" }}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md" style={{ background: "#92400e" }}>
+            🕉️
           </div>
-          <div className="flex items-center gap-2">
-            {reportState && (
-              <button
-                onClick={handleRenderPdf}
-                disabled={rendering}
-                id="btn-update-pdf"
-                className="bg-amber-500 text-slate-950 px-4 py-2 rounded font-semibold text-sm shadow hover:bg-amber-400 transition-all disabled:opacity-60 flex items-center gap-1.5"
-              >
-                {rendering && <LoadingSpinner />}
-                {rendering ? "Updating PDF..." : "Update & Refresh Preview"}
-              </button>
-            )}
+          <div>
+            <h1 className="text-sm sm:text-lg font-bold tracking-tight" style={{ color: "#1a365d" }}>Astro Freelance Workspace</h1>
+            <p className="hidden sm:block text-xs font-medium" style={{ color: "rgba(146, 64, 14, 0.8)" }}>Kaka Babu&apos;s Digital Astrology Board</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          {reportState && (
+            <button
+              type="button"
+              onClick={() => setShowBirthDetails(!showBirthDetails)}
+              className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border"
+              style={{ color: "#475569", background: "#fffbeb", borderColor: "#ebdcb9" }}
+              id="edit-details-btn"
+            >
+              <i className="fa-solid fa-user-pen"></i> Edit Birth Details
+            </button>
+          )}
+          {reportState && (
+            <button
+              onClick={handleRenderPdf}
+              disabled={rendering}
+              id="btn-update-pdf"
+              className="flex items-center gap-1.5 text-[0.6875rem] sm:text-xs font-semibold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg shadow-sm transition-all disabled:opacity-60 text-white"
+              style={{ background: "linear-gradient(135deg, #800020, #590219)" }}
+            >
+              {rendering && <LoadingSpinner />}
+              <span className="hidden sm:inline">{rendering ? "Updating..." : "Update & Refresh Preview"}</span>
+              <span className="inline sm:hidden">{rendering ? "Updating..." : "Update"}</span>
+            </button>
+          )}
+          <div className="text-[0.6875rem] sm:text-xs font-semibold px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg flex items-center gap-2 border" style={{ background: "#fffbeb", color: "#78350f", borderColor: "#ebdcb9" }}>
+            <i className="fa-solid fa-circle text-emerald-500 animate-pulse" style={{ fontSize: "10px" }}></i>
+            <span className="hidden sm:inline">Active Session</span>
+            <span className="inline sm:hidden">Active</span>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 xl:px-8 py-6 flex flex-col gap-6">
-        {error && (
-          <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm flex items-center gap-2">
-            <span className="font-bold">Error:</span> {error}
-          </div>
-        )}
+      {/* ── Error Banner ── */}
+      {error && (
+        <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm flex items-center gap-2 z-20">
+          <i className="fa-solid fa-triangle-exclamation text-red-500"></i>
+          <span className="font-bold">Error:</span> {error}
+        </div>
+      )}
 
-        {/* SECTION 1: BIRTH DETAILS (Collapsible) */}
-        <section className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowBirthDetails(!showBirthDetails)}
-            className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100/70 transition-all focus:outline-none"
-          >
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">
-                1. Birth Details
-              </h2>
-              {reportState && (
-                <span className="text-xs text-slate-500 font-medium">
-                  ({reportState.customer.name} • {reportState.customer.dob} • {reportState.customer.time} • {reportState.customer.place})
+      {/* ── MAIN INTERACTIVE FLOW ── */}
+      <div className="flex-1 flex flex-col relative w-full md:overflow-hidden">
+
+        {/* ═══ STEP 1: BIRTH DETAILS CARD (Centered Overlay) ═══ */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center z-20 p-3 sm:p-4 overflow-y-auto transition-workspace ${
+            !showBirthDetails || reportState ? "opacity-0 scale-95 pointer-events-none" : "opacity-100 scale-100"
+          }`}
+          style={{ background: "rgba(255, 251, 235, 0.6)", backdropFilter: "blur(8px)" }}
+        >
+          <div className="w-full max-w-[90vw] md:max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 relative overflow-hidden" style={{ background: "#fdfcf9", border: "2px solid #ebdcb9" }}>
+            {/* Decorative inner border */}
+            <div className="absolute inset-2 rounded-xl pointer-events-none" style={{ border: "1px solid #f3e9d2" }} />
+
+            {/* Bengali Title Header */}
+            <div className="text-center mb-6 relative">
+              <span className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: "#92400e" }}>কোষ্ঠী ও জীবন জিজ্ঞাসা</span>
+              <h2 className="text-3xl font-extrabold mb-2 tracking-wide bengali-serif" style={{ color: "#800020" }}>জন্ম বিবরণী</h2>
+              <div className="flex justify-center items-center gap-2" style={{ color: "#d97706" }}>
+                <span className="h-[1px] w-12" style={{ background: "#ebdcb9" }}></span>
+                <i className="fa-solid fa-om text-md"></i>
+                <span className="h-[1px] w-12" style={{ background: "#ebdcb9" }}></span>
+              </div>
+            </div>
+
+            {/* Form Content */}
+            <div className="relative">
+              <ReportForm value={formValue} onChange={setFormValue} onSubmit={handleLoadDetails} loading={loading} />
+              <p className="text-center mt-2 text-[0.625rem]" style={{ color: "rgba(120, 53, 15, 0.6)" }}>
+                Inspired by traditional Bengali palmistry &amp; astrology charts
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ STEP 2: WORKSPACE (Two-column editor + preview) ═══ */}
+        <div
+          className={`flex-1 w-full flex flex-col md:flex-row md:overflow-hidden transition-workspace ${
+            reportState ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12 pointer-events-none"
+          }`}
+        >
+          {/* ── LEFT COLUMN: Interactive Visual Editor ── */}
+          <section className="w-full md:w-[42%] flex flex-col md:overflow-y-auto overflow-visible border-b md:border-b-0 md:border-r border-[#ebdcb9]" style={{ background: "white" }}>
+
+            {/* Editor Header */}
+            <div className="p-4 flex items-center justify-between no-print border-b" style={{ background: "rgba(255, 251, 235, 0.6)", borderColor: "#ebdcb9" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-md font-bold uppercase tracking-wider" style={{ background: "rgba(128, 0, 32, 0.1)", color: "#800020" }}>
+                  Visual Editor Sheet
                 </span>
+              </div>
+              {/* Collapsible birth details toggle in editor */}
+              {reportState && (
+                <button
+                  type="button"
+                  onClick={() => setShowBirthDetails(!showBirthDetails)}
+                  className="text-xs font-medium flex items-center gap-1 transition-colors"
+                  style={{ color: "#64748b" }}
+                >
+                  <i className="fa-solid fa-keyboard"></i> {showBirthDetails ? "Hide Form" : "Edit Details"}
+                </button>
               )}
             </div>
-            <span className="text-xs text-indigo-650 font-semibold flex items-center gap-1">
-              {showBirthDetails ? "Collapse" : "Expand / Edit"}
-              <svg className={`w-4 h-4 transform transition-transform ${showBirthDetails ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </span>
-          </button>
-          {showBirthDetails && (
-            <div className="p-5 border-t border-slate-200 bg-white">
-              <ReportForm value={formValue} onChange={setFormValue} onSubmit={handleLoadDetails} loading={loading} />
-            </div>
-          )}
-        </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          {/* SECTION 2: WYSIWYG Document Editor */}
-          <section className="bg-white rounded-lg p-5 shadow-sm border border-slate-200 flex flex-col min-w-0">
-            <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3 pb-1.5 border-b border-slate-100 flex items-center justify-between">
-              <span>2. Visual Editor Sheet</span>
-              <span className="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-normal uppercase tracking-wider">
-                Interactive
-              </span>
-            </h2>
-
-            {!reportState ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-slate-500 min-h-[300px]">
-                <svg width="40" height="40" className="h-10 w-10 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                <p className="text-sm font-medium">No active report loaded.</p>
-                <p className="text-xs mt-1 max-w-[200px]">Fill in the birth details form above and load details to begin editing.</p>
+            {/* Collapsible birth details inside editor */}
+            {showBirthDetails && reportState && (
+              <div className="p-4 border-b" style={{ background: "#fdfcf9", borderColor: "#ebdcb9" }}>
+                <ReportForm value={formValue} onChange={setFormValue} onSubmit={handleLoadDetails} loading={loading} />
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col">
-                {/* Visual A4 Sheet Preview Mock */}
-                <div className="flex-1 bg-white border border-slate-300 rounded p-4 text-[11px] font-sans text-slate-900 leading-relaxed shadow-inner flex flex-col gap-4 max-h-[75vh] overflow-y-auto min-w-0 select-text w-full mx-auto">
+            )}
 
-                  {/* Sheet Header */}
-                  <div className="border-b border-slate-800 pb-2 flex items-center justify-between relative px-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-400">No:</span>
+            {reportState && (
+              <div className="p-4 space-y-5">
+
+                {/* ── SECTIONS B & C: Planet Positions & Kundli Summary (Side-by-Side) ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* ── SECTION B: Planet Positions ── */}
+                  <div className="rounded-xl p-4 shadow-sm" style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
+                    <h3 className="text-sm font-bold mb-3 pb-2 flex items-center gap-2" style={{ color: "#1a365d", borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                      <i className="fa-solid fa-sliders" style={{ color: "#92400e" }}></i> Planet Positions (গ্রহাবস্থান)
+                    </h3>
+                    <div className="grid gap-2">
+                      {sortedShorthandPlanets.map((pl) => (
+                        <div key={pl.full} className="grid grid-cols-[5rem_1fr_auto] gap-2 items-center">
+                          <span className="font-bold text-slate-700 text-right pr-1 whitespace-nowrap text-[0.6875rem]" title={pl.full}>
+                            {pl.full === "Sun" ? "রবি" :
+                             pl.full === "Moon" ? "চন্দ্র" :
+                             pl.full === "Mars" ? "মঙ্গল" :
+                             pl.full === "Mercury" ? "বুধ" :
+                             pl.full === "Jupiter" ? "বৃহস্পতি" :
+                             pl.full === "Venus" ? "শুক্র" :
+                             pl.full === "Saturn" ? "শনি" :
+                             pl.full === "Rahu" ? "রাহু" : "কেতু"} :
+                          </span>
+                          <input
+                            className="px-2 py-1 rounded w-full font-bold tracking-wide shadow-sm focus:bg-white focus:outline-none focus:border-indigo-500 text-[0.6875rem]"
+                            style={{ border: "1px solid #fcd34d", background: "rgba(255, 251, 235, 0.7)", color: "#1e1b4b" }}
+                            value={toEnglishDigits(pl.compact_indexed ?? pl.compact ?? "")}
+                            onChange={(e) => updateShorthandPlanet(pl.full, "compact_indexed", e.target.value)}
+                          />
+                          <div className="flex gap-0.5 pl-1 shrink-0 w-fit">
+                            {pl.is_retrograde && <span title="Retrograde" className="select-none text-amber-600 font-bold text-[0.625rem]">(R)</span>}
+                            {pl.is_combust && <span title="Combust" className="select-none text-red-500 font-bold text-[0.625rem]">(C)</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ── SECTION C: Summary & Lucky Info ── */}
+                  <div className="rounded-xl p-4 shadow-sm" style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
+                    <div className="flex items-center justify-between pb-2 mb-3" style={{ borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                      <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: "#1a365d" }}>
+                        <i className="fa-solid fa-star-half-stroke" style={{ color: "#92400e" }}></i> Kundli Summary
+                      </h3>
+                      <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]">
+                        <input type="checkbox" checked={!!reportState.show_lucky_info} onChange={(e) => updateToggle("show_lucky_info", e.target.checked)}
+                          className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" style={{ borderColor: "#cbd5e1" }} />
+                        <span>Show Lucky</span>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: "Rashi", field: "rashi" as const },
+                        { label: "Lagna", field: "lagna" as const },
+                        { label: "Nakshatra", field: "nakshatra" as const },
+                        { label: "Pada", field: "pada" as const },
+                        { label: "Gan", field: "gan" as const },
+                        { label: "Varna", field: "varna" as const },
+                      ].map(({ label, field }) => (
+                        <div key={field} className="flex items-center gap-1 text-[0.625rem]">
+                          <span className="font-semibold text-slate-500 shrink-0">{label}:</span>
+                          <input
+                            className="rounded px-1 py-0.5 w-full focus:bg-white focus:outline-none text-[0.6875rem]"
+                            style={{ border: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.5)" }}
+                            value={toEnglishDigits((reportState.summary as any)[field])}
+                            onChange={(e) => {
+                              updateSummaryField(field, e.target.value);
+                              if (field === "pada") updateSummaryField("nakshatra_pada", e.target.value);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Lucky Info */}
+                    <div className={`mt-3 p-2 rounded grid gap-2 transition-opacity ${!reportState.show_lucky_info ? "opacity-30 pointer-events-none" : ""}`} style={{ border: "1px solid #fef3c7", background: "rgba(255, 251, 235, 0.4)" }}>
+                      {[
+                        { label: "Lucky Day", field: "shubh_bar" as const },
+                        { label: "Lucky Color", field: "shubh_rong" as const },
+                        { label: "Lucky Number", field: "shubh_sonkha" as const },
+                      ].map(({ label, field }) => (
+                        <div key={field} className="flex items-center gap-1">
+                          <span className="font-semibold text-slate-500 w-20 shrink-0 text-[0.625rem]">{label}:</span>
+                          <input
+                            className="px-1 py-0.5 rounded w-full focus:outline-none text-[0.6875rem]"
+                            style={{ border: "1px solid #e2e8f0", background: "white" }}
+                            value={toEnglishDigits((reportState.summary as any)[field])}
+                            onChange={(e) => updateSummaryField(field, e.target.value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="flex flex-col text-[0.59375rem]">
+                        <span className="font-semibold text-slate-500">Lucky Name Letter</span>
+                        <input
+                          className="rounded px-1 py-0.5 w-full focus:bg-white focus:outline-none text-[0.6875rem]"
+                          style={{ border: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.5)" }}
+                          value={toEnglishDigits(reportState.summary.current_pada_syllable)}
+                          onChange={(e) => { updateSummaryField("current_pada_syllable", e.target.value); updateSummaryField("namer_adokkhyor", e.target.value); }}
+                        />
+                      </div>
+                      <div className="flex flex-col text-[0.59375rem]">
+                        <span className="font-semibold text-slate-500">Nakshatra Lord</span>
+                        <input
+                          className="rounded px-1 py-0.5 w-full focus:bg-white focus:outline-none text-[0.6875rem]"
+                          style={{ border: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.5)" }}
+                          value={toEnglishDigits(reportState.summary.nakshatra_lord)}
+                          onChange={(e) => updateSummaryField("nakshatra_lord", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col mt-2 text-[0.59375rem]">
+                      <span className="font-semibold text-slate-500">Dasha Balance</span>
                       <input
-                        className="bg-transparent border border-slate-200 rounded px-1.5 py-0.5 text-[11px] font-bold text-slate-700 w-24 focus:bg-white focus:outline-none"
-                        value={toEnglishDigits(reportState.report_no)}
-                        onChange={(e) => setReportState({ ...reportState, report_no: normalizeEditorInput(e.target.value) })}
+                        className="rounded px-1 py-0.5 w-full font-bold focus:bg-white focus:outline-none text-[0.6875rem]"
+                        style={{ border: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.5)" }}
+                        value={toEnglishDigits(reportState.summary.dasha_balance)}
+                        onChange={(e) => updateSummaryField("dasha_balance", e.target.value)}
                       />
                     </div>
-                    <h3 className="text-xl font-extrabold text-red-600 tracking-wide text-center">জীবন জিজ্ঞাসা</h3>
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      <svg width="30" height="30" viewBox="0 0 40 40" className="stroke-indigo-650 stroke-[1.5]">
-                        <polygon points="20,0 40,20 20,40 0,20" fill="none" />
-                        <line x1="0" y1="20" x2="40" y2="20" />
-                        <line x1="20" y1="0" x2="20" y2="40" />
-                      </svg>
-                    </div>
                   </div>
-
-                  {/* Customer Info Grid Row */}
-                  <div className="grid grid-cols-3 border border-slate-800 divide-x divide-slate-800 text-[10px] bg-slate-50/30">
-                    <div className="p-2 flex flex-col gap-1">
-                      <span className="font-semibold text-indigo-800 text-[11px]">Astrologer: S. Ghosh</span>
-                      <span className="text-slate-500 leading-tight">Jyotish Samrat, Gold Medalist<br />(M.A), M.B.P.P</span>
-                      <span className="text-slate-600 font-medium mt-1">Mobile: 9153087870<br />9732830353</span>
-                    </div>
-
-                    <div className="p-2 col-span-2 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-slate-500 w-20">Name:</span>
-                        <input
-                          className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full font-bold text-slate-850"
-                          value={toEnglishDigits(reportState.customer.name)}
-                          onChange={(e) => updateCustomerField("name", e.target.value)}
-                        />
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-slate-500 w-20">Father's Name:</span>
-                        <input
-                          className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                          value={toEnglishDigits(reportState.customer.father_name)}
-                          onChange={(e) => updateCustomerField("father_name", e.target.value)}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-500 w-20">DOB:</span>
-                          <input
-                            className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                            value={toEnglishDigits(reportState.customer.dob)}
-                            onChange={(e) => updateCustomerField("dob", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-500 w-20">Birth Time:</span>
-                          <input
-                            className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                            value={toEnglishDigits(reportState.customer.time)}
-                            onChange={(e) => updateCustomerField("time", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-500 w-20">Weekday:</span>
-                          <input
-                            className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                            value={toEnglishDigits(reportState.customer.weekday)}
-                            onChange={(e) => updateCustomerField("weekday", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-500 w-20">Mobile:</span>
-                          <input
-                            className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                            value={toEnglishDigits(reportState.customer.mobile)}
-                            onChange={(e) => updateCustomerField("mobile", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-500 w-20">Birth Place:</span>
-                          <input
-                            className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                            value={toEnglishDigits(reportState.customer.place)}
-                            onChange={(e) => updateCustomerField("place", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-500 w-20">Date:</span>
-                          <input
-                            className="border-b border-dotted border-slate-400 bg-transparent px-1 focus:border-indigo-600 focus:outline-none w-full"
-                            value={toEnglishDigits(reportState.generated_at)}
-                            onChange={(e) => setReportState({ ...reportState, generated_at: normalizeEditorInput(e.target.value) })}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Mid Row: Planet lists, Kundli Chakra, Summary info */}
-                  <div className="grid grid-cols-[180px_280px_1fr] border border-slate-800 divide-x divide-slate-800 text-[10px]">
-
-                    {/* Left Col: Planets display Input Grid (Width Fixed to prevent cut-off) */}
-                    <div className="p-2 flex flex-col gap-1.5 w-full">
-                      <span className="font-bold text-indigo-800 text-[11px] border-b border-slate-200 pb-0.5 mb-0.5">
-                        গ্রহাবস্থান (Planetary Positions)
-                      </span>
-                      <div className="grid gap-1.5 w-full">
-                        {sortedShorthandPlanets.map((pl) => (
-                          <div key={pl.full} className="grid grid-cols-[65px_1fr_auto] gap-2 items-center w-full">
-                            <span className="font-bold text-slate-700 text-[11px] shrink-0 text-right pr-1 whitespace-nowrap" title={pl.full}>
-                              {pl.full === "Sun" ? "রবি" : 
-                               pl.full === "Moon" ? "চন্দ্র" : 
-                               pl.full === "Mars" ? "মঙ্গল" : 
-                               pl.full === "Mercury" ? "বুধ" : 
-                               pl.full === "Jupiter" ? "বৃহস্পতি" : 
-                               pl.full === "Venus" ? "শুক্র" : 
-                               pl.full === "Saturn" ? "শনি" : 
-                               pl.full === "Rahu" ? "রাহু" : "কেতু"} :
-                            </span>
-                            <input
-                              className="border border-amber-200 bg-amber-50/70 px-1 py-0.5 rounded text-[11px] w-full font-bold tracking-wide text-indigo-950 shadow-sm focus:bg-white focus:outline-none focus:border-indigo-500"
-                              value={toEnglishDigits(pl.compact_indexed ?? pl.compact ?? "")}
-                              onChange={(e) => updateShorthandPlanet(pl.full, "compact_indexed", e.target.value)}
-                            />
-                            <div className="flex gap-0.5 pl-1 shrink-0 w-fit">
-                              {pl.is_retrograde && <span title="Retrograde" className="select-none text-[10px] text-amber-600 font-bold">(R)</span>}
-                              {pl.is_combust && <span title="Combust" className="select-none text-[10px] text-red-500 font-bold">(C)</span>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Center Col: Kundli Chakra SVG with layout toggle */}
-                    <div className="p-2 flex flex-col items-center">
-                      <div className="w-full flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1.5">
-                        <span className="font-bold text-slate-800 text-[11px]">Rashi Chakra</span>
-                        <label className="flex items-center gap-1 cursor-pointer text-[9px] text-slate-500 hover:text-slate-800">
-                          <input
-                            type="checkbox"
-                            checked={!!reportState.show_kundli}
-                            onChange={(e) => updateToggle("show_kundli", e.target.checked)}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer"
-                          />
-                          <span>Show PDF</span>
-                        </label>
-                      </div>
-
-                      {selectedPlanet && (
-                        <div className="flex items-center justify-center gap-2 bg-amber-50 border border-amber-200 rounded px-2 py-1 text-[10px] text-amber-800 font-semibold mb-1">
-                          <span>Selected: <strong className="text-amber-600">{selectedPlanet}</strong> — click house to move or use arrow keys / pad to nudge</span>
-                          <button
-                            onClick={() => setSelectedPlanet("")}
-                            className="text-amber-500 hover:text-amber-700 font-bold text-xs px-1"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-
-                      <div className={`transition-opacity duration-200 ${!reportState.show_kundli ? "opacity-30" : ""}`}>
-                        <svg width="270" height="270" viewBox="0 0 300 300" className="stroke-slate-700 bg-slate-50 rounded-lg shadow-sm border border-slate-200">
-                          {/* Outer Border */}
-                          <rect x="0" y="0" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" strokeWidth="2.5" rx="8" />
-
-                          {/* Grid Lines */}
-                          <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" strokeWidth="2" />
-                          <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" strokeWidth="2" />
-                          <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" strokeWidth="2" />
-                          <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" strokeWidth="2" />
-
-                          {/* Diagonals */}
-                          <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" strokeWidth="2" />
-                          <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" strokeWidth="2" />
-                          <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" strokeWidth="2" />
-                          <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" strokeWidth="2" />
-
-                          {/* Center Square decoration */}
-                          <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
-                          <text x="150" y="155" textAnchor="middle" stroke="none" className="text-xs font-black fill-purple-900 tracking-wider select-none">
-                            রাশি চক্র
-                          </text>
-
-                          {(() => {
-                            const houseLayout = [
-                              { numX: 150, numY: 85, planetsX: 150, planetsY: 50, poly: "100,100 200,100 150,0", signIdx: 0 },
-                              { numX: 78, numY: 45, planetsX: 65, planetsY: 35, poly: "0,0 100,0 100,100", signIdx: 1 },
-                              { numX: 22, numY: 80, planetsX: 30, planetsY: 50, poly: "0,0 0,100 100,100", signIdx: 2 },
-                              { numX: 50, numY: 185, planetsX: 60, planetsY: 150, poly: "100,100 100,200 0,150", signIdx: 3 },
-                              { numX: 22, numY: 225, planetsX: 45, planetsY: 245, poly: "0,200 0,300 100,300", signIdx: 4 },
-                              { numX: 78, numY: 280, planetsX: 65, planetsY: 245, poly: "100,200 100,300 0,300", signIdx: 5 },
-                              { numX: 150, numY: 285, planetsX: 150, planetsY: 220, poly: "100,200 200,200 150,300", signIdx: 6 },
-                              { numX: 222, numY: 280, planetsX: 235, planetsY: 245, poly: "200,200 200,300 300,300", signIdx: 7 },
-                              { numX: 278, numY: 225, planetsX: 255, planetsY: 245, poly: "300,200 300,300 200,300", signIdx: 8 },
-                              { numX: 250, numY: 185, planetsX: 240, planetsY: 150, poly: "200,100 200,200 300,150", signIdx: 9 },
-                              { numX: 222, numY: 30, planetsX: 245, planetsY: 45, poly: "200,0 300,0 200,100", signIdx: 11 },
-                              { numX: 278, numY: 80, planetsX: 255, planetsY: 60, poly: "300,0 200,100 300,100", signIdx: 10 }
-                            ];
-
-                            const lagnaIdx = reportState.summary.lagna_sign_index ?? 0;
-                            const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "১০", "১১", "১২"];
-                            const finalCoords = reportState ? calculatePlanetCoords(reportState) : {};
-
-                            return houseLayout.map((layout) => {
-                              const rawHouseNumber = ((layout.signIdx - lagnaIdx + 12) % 12) + 1;
-                              const currentHouseBn = banglaDigits[rawHouseNumber];
-                              const house = reportState.house_chart[layout.signIdx];
-                              const isDropTarget = !!selectedPlanet;
-
-                              return (
-                                <g
-                                  key={layout.signIdx}
-                                  onClick={() => {
-                                    if (selectedPlanet) {
-                                      handleClickDropPlanet(layout.signIdx);
-                                    }
-                                  }}
-                                  onDragOver={(e) => e.preventDefault()}
-                                  onDrop={(e) => handleDropPlanet(e, layout.signIdx)}
-                                  className="cursor-pointer"
-                                >
-                                  <polygon
-                                    points={layout.poly}
-                                    fill={isDropTarget ? "rgba(99,102,241,0.08)" : "transparent"}
-                                    stroke={isDropTarget ? "#818cf8" : "transparent"}
-                                    strokeWidth={isDropTarget ? "1" : "0"}
-                                    pointerEvents="all"
-                                    className="transition-all duration-150"
-                                  />
-
-                                  <text x={layout.numX} y={layout.numY} textAnchor="middle" fill="#9333ea" stroke="none" className="text-[13px] font-extrabold select-none pointer-events-none">
-                                    {currentHouseBn}
-                                  </text>
-                                  {(() => {
-                                    const items = [];
-                                    if (layout.signIdx === lagnaIdx) {
-                                      items.push("ল");
-                                    }
-                                    if (house && house.planets) {
-                                      items.push(...house.planets);
-                                    }
-
-                                    const isDense = items.length >= 5;
-                                    const textSize = isDense ? "text-[11px]" : "text-[13px]";
-
-                                    return items.map((itemName, idx) => {
-                                      const coords = finalCoords[itemName];
-                                      if (!coords) return null;
-                                      const isSelected = selectedPlanet === itemName;
-                                      const isLagna = itemName === "ল";
-
-                                      return (
-                                        <text
-                                          key={idx}
-                                          x={coords.x}
-                                          y={coords.y}
-                                          textAnchor="middle"
-                                          stroke="none"
-                                          className={isLagna ? (
-                                            `${textSize} font-normal cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[17px] animate-pulse" : "fill-red-600 hover:fill-red-500"
-                                            }`
-                                          ) : (
-                                            `${textSize} font-black cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[17px] animate-pulse" : "fill-indigo-950 hover:fill-indigo-650"
-                                            }`
-                                          )}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedPlanet(isSelected ? "" : itemName);
-                                          }}
-                                          {...(!isLagna ? ({ draggable: true } as any) : {})}
-                                          onDragStart={(e) => {
-                                            if (isLagna) return;
-                                            e.dataTransfer.effectAllowed = "move";
-                                            e.dataTransfer.setData("text/plain", itemName);
-                                            setSelectedPlanet(itemName);
-                                          }}
-                                        >
-                                          {itemName}
-                                        </text>
-                                      );
-                                    });
-                                  })()}
-                                </g>
-                              );
-                            });
-                          })()}
-
-                        </svg>
-                      </div>
-
-                      {selectedPlanet && (
-                        <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 flex flex-col items-center gap-1 select-none">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            Nudge Controls
-                          </span>
-                          <div className="grid grid-cols-3 gap-1 w-20 h-20 items-center justify-center">
-                            <div />
-                            <button
-                              type="button"
-                              onClick={() => nudgeSelectedPlanet(0, -2)}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors"
-                              title="Nudge Up"
-                            >
-                              ▲
-                            </button>
-                            <div />
-                            <button
-                              type="button"
-                              onClick={() => nudgeSelectedPlanet(-2, 0)}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors"
-                              title="Nudge Left"
-                            >
-                              ◀
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReportState(prev => {
-                                  if (!prev) return prev;
-                                  const nudges = prev.planet_nudges || {};
-                                  return {
-                                    ...prev,
-                                    planet_nudges: {
-                                      ...nudges,
-                                      [selectedPlanet]: { dx: 0, dy: 0 }
-                                    }
-                                  };
-                                });
-                              }}
-                              className="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold p-1 rounded border border-amber-200 flex items-center justify-center h-6 w-6 text-[10px] transition-colors"
-                              title="Reset Offset"
-                            >
-                              ⟲
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => nudgeSelectedPlanet(2, 0)}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors"
-                              title="Nudge Right"
-                            >
-                              ▶
-                            </button>
-                            <div />
-                            <button
-                              type="button"
-                              onClick={() => nudgeSelectedPlanet(0, 2)}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors"
-                              title="Nudge Down"
-                            >
-                              ▼
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Col: Summary & Lucky Info */}
-                    <div className="p-2 flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-0.5">
-                        <span className="font-bold text-indigo-800 text-[11px]">Kundli Summary</span>
-                        <label className="flex items-center gap-1 cursor-pointer text-[9px] text-slate-500 hover:text-slate-800">
-                          <input
-                            type="checkbox"
-                            checked={!!reportState.show_lucky_info}
-                            onChange={(e) => updateToggle("show_lucky_info", e.target.checked)}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer"
-                          />
-                          <span>Show Lucky</span>
-                        </label>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 shrink-0">Rashi:</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.rashi)}
-                            onChange={(e) => updateSummaryField("rashi", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 shrink-0">Lagna:</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.lagna)}
-                            onChange={(e) => updateSummaryField("lagna", e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 shrink-0">Nakshatra:</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.nakshatra)}
-                            onChange={(e) => updateSummaryField("nakshatra", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 shrink-0">Pada:</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.pada)}
-                            onChange={(e) => {
-                              updateSummaryField("pada", e.target.value);
-                              updateSummaryField("nakshatra_pada", e.target.value);
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 shrink-0">Gan:</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.gan)}
-                            onChange={(e) => updateSummaryField("gan", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 shrink-0">Varna:</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.varna)}
-                            onChange={(e) => updateSummaryField("varna", e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Lucky Info Sub-card */}
-                      <div className={`p-1.5 rounded border border-amber-150 bg-amber-50/40 grid gap-1.5 transition-opacity ${!reportState.show_lucky_info ? "opacity-30 pointer-events-none" : ""}`}>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 w-16 shrink-0 text-[10px]">Lucky Day:</span>
-                          <input
-                            className="border border-slate-200 bg-white px-1 py-0.5 rounded text-[11px] w-full focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.shubh_bar)}
-                            onChange={(e) => updateSummaryField("shubh_bar", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 w-16 shrink-0 text-[10px]">Lucky Color:</span>
-                          <input
-                            className="border border-slate-200 bg-white px-1 py-0.5 rounded text-[11px] w-full focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.shubh_rong)}
-                            onChange={(e) => updateSummaryField("shubh_rong", e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-slate-500 w-16 shrink-0 text-[10px]">Lucky Number:</span>
-                          <input
-                            className="border border-slate-200 bg-white px-1 py-0.5 rounded text-[11px] w-full focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.shubh_sonkha)}
-                            onChange={(e) => updateSummaryField("shubh_sonkha", e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="flex flex-col text-[9.5px]">
-                          <span className="font-semibold text-slate-500">Lucky Name Letter</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.current_pada_syllable)}
-                            onChange={(e) => {
-                              updateSummaryField("current_pada_syllable", e.target.value);
-                              updateSummaryField("namer_adokkhyor", e.target.value);
-                            }}
-                          />
-                        </div>
-                        <div className="flex flex-col text-[9.5px]">
-                          <span className="font-semibold text-slate-500">Nakshatra Lord</span>
-                          <input
-                            className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none"
-                            value={toEnglishDigits(reportState.summary.nakshatra_lord)}
-                            onChange={(e) => updateSummaryField("nakshatra_lord", e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col text-[9.5px]">
-                        <span className="font-semibold text-slate-500">Dasha Balance</span>
-                        <input
-                          className="border border-slate-200 bg-slate-50/50 px-1 py-0.5 rounded text-[11px] w-full focus:bg-white focus:outline-none font-bold"
-                          value={toEnglishDigits(reportState.summary.dasha_balance)}
-                          onChange={(e) => updateSummaryField("dasha_balance", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vimshottari Dasha & Antardasha Double Column */}
-                  <div className="grid grid-cols-2 gap-4 text-[9px]">
-
-                    {/* Mahadasha Table */}
-                    <div className={`border border-slate-800 p-2 flex flex-col min-w-0 transition-opacity duration-200 ${!reportState.show_mahadasha ? "opacity-30" : ""}`}>
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5">
-                        <span className="font-bold text-slate-800 text-[11px]">Vimshottari Dasha :</span>
-                        <label className="flex items-center gap-1 cursor-pointer text-[9px] text-slate-500 hover:text-slate-800">
-                          <input
-                            type="checkbox"
-                            checked={!!reportState.show_mahadasha}
-                            onChange={(e) => updateToggle("show_mahadasha", e.target.checked)}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer"
-                          />
-                          <span>Show PDF</span>
-                        </label>
-                      </div>
-
-                      <div className="overflow-x-auto select-none">
-                        <table className="min-w-full text-left text-[10px]">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-655 font-bold border-b border-slate-200">
-                              <th className="px-1 py-0.5 text-center w-5">Active</th>
-                              <th className="px-1 py-0.5">Dasha (Planet)</th>
-                              <th className="px-1 py-0.5 text-center">Years</th>
-                              <th className="px-1 py-0.5">Start</th>
-                              <th className="px-1 py-0.5">End</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {reportState.dasha_list.map((dasha, idx) => (
-                              <tr
-                                key={idx}
-                                className={`cursor-pointer hover:bg-indigo-50/40 transition-colors ${activePlanet === dasha.planet ? "bg-amber-50/80 font-bold text-slate-900" : "text-slate-700"
-                                  }`}
-                                onClick={() => setActivePlanet(dasha.planet)}
-                              >
-                                <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
-                                  <input
-                                    type="radio"
-                                    name="activeDasha"
-                                    checked={activePlanet === dasha.planet}
-                                    onChange={() => setActivePlanet(dasha.planet)}
-                                    className="text-indigo-650 focus:ring-0 h-3 w-3 cursor-pointer"
-                                  />
-                                </td>
-                                <td className="px-1 py-1">
-                                  <input
-                                    className="bg-transparent border-0 p-0 text-[11px] w-14 font-medium focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5"
-                                    value={toEnglishDigits(dasha.planet_bn)}
-                                    onChange={(e) => updateDashaField(idx, "planet_bn", e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </td>
-                                <td className="px-1 py-1 text-center">
-                                  <input
-                                    className="bg-transparent border-0 p-0 text-[11px] w-8 text-center font-medium focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5"
-                                    value={toEnglishDigits(dasha.years)}
-                                    onChange={(e) => updateDashaField(idx, "years", e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </td>
-                                <td className="px-1 py-1">
-                                  <input
-                                    className="bg-transparent border-0 p-0 text-[11px] w-16 focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5"
-                                    value={toEnglishDigits(dasha.start)}
-                                    onChange={(e) => updateDashaField(idx, "start", e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </td>
-                                <td className="px-1 py-1">
-                                  <input
-                                    className="bg-transparent border-0 p-0 text-[11px] w-16 focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5"
-                                    value={toEnglishDigits(dasha.end)}
-                                    onChange={(e) => updateDashaField(idx, "end", e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    {/* Antardasha Table */}
-                    <div className={`border border-slate-800 p-2 flex flex-col min-w-0 transition-opacity duration-200 ${!reportState.show_antardasha ? "opacity-30" : ""}`}>
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5">
-                        <span className="font-bold text-slate-800 text-[11px] truncate">
-                          Antardasha: {toEnglishDigits(reportState.dasha_list.find((d) => d.planet === activePlanet)?.planet_bn || activePlanet)}
-                        </span>
-                        <label className="flex items-center gap-1 cursor-pointer text-[9px] text-slate-500 hover:text-slate-800">
-                          <input
-                            type="checkbox"
-                            checked={!!reportState.show_antardasha}
-                            onChange={(e) => updateToggle("show_antardasha", e.target.checked)}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer"
-                          />
-                          <span>Show PDF</span>
-                        </label>
-                      </div>
-
-                      <div className="overflow-x-auto select-none">
-                        <table className="min-w-full text-left text-[10px]">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-655 font-bold border-b border-slate-200">
-                              <th className="px-1 py-0.5">Maha / Antar</th>
-                              <th className="px-1 py-0.5">Start</th>
-                              <th className="px-1 py-0.5">End</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {(() => {
-                              const displayRows = reportState.antardasha_display_rows ?? [];
-                              if (!displayRows.length) {
-                                return (
-                                  <tr>
-                                    <td colSpan={3} className="px-2 py-4 text-center text-slate-450 italic">
-                                      No antardasha rows available for the selected report date.
-                                    </td>
-                                  </tr>
-                                );
-                              }
-                              return displayRows.map((row, rowIdx) => (
-                                <tr key={rowIdx} className="hover:bg-slate-50/50">
-                                  <td className="px-1 py-1">
-                                    <span className="text-[10px] font-semibold text-slate-400 mr-1">
-                                      {toEnglishDigits(row.major_bn)} /
-                                    </span>
-                                    <span className="text-[11px] font-medium text-slate-700">{toEnglishDigits(row.lord_bn)}</span>
-                                  </td>
-                                  <td className="px-1 py-1">
-                                    <span className="text-[11px] text-slate-700">{toEnglishDigits(row.start)}</span>
-                                  </td>
-                                  <td className="px-1 py-1">
-                                    <span className="text-[11px] text-slate-700">{toEnglishDigits(row.end)}</span>
-                                  </td>
-                                </tr>
-                              ));
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                  </div>
-
                 </div>
 
-                {/* Bottom Actions Row */}
-                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-4 bg-slate-50 -mx-5 -mb-5 p-5 rounded-b-lg">
-                  <div className="text-[11px] text-slate-500 leading-normal max-w-[240px]">
-                    All modifications exist in local memory. Click update to compile the PDF with tick mark configurations.
+                {/* ── SECTION A: Rashi Chakra ── */}
+                <div className="rounded-xl p-4 shadow-sm" style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
+                  <div className="flex items-center justify-between mb-3 pb-2" style={{ borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                    <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: "#1a365d" }}>
+                      <i className="fa-solid fa-bahai animate-spin-slow" style={{ color: "#92400e" }}></i> Interactive Rashi Chakra
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]">
+                        <input
+                          type="checkbox"
+                          checked={!!reportState.show_kundli}
+                          onChange={(e) => updateToggle("show_kundli", e.target.checked)}
+                          className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer"
+                          style={{ borderColor: "#cbd5e1" }}
+                        />
+                        <span>Show PDF</span>
+                      </label>
+                      <span className="text-[0.6875rem] px-2 py-0.5 rounded font-medium" style={{ background: "#fef3c7", color: "#78350f" }}>
+                        Click / Drag Planets
+                      </span>
+                    </div>
+                  </div>
+
+                  {selectedPlanet && (
+                    <div className="flex items-center justify-center gap-2 rounded px-2 py-1 text-amber-800 font-semibold mb-2 text-[0.625rem]" style={{ background: "#fffbeb", border: "1px solid #fcd34d" }}>
+                      <span>Selected: <strong className="text-amber-600">{selectedPlanet}</strong> — click house to move or use arrow keys to nudge</span>
+                      <button
+                        onClick={() => setSelectedPlanet("")}
+                        className="text-amber-500 hover:text-amber-700 font-bold text-xs px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Rashi Chakra SVG — 100% IDENTICAL LOGIC */}
+                  <div className={`transition-opacity duration-200 ${!reportState.show_kundli ? "opacity-30" : ""}`}>
+                    <svg viewBox="0 0 300 300" className="w-full max-w-[17rem] aspect-square stroke-slate-700 rounded-lg shadow-sm mx-auto" style={{ background: "#faf5ff", border: "1px solid #e2e8f0" }}>
+                      {/* Outer Border */}
+                      <rect x="0" y="0" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" strokeWidth="2.5" rx="8" />
+
+                      {/* Grid Lines */}
+                      <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" strokeWidth="2" />
+
+                      {/* Diagonals */}
+                      <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" strokeWidth="2" />
+
+                      {/* Center Square decoration */}
+                      <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
+                      <text x="150" y="155" textAnchor="middle" stroke="none" className="text-[0.75rem] font-black fill-purple-900 tracking-wider select-none">
+                        রাশি চক্র
+                      </text>
+
+                      {(() => {
+                        const houseLayout = [
+                          { numX: 150, numY: 85, planetsX: 150, planetsY: 50, poly: "100,100 200,100 150,0", signIdx: 0 },
+                          { numX: 78, numY: 45, planetsX: 65, planetsY: 35, poly: "0,0 100,0 100,100", signIdx: 1 },
+                          { numX: 22, numY: 80, planetsX: 30, planetsY: 50, poly: "0,0 0,100 100,100", signIdx: 2 },
+                          { numX: 50, numY: 185, planetsX: 60, planetsY: 150, poly: "100,100 100,200 0,150", signIdx: 3 },
+                          { numX: 22, numY: 225, planetsX: 45, planetsY: 245, poly: "0,200 0,300 100,300", signIdx: 4 },
+                          { numX: 78, numY: 280, planetsX: 65, planetsY: 245, poly: "100,200 100,300 0,300", signIdx: 5 },
+                          { numX: 150, numY: 285, planetsX: 150, planetsY: 220, poly: "100,200 200,200 150,300", signIdx: 6 },
+                          { numX: 222, numY: 280, planetsX: 235, planetsY: 245, poly: "200,200 200,300 300,300", signIdx: 7 },
+                          { numX: 278, numY: 225, planetsX: 255, planetsY: 245, poly: "300,200 300,300 200,300", signIdx: 8 },
+                          { numX: 250, numY: 185, planetsX: 240, planetsY: 150, poly: "200,100 200,200 300,150", signIdx: 9 },
+                          { numX: 222, numY: 30, planetsX: 245, planetsY: 45, poly: "200,0 300,0 200,100", signIdx: 11 },
+                          { numX: 278, numY: 80, planetsX: 255, planetsY: 60, poly: "300,0 200,100 300,100", signIdx: 10 }
+                        ];
+
+                        const lagnaIdx = reportState.summary.lagna_sign_index ?? 0;
+                        const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "১০", "১১", "১২"];
+                        const finalCoords = reportState ? calculatePlanetCoords(reportState) : {};
+
+                        return houseLayout.map((layout) => {
+                          const rawHouseNumber = ((layout.signIdx - lagnaIdx + 12) % 12) + 1;
+                          const currentHouseBn = banglaDigits[rawHouseNumber];
+                          const house = reportState.house_chart[layout.signIdx];
+                          const isDropTarget = !!selectedPlanet;
+
+                          return (
+                            <g
+                              key={layout.signIdx}
+                              onClick={() => {
+                                if (selectedPlanet) {
+                                  handleClickDropPlanet(layout.signIdx);
+                                }
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => handleDropPlanet(e, layout.signIdx)}
+                              className="cursor-pointer"
+                            >
+                              <polygon
+                                points={layout.poly}
+                                fill={isDropTarget ? "rgba(99,102,241,0.08)" : "transparent"}
+                                stroke={isDropTarget ? "#818cf8" : "transparent"}
+                                strokeWidth={isDropTarget ? "1" : "0"}
+                                pointerEvents="all"
+                                className="transition-all duration-150"
+                              />
+
+                              <text x={layout.numX} y={layout.numY} textAnchor="middle" fill="#9333ea" stroke="none" className="text-[0.8125rem] font-extrabold select-none pointer-events-none">
+                                {currentHouseBn}
+                              </text>
+                              {(() => {
+                                const items: string[] = [];
+                                if (layout.signIdx === lagnaIdx) {
+                                  items.push("ল");
+                                }
+                                if (house && house.planets) {
+                                  items.push(...house.planets);
+                                }
+
+                                const isDense = items.length >= 5;
+                                const textSize = isDense ? "text-[0.6875rem]" : "text-[0.8125rem]";
+
+                                return items.map((itemName, idx) => {
+                                  const coords = finalCoords[itemName];
+                                  if (!coords) return null;
+                                  const isSelected = selectedPlanet === itemName;
+                                  const isLagna = itemName === "ল";
+
+                                  return (
+                                    <text
+                                      key={idx}
+                                      x={coords.x}
+                                      y={coords.y}
+                                      textAnchor="middle"
+                                      stroke="none"
+                                      className={isLagna ? (
+                                        `${textSize} font-normal cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-red-600 hover:fill-red-500"
+                                        }`
+                                      ) : (
+                                        `${textSize} font-black cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-indigo-950 hover:fill-indigo-650"
+                                        }`
+                                      )}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedPlanet(isSelected ? "" : itemName);
+                                      }}
+                                      {...(!isLagna ? ({ draggable: true } as any) : {})}
+                                      onDragStart={(e) => {
+                                        if (isLagna) return;
+                                        e.dataTransfer.effectAllowed = "move";
+                                        e.dataTransfer.setData("text/plain", itemName);
+                                        setSelectedPlanet(itemName);
+                                      }}
+                                    >
+                                      {itemName}
+                                    </text>
+                                  );
+                                });
+                              })()}
+                            </g>
+                          );
+                        });
+                      })()}
+                    </svg>
+                  </div>
+
+                  {/* Nudge Controls */}
+                  {selectedPlanet && (
+                    <div className="mt-2 p-2 rounded-lg flex flex-col items-center gap-1 select-none" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      <span className="text-slate-500 uppercase tracking-wider text-[0.625rem] font-bold">
+                        Nudge Controls
+                      </span>
+                      <div className="grid grid-cols-3 gap-1 w-[5rem] h-[5rem] items-center justify-center">
+                        <div />
+                        <button type="button" onClick={() => nudgeSelectedPlanet(0, -2)}
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors" title="Nudge Up">▲</button>
+                        <div />
+                        <button type="button" onClick={() => nudgeSelectedPlanet(-2, 0)}
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors" title="Nudge Left">◀</button>
+                        <button type="button"
+                          onClick={() => {
+                            setReportState(prev => {
+                              if (!prev) return prev;
+                              const nudges = prev.planet_nudges || {};
+                              return { ...prev, planet_nudges: { ...nudges, [selectedPlanet]: { dx: 0, dy: 0 } } };
+                            });
+                          }}
+                          className="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold p-1 rounded border border-amber-200 flex items-center justify-center h-6 w-6 transition-colors text-[0.625rem]" title="Reset Offset">⟲</button>
+                        <button type="button" onClick={() => nudgeSelectedPlanet(2, 0)}
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors" title="Nudge Right">▶</button>
+                        <div />
+                        <button type="button" onClick={() => nudgeSelectedPlanet(0, 2)}
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold p-1 rounded border border-indigo-200 flex items-center justify-center h-6 w-6 text-xs transition-colors" title="Nudge Down">▼</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── SECTION D: Vimshottari Dasha & Antardasha ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Mahadasha Table */}
+                  <div className={`rounded-xl p-3 shadow-sm transition-opacity duration-200 ${!reportState.show_mahadasha ? "opacity-30" : ""}`} style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
+                    <div className="flex items-center justify-between pb-1.5 mb-2" style={{ borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                      <span className="font-bold text-slate-800 text-[0.6875rem]">
+                        <i className="fa-solid fa-calendar-alt mr-1" style={{ color: "#92400e" }}></i> Vimshottari Dasha
+                      </span>
+                      <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]">
+                        <input type="checkbox" checked={!!reportState.show_mahadasha} onChange={(e) => updateToggle("show_mahadasha", e.target.checked)}
+                          className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" style={{ borderColor: "#cbd5e1" }} />
+                        <span>Show PDF</span>
+                      </label>
+                    </div>
+                    <div className="overflow-x-auto select-none">
+                      <table className="min-w-full text-left text-[0.625rem]">
+                        <thead>
+                          <tr className="font-bold border-b" style={{ background: "#f8fafc", color: "#64748b", borderColor: "#e2e8f0" }}>
+                            <th className="px-1 py-0.5 text-center w-5">Active</th>
+                            <th className="px-1 py-0.5">Dasha</th>
+                            <th className="px-1 py-0.5 text-center">Yrs</th>
+                            <th className="px-1 py-0.5">Start</th>
+                            <th className="px-1 py-0.5">End</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {reportState.dasha_list.map((dasha, idx) => (
+                            <tr
+                              key={idx}
+                              className={`cursor-pointer hover:bg-amber-50/40 transition-colors ${activePlanet === dasha.planet ? "font-bold text-slate-900" : "text-slate-700"}`}
+                              style={activePlanet === dasha.planet ? { background: "rgba(255, 251, 235, 0.8)" } : {}}
+                              onClick={() => setActivePlanet(dasha.planet)}
+                            >
+                              <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
+                                <input type="radio" name="activeDasha" checked={activePlanet === dasha.planet} onChange={() => setActivePlanet(dasha.planet)}
+                                  className="text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" />
+                              </td>
+                              <td className="px-1 py-1">
+                                <input className="bg-transparent border-0 p-0 w-[3.5rem] font-medium focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
+                                  value={toEnglishDigits(dasha.planet_bn)} onChange={(e) => updateDashaField(idx, "planet_bn", e.target.value)} onClick={(e) => e.stopPropagation()} />
+                              </td>
+                              <td className="px-1 py-1 text-center">
+                                <input className="bg-transparent border-0 p-0 w-[2rem] text-center font-medium focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
+                                  value={toEnglishDigits(dasha.years)} onChange={(e) => updateDashaField(idx, "years", e.target.value)} onClick={(e) => e.stopPropagation()} />
+                              </td>
+                              <td className="px-1 py-1">
+                                <input className="bg-transparent border-0 p-0 w-[4rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
+                                  value={toEnglishDigits(dasha.start)} onChange={(e) => updateDashaField(idx, "start", e.target.value)} onClick={(e) => e.stopPropagation()} />
+                              </td>
+                              <td className="px-1 py-1">
+                                <input className="bg-transparent border-0 p-0 w-[4rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
+                                  value={toEnglishDigits(dasha.end)} onChange={(e) => updateDashaField(idx, "end", e.target.value)} onClick={(e) => e.stopPropagation()} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Antardasha Table */}
+                  <div className={`rounded-xl p-3 shadow-sm transition-opacity duration-200 ${!reportState.show_antardasha ? "opacity-30" : ""}`} style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
+                    <div className="flex items-center justify-between pb-1.5 mb-2" style={{ borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                      <span className="font-bold text-slate-800 truncate text-[0.6875rem]">
+                        Antardasha: {toEnglishDigits(reportState.dasha_list.find((d) => d.planet === activePlanet)?.planet_bn || activePlanet)}
+                      </span>
+                      <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]">
+                        <input type="checkbox" checked={!!reportState.show_antardasha} onChange={(e) => updateToggle("show_antardasha", e.target.checked)}
+                          className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" style={{ borderColor: "#cbd5e1" }} />
+                        <span>Show PDF</span>
+                      </label>
+                    </div>
+                    <div className="overflow-x-auto select-none">
+                      <table className="min-w-full text-left text-[0.625rem]">
+                        <thead>
+                          <tr className="font-bold border-b" style={{ background: "#f8fafc", color: "#64748b", borderColor: "#e2e8f0" }}>
+                            <th className="px-1 py-0.5">Maha / Antar</th>
+                            <th className="px-1 py-0.5">Start</th>
+                            <th className="px-1 py-0.5">End</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {(() => {
+                            const displayRows = reportState.antardasha_display_rows ?? [];
+                            if (!displayRows.length) {
+                              return (
+                                <tr>
+                                  <td colSpan={3} className="px-2 py-4 text-center text-slate-400 italic">
+                                    No antardasha rows available for the selected report date.
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return displayRows.map((row, rowIdx) => (
+                              <tr key={rowIdx} className="hover:bg-amber-50/30">
+                                <td className="px-1 py-1">
+                                  <span className="font-semibold text-slate-400 mr-1 text-[0.625rem]">
+                                    {toEnglishDigits(row.major_bn)} /
+                                  </span>
+                                  <span className="font-medium text-slate-700 text-[0.6875rem]">{toEnglishDigits(row.lord_bn)}</span>
+                                </td>
+                                <td className="px-1 py-1">
+                                  <span className="text-slate-700 text-[0.6875rem]">{toEnglishDigits(row.start)}</span>
+                                </td>
+                                <td className="px-1 py-1">
+                                  <span className="text-slate-700 text-[0.6875rem]">{toEnglishDigits(row.end)}</span>
+                                </td>
+                              </tr>
+                            ));
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Update Button */}
+                <div className="flex items-center justify-between gap-4 p-4 -mx-4 -mb-4 rounded-b-lg" style={{ background: "rgba(255, 251, 235, 0.6)", borderTop: "1px solid #ebdcb9" }}>
+                  <div className="text-slate-500 leading-normal max-w-[16.25rem] text-[0.6875rem]">
+                    Modifications exist in local memory. Click update to compile PDF with current configurations.
                   </div>
                   <button
                     onClick={handleRenderPdf}
                     disabled={rendering}
                     id="btn-update-pdf-bottom"
-                    className="bg-indigo-600 hover:bg-indigo-750 text-white font-semibold text-xs px-4 py-2.5 rounded shadow-sm transition-all disabled:opacity-60 flex items-center gap-1.5"
+                    className="font-semibold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all disabled:opacity-60 flex items-center gap-1.5 text-white btn-press"
+                    style={{ background: "linear-gradient(135deg, #800020, #590219)" }}
                   >
                     {rendering && <LoadingSpinner />}
                     {rendering ? "Updating PDF..." : "Update & Refresh Preview"}
@@ -1328,51 +1172,51 @@ export default function CreateReportPage() {
             )}
           </section>
 
-          {/* SECTION 3: Live PDF Preview */}
-          <section className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 flex flex-col w-full">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3 px-2">
-              <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">
-                3. Report Preview
-              </h2>
-              {fullPdfUrl && (
-                <div className="flex gap-2">
-                  <a
-                    className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1"
-                    href={fullPdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    id="btn-open-pdf"
-                  >
-                    Open View
-                  </a>
-                  <button
-                    className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1 cursor-pointer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const iframe = document.querySelector("iframe");
-                      if (iframe && iframe.contentWindow) {
-                        const originalTitle = document.title;
-                        document.title = "Print Astrological Report";
-                        iframe.contentWindow.focus();
-                        iframe.contentWindow.print();
-                        setTimeout(() => {
-                          document.title = originalTitle;
-                        }, 1000);
-                      }
-                    }}
-                    id="btn-print-report"
-                  >
-                    Print Report
-                  </button>
-                  <button
-                    className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1 cursor-pointer"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      const iframe = document.querySelector("iframe");
-                      if (iframe && iframe.contentWindow) {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        const element = iframeDoc?.querySelector(".a4-page") as HTMLElement;
-                        if (!element) return;
+          {/* ── RIGHT COLUMN: Live PDF Preview ── */}
+          <section className="w-full md:w-[58%] flex flex-col h-auto md:h-full md:overflow-y-auto overflow-visible items-center p-4 relative border-t md:border-t-0 md:border-l border-[#e2e8f0] bg-[#f1f5f9]">
+
+            {/* Floating Controls Bar */}
+            <div className="w-full max-w-5xl rounded-xl shadow-md p-3 mb-4 flex items-center justify-between z-10 sticky top-0 no-print" style={{ background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(8px)", border: "1px solid #ebdcb9" }}>
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-2">
+                <i className="fa-solid fa-file-pdf" style={{ color: "#800020" }}></i> Live Report Preview
+              </span>
+              <div className="flex items-center gap-2">
+                {fullPdfUrl && (
+                  <>
+                    <a
+                      className="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1"
+                      style={{ border: "1px solid #cbd5e1" }}
+                      href={fullPdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      id="btn-open-pdf"
+                    >
+                      <i className="fa-solid fa-up-right-from-square text-[0.5625rem]"></i> Open
+                    </a>
+                    <button
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all text-white"
+                      style={{ background: "#4f46e5" }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const iframe = document.querySelector("iframe");
+                        if (iframe && iframe.contentWindow) {
+                          const originalTitle = document.title;
+                          document.title = "Print Astrological Report";
+                          iframe.contentWindow.focus();
+                          iframe.contentWindow.print();
+                          setTimeout(() => { document.title = originalTitle; }, 1000);
+                        }
+                      }}
+                      id="btn-print-report"
+                    >
+                      <i className="fa-solid fa-print"></i> Print
+                    </button>
+                    <button
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all text-white btn-press"
+                      style={{ background: "#800020" }}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        if (!compiledPdfUrl) return;
 
                         const dobFormatted = formValue.dob
                           ? formValue.dob.split('-').reverse().join('.')
@@ -1383,54 +1227,44 @@ export default function CreateReportPage() {
 
                         setRendering(true);
                         try {
-                          const { jsPDF } = await import("jspdf");
-                          const { toPng } = await import("html-to-image");
+                          // Extract the filename from the compiledPdfUrl path
+                          const urlParts = compiledPdfUrl.split("/");
+                          const pdfFilename = urlParts[urlParts.length - 1];
 
-                          // Convert the element to PNG at 2x pixel ratio for print-quality sharpness.
-                          // This uses SVG foreignObject rendering client-side, which preserves
-                          // modern layouts (grid/flex) and complex scripts (Bengali ligatures) perfectly.
-                          const dataUrl = await toPng(element, {
-                            quality: 1.0,
-                            pixelRatio: 2,
-                            style: {
-                              margin: "0",
-                              transform: "scale(1)",
-                            }
-                          });
-
-                          const pdf = new jsPDF({
-                            orientation: "portrait",
-                            unit: "mm",
-                            format: "a4",
-                          });
-
-                          // A4 dimensions: 210mm x 297mm
-                          pdf.addImage(dataUrl, "PNG", 0, 0, 210, 297);
-                          pdf.save(filename);
+                          // Build the download link pointing to our download helper endpoint
+                          const downloadUrl = `${API}/api/download-pdf/${pdfFilename}?name=${encodeURIComponent(filename)}`;
+                          
+                          // Trigger native browser download directly via dynamic link navigation
+                          const a = document.createElement("a");
+                          a.href = downloadUrl;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
                         } catch (err) {
-                          console.error("Direct PDF download failed, falling back to print", err);
-                          // Fallback to browser print dialog if client-side rendering fails
-                          const originalTitle = document.title;
-                          document.title = filename.replace(".pdf", "");
-                          iframe.contentWindow.focus();
-                          iframe.contentWindow.print();
-                          setTimeout(() => {
-                            document.title = originalTitle;
-                          }, 1000);
+                          console.error("Direct PDF download failed, falling back to iframe print", err);
+                          const iframe = document.querySelector("iframe");
+                          if (iframe && iframe.contentWindow) {
+                            const originalTitle = document.title;
+                            document.title = filename.replace(".pdf", "");
+                            iframe.contentWindow.focus();
+                            iframe.contentWindow.print();
+                            setTimeout(() => { document.title = originalTitle; }, 1000);
+                          }
                         } finally {
                           setRendering(false);
                         }
-                      }
-                    }}
-                    id="btn-download-pdf"
-                  >
-                    Download PDF
-                  </button>
-                </div>
-              )}
+                      }}
+                      id="btn-download-pdf"
+                    >
+                      <i className="fa-solid fa-download"></i> Download PDF
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
-            <div className="flex-1 min-h-[500px] lg:min-h-[70vh] bg-slate-100 rounded border border-slate-200 relative overflow-hidden">
+            {/* PDF Viewer */}
+            <div className="w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] h-[320mm]">
               {rendering && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-slate-600 gap-3">
                   <LoadingSpinner />
@@ -1441,12 +1275,14 @@ export default function CreateReportPage() {
               {fullPdfUrl ? (
                 <PdfViewer pdfUrl={fullPdfUrl} />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 gap-2">
-                  <svg width="48" height="48" className="h-12 w-12 text-slate-300 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-medium">No preview available</span>
-                  <span className="text-[10px] text-slate-400 max-w-[200px]">Initial calculations must be loaded first before the PDF compiles.</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-slate-400 gap-3">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "#f3e8ff" }}>
+                    <i className="fa-solid fa-scroll text-2xl" style={{ color: "#9333ea" }}></i>
+                  </div>
+                  <span className="text-sm font-medium text-slate-500">No preview available</span>
+                  <span className="text-slate-400 max-w-[15rem] text-[0.6875rem]">
+                    Initial calculations must be loaded first before the PDF compiles.
+                  </span>
                 </div>
               )}
             </div>

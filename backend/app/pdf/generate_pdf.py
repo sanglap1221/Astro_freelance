@@ -1,10 +1,14 @@
 from datetime import date, datetime
-from io import BytesIO
 import os
 from pathlib import Path
 import random
 from typing import Any
+import uuid
+from zoneinfo import ZoneInfo
+
 from jinja2 import Environment, FileSystemLoader
+# pyrefly: ignore [missing-import]
+from playwright.sync_api import sync_playwright
 
 from app.astrology.calculations import (
     ZODIAC_SIGNS_BN,
@@ -73,15 +77,15 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         dob=payload.dob,
         birth_time=payload.time,
         place=payload.place,
+        latitude=getattr(payload, 'latitude', None),
+        longitude=getattr(payload, 'longitude', None),
+        timezone=getattr(payload, 'timezone', None),
         ayanamsa_mode=payload.ayanamsa_mode,
         custom_ayanamsa_degrees=payload.custom_ayanamsa_degrees,
         true_moon=payload.true_moon,
         true_node=payload.true_node,
         planet_overrides=payload.planet_overrides,
         override_moon_longitude=payload.override_moon_longitude,
-        latitude=payload.latitude,
-        longitude=payload.longitude,
-        timezone=payload.timezone,
     )
 
     # 2. Generate report_no (Bengali digits)
@@ -295,4 +299,55 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     }
 
 
+def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> str:
+    # Set up Jinja2 environment and load template
+    templates_dir = Path(__file__).parent / "templates"
+    env = Environment(loader=FileSystemLoader(str(templates_dir)))
+    template = env.get_template("bengali_report.html")
+    html_content = template.render(**context)
 
+    # Output file setup in the backend's generated directory
+    backend_root = Path(__file__).resolve().parents[2]
+    generated_dir = backend_root / "generated"
+    generated_dir.mkdir(exist_ok=True)
+
+    if not filename:
+        filename = f"report_{uuid.uuid4().hex}.pdf"
+    output_path = generated_dir / filename
+
+    # Compile HTML to PDF using Playwright sync API
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        try:
+            page = browser.new_page()
+            # Set HTML content and wait until network is idle (to download fonts)
+            page.set_content(html_content, wait_until="networkidle")
+            
+            # Print PDF
+            page.pdf(
+                path=str(output_path),
+                format="A4",
+                print_background=True,
+                margin={
+                    "top": "10mm",
+                    "bottom": "10mm",
+                    "left": "10mm",
+                    "right": "10mm",
+                },
+            )
+        finally:
+            browser.close()
+
+    return f"/generated/{filename}"
+
+
+def generate_pdf_report(payload: PdfRequest) -> PdfReportResult:
+    context = build_report_context(payload)
+    # Default layout options
+    context["show_kundli"] = True
+    context["show_mahadasha"] = True
+    context["show_antardasha"] = True
+    context["show_lucky_info"] = True
+    
+    pdf_url = render_pdf_from_context(context)
+    return PdfReportResult(pdf_url=pdf_url)
