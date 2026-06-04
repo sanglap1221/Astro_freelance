@@ -1,6 +1,6 @@
 import type { ReportInput, ReportState } from "../types/report";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://astro-freelance.onrender.com";
 
 export async function calculateReport(data: ReportInput): Promise<ReportState> {
   const overrideMoonRaw = data.override_moon_longitude?.trim();

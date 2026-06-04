@@ -1,27 +1,13 @@
 from typing import Any
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
 
 from app.pdf.generate_pdf import (
-    generate_pdf_report,
     build_report_context,
-    render_pdf_from_context,
-    render_pdf_to_memory,
 )
-from app.schemas import PdfRequest, PdfResponse
+from app.schemas import PdfRequest
 from app.db import save_astro_data
 
 router = APIRouter(tags=["pdf"])
-
-
-@router.post("/generate-pdf", response_model=PdfResponse)
-def generate_pdf(payload: PdfRequest) -> PdfResponse:
-    try:
-        result = generate_pdf_report(payload)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    return PdfResponse(pdf_url=result.pdf_url)
 
 
 @router.post("/api/calculate-report")
@@ -61,27 +47,4 @@ def render_pdf(payload: dict[str, Any]) -> dict[str, str]:
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-
-@router.post("/api/download-report")
-def download_report(payload: dict[str, Any]) -> StreamingResponse:
-    try:
-        import urllib.parse
-        pdf_buf = render_pdf_to_memory(payload)
-        
-        customer = payload.get("customer", {})
-        name = customer.get("name", "report").strip()
-        dob = customer.get("dob", "").strip().replace("-", ".")
-        
-        if dob:
-            filename = f"{name} ({dob}).pdf"
-        else:
-            filename = f"{name}.pdf"
-            
-        safe_filename = urllib.parse.quote(filename)
-        headers = {
-            "Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"
-        }
-        return StreamingResponse(pdf_buf, media_type="application/pdf", headers=headers)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
 

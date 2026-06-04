@@ -257,7 +257,7 @@ export default function CreateReportPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedPlanet, reportState]);
 
-  const fullPdfUrl = useMemo(() => (pdfUrl ? (pdfUrl.startsWith("blob:") ? pdfUrl : `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}${pdfUrl}`) : ""), [pdfUrl]);
+  const fullPdfUrl = useMemo(() => (pdfUrl ? (pdfUrl.startsWith("blob:") ? pdfUrl : `${process.env.NEXT_PUBLIC_API_URL || "https://astro-freelance.onrender.com"}${pdfUrl}`) : ""), [pdfUrl]);
 
   // Load the initial calculation from backend into central state
   async function handleLoadDetails() {
@@ -1368,44 +1368,48 @@ export default function CreateReportPage() {
                     className="border border-slate-300 rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center gap-1 cursor-pointer"
                     onClick={async (e) => {
                       e.preventDefault();
-                      if (!reportState) return;
+                      const iframe = document.querySelector("iframe");
+                      if (iframe && iframe.contentWindow) {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const element = iframeDoc?.querySelector(".a4-page") as HTMLElement;
+                        if (!element) return;
 
-                      const dobFormatted = formValue.dob
-                        ? formValue.dob.split('-').reverse().join('.')
-                        : "";
-                      const filename = dobFormatted
-                        ? `${formValue.name} (${dobFormatted}).pdf`
-                        : `${formValue.name}.pdf`;
+                        const dobFormatted = formValue.dob
+                          ? formValue.dob.split('-').reverse().join('.')
+                          : "";
+                        const filename = dobFormatted
+                          ? `${formValue.name} (${dobFormatted}).pdf`
+                          : `${formValue.name}.pdf`;
 
-                      setRendering(true);
-                      try {
-                        const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-                        const response = await fetch(`${API}/api/download-report`, {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                          },
-                          body: JSON.stringify(reportState),
-                        });
+                        setRendering(true);
+                        try {
+                          const { jsPDF } = await import("jspdf");
+                          const { toPng } = await import("html-to-image");
 
-                        if (!response.ok) {
-                          throw new Error("Server-side PDF generation failed");
-                        }
+                          // Convert the element to PNG at 2x pixel ratio for print-quality sharpness.
+                          // This uses SVG foreignObject rendering client-side, which preserves
+                          // modern layouts (grid/flex) and complex scripts (Bengali ligatures) perfectly.
+                          const dataUrl = await toPng(element, {
+                            quality: 1.0,
+                            pixelRatio: 2,
+                            style: {
+                              margin: "0",
+                              transform: "scale(1)",
+                            }
+                          });
 
-                        const blob = await response.blob();
-                        const downloadUrl = window.URL.createObjectURL(blob);
-                        const link = document.createElement("a");
-                        link.href = downloadUrl;
-                        link.download = filename;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(downloadUrl);
-                      } catch (err) {
-                        console.error("Direct PDF download failed, falling back to print", err);
-                        // Fallback to print method if API download fails
-                        const iframe = document.querySelector("iframe");
-                        if (iframe && iframe.contentWindow) {
+                          const pdf = new jsPDF({
+                            orientation: "portrait",
+                            unit: "mm",
+                            format: "a4",
+                          });
+
+                          // A4 dimensions: 210mm x 297mm
+                          pdf.addImage(dataUrl, "PNG", 0, 0, 210, 297);
+                          pdf.save(filename);
+                        } catch (err) {
+                          console.error("Direct PDF download failed, falling back to print", err);
+                          // Fallback to browser print dialog if client-side rendering fails
                           const originalTitle = document.title;
                           document.title = filename.replace(".pdf", "");
                           iframe.contentWindow.focus();
@@ -1413,9 +1417,9 @@ export default function CreateReportPage() {
                           setTimeout(() => {
                             document.title = originalTitle;
                           }, 1000);
+                        } finally {
+                          setRendering(false);
                         }
-                      } finally {
-                        setRendering(false);
                       }
                     }}
                     id="btn-download-pdf"

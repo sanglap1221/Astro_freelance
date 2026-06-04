@@ -4,12 +4,7 @@ import os
 from pathlib import Path
 import random
 from typing import Any
-import uuid
-from zoneinfo import ZoneInfo
-
 from jinja2 import Environment, FileSystemLoader
-# pyrefly: ignore [missing-import]
-from playwright.sync_api import sync_playwright
 
 from app.astrology.calculations import (
     ZODIAC_SIGNS_BN,
@@ -300,96 +295,4 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     }
 
 
-def render_pdf_from_context(context: dict[str, Any]) -> str:
-    # Set up Jinja2 environment and load template
-    templates_dir = Path(__file__).parent / "templates"
-    env = Environment(loader=FileSystemLoader(str(templates_dir)))
-    template = env.get_template("bengali_report.html")
-    html_content = template.render(**context)
 
-    # Output file setup in the backend's generated directory
-    backend_root = Path(__file__).resolve().parents[2]
-    generated_dir = backend_root / "generated"
-    generated_dir.mkdir(exist_ok=True)
-
-    filename = f"report_{uuid.uuid4().hex}.pdf"
-    output_path = generated_dir / filename
-
-    # Compile HTML to PDF using Playwright sync API
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        try:
-            page = browser.new_page()
-            page.set_content(html_content)
-            try:
-                page.evaluate("document.fonts.ready")
-            except Exception:
-                pass
-            
-            # Print PDF
-            page.pdf(
-                path=str(output_path),
-                format="A4",
-                print_background=True,
-                margin={
-                    "top": "10mm",
-                    "bottom": "10mm",
-                    "left": "10mm",
-                    "right": "10mm",
-                },
-            )
-        finally:
-            browser.close()
-
-    return f"/generated/{filename}"
-
-
-def render_pdf_to_memory(context: dict[str, Any]) -> BytesIO:
-    # Set up Jinja2 environment and load template
-    templates_dir = Path(__file__).parent / "templates"
-    env = Environment(loader=FileSystemLoader(str(templates_dir)))
-    template = env.get_template("bengali_report.html")
-    html_content = template.render(**context)
-
-    pdf_buffer = BytesIO()
-
-    # Compile HTML to PDF using Playwright sync API
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        try:
-            page = browser.new_page()
-            page.set_content(html_content)
-            try:
-                page.evaluate("document.fonts.ready")
-            except Exception:
-                pass
-            
-            # Print PDF in-memory (no path argument)
-            pdf_bytes = page.pdf(
-                format="A4",
-                print_background=True,
-                margin={
-                    "top": "10mm",
-                    "bottom": "10mm",
-                    "left": "10mm",
-                    "right": "10mm",
-                },
-            )
-            pdf_buffer.write(pdf_bytes)
-        finally:
-            browser.close()
-
-    pdf_buffer.seek(0)
-    return pdf_buffer
-
-
-def generate_pdf_report(payload: PdfRequest) -> PdfReportResult:
-    context = build_report_context(payload)
-    # Default layout options
-    context["show_kundli"] = True
-    context["show_mahadasha"] = True
-    context["show_antardasha"] = True
-    context["show_lucky_info"] = True
-    
-    pdf_url = render_pdf_from_context(context)
-    return PdfReportResult(pdf_url=pdf_url)
