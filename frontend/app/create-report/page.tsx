@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { PdfViewer } from "../../components/PdfViewer";
@@ -258,15 +259,33 @@ export default function CreateReportPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedPlanet, reportState]);
 
+  // Check for pending birth details on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("pending_birth_details");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as ReportInput;
+          setFormValue(parsed);
+          sessionStorage.removeItem("pending_birth_details");
+          handleLoadDetails(parsed);
+        } catch (e) {
+          console.error("Error parsing stored birth details", e);
+        }
+      }
+    }
+  }, []);
+
   const fullPdfUrl = useMemo(() => (pdfUrl ? (pdfUrl.startsWith("blob:") ? pdfUrl : `${process.env.NEXT_PUBLIC_API_URL || "https://astro-freelance.onrender.com"}${pdfUrl}`) : ""), [pdfUrl]);
 
   // Load the initial calculation from backend into central state
-  async function handleLoadDetails() {
+  async function handleLoadDetails(overrideValue?: ReportInput) {
     setLoading(true);
     setError("");
     setPdfUrl("");
     try {
-      const state = await calculateReport(buildRequestPayload(formValue, null));
+      const activeFormValue = overrideValue || formValue;
+      const state = await calculateReport(buildRequestPayload(activeFormValue, null));
 
       // Determine default active planet
       const activeDasha = state.dasha_list.find((d) => d.is_active);
@@ -277,7 +296,7 @@ export default function CreateReportPage() {
 
       const stateWithCoords: ReportState = {
         ...state,
-        true_node: formValue.true_node ?? true,
+        true_node: activeFormValue.true_node ?? true,
         planet_overrides: buildPlanetOverrides(state.shorthand_planets),
       };
 
@@ -601,6 +620,16 @@ export default function CreateReportPage() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           {reportState && (
+            <Link
+              href="/"
+              className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
+              style={{ color: "#475569", background: "#f8fafc", borderColor: "#cbd5e1" }}
+              id="new-report-btn"
+            >
+              <i className="fa-solid fa-plus"></i> New Report
+            </Link>
+          )}
+          {reportState && (
             <button
               type="button"
               onClick={() => setShowBirthDetails(!showBirthDetails)}
@@ -643,43 +672,9 @@ export default function CreateReportPage() {
       {/* ── MAIN INTERACTIVE FLOW ── */}
       <div className="flex-1 flex flex-col relative w-full md:overflow-hidden">
 
-        {/* ═══ STEP 1: BIRTH DETAILS CARD (Centered Overlay) ═══ */}
+        {/* ═══ WORKSPACE (Two-column editor + preview) ═══ */}
         <div
-          className={`absolute inset-0 flex items-center justify-center z-20 p-3 sm:p-4 overflow-y-auto transition-workspace ${
-            !showBirthDetails || reportState ? "opacity-0 scale-95 pointer-events-none" : "opacity-100 scale-100"
-          }`}
-          style={{ background: "rgba(255, 251, 235, 0.6)", backdropFilter: "blur(8px)" }}
-        >
-          <div className="w-full max-w-[90vw] md:max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 relative overflow-hidden" style={{ background: "#fdfcf9", border: "2px solid #ebdcb9" }}>
-            {/* Decorative inner border */}
-            <div className="absolute inset-2 rounded-xl pointer-events-none" style={{ border: "1px solid #f3e9d2" }} />
-
-            {/* Bengali Title Header */}
-            <div className="text-center mb-6 relative">
-              <span className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: "#92400e" }}>কোষ্ঠী ও জীবন জিজ্ঞাসা</span>
-              <h2 className="text-3xl font-extrabold mb-2 tracking-wide bengali-serif" style={{ color: "#800020" }}>জন্ম বিবরণী</h2>
-              <div className="flex justify-center items-center gap-2" style={{ color: "#d97706" }}>
-                <span className="h-[1px] w-12" style={{ background: "#ebdcb9" }}></span>
-                <i className="fa-solid fa-om text-md"></i>
-                <span className="h-[1px] w-12" style={{ background: "#ebdcb9" }}></span>
-              </div>
-            </div>
-
-            {/* Form Content */}
-            <div className="relative">
-              <ReportForm value={formValue} onChange={setFormValue} onSubmit={handleLoadDetails} loading={loading} />
-              <p className="text-center mt-2 text-[0.625rem]" style={{ color: "rgba(120, 53, 15, 0.6)" }}>
-                Inspired by traditional Bengali palmistry &amp; astrology charts
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ STEP 2: WORKSPACE (Two-column editor + preview) ═══ */}
-        <div
-          className={`flex-1 w-full flex flex-col md:flex-row md:overflow-hidden transition-workspace ${
-            reportState ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12 pointer-events-none"
-          }`}
+          className="flex-1 w-full flex flex-col md:flex-row md:overflow-hidden transition-workspace"
         >
           {/* ── LEFT COLUMN: Interactive Visual Editor ── */}
           <section className="w-full md:w-[42%] flex flex-col md:overflow-y-auto overflow-visible border-b md:border-b-0 md:border-r border-[#ebdcb9]" style={{ background: "white" }}>
@@ -704,10 +699,27 @@ export default function CreateReportPage() {
               )}
             </div>
 
-            {/* Collapsible birth details inside editor */}
-            {showBirthDetails && reportState && (
+            {/* Birth details inside editor */}
+            {showBirthDetails && (
               <div className="p-4 border-b" style={{ background: "#fdfcf9", borderColor: "#ebdcb9" }}>
+                {!reportState && (
+                  /* Bengali Title Header */
+                  <div className="text-center mb-6 relative">
+                    <span className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: "#92400e" }}>কোষ্ঠী ও জীবন জিজ্ঞাসা</span>
+                    <h2 className="text-3xl font-extrabold mb-2 tracking-wide bengali-serif" style={{ color: "#800020" }}>জন্ম বিবরণী</h2>
+                    <div className="flex justify-center items-center gap-2" style={{ color: "#d97706" }}>
+                      <span className="h-[1px] w-12" style={{ background: "#ebdcb9" }}></span>
+                      <i className="fa-solid fa-om text-md"></i>
+                      <span className="h-[1px] w-12" style={{ background: "#ebdcb9" }}></span>
+                    </div>
+                  </div>
+                )}
                 <ReportForm value={formValue} onChange={setFormValue} onSubmit={handleLoadDetails} loading={loading} />
+                {!reportState && (
+                  <p className="text-center mt-4 text-[0.625rem]" style={{ color: "rgba(120, 53, 15, 0.6)" }}>
+                    Inspired by traditional Bengali palmistry &amp; astrology charts
+                  </p>
+                )}
               </div>
             )}
 
