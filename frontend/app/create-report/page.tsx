@@ -1320,6 +1320,7 @@ export default function CreateReportPage() {
                           const downloadUrl = `${API}/api/download-pdf/report_${reportId}.pdf?name=${encodeURIComponent(filename)}`;
                           const a = document.createElement("a");
                           a.href = downloadUrl;
+                          a.target = "_blank";
                           document.body.appendChild(a);
                           a.click();
                           a.remove();
