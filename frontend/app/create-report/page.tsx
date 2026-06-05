@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { PdfViewer } from "../../components/PdfViewer";
 import { ReportForm } from "../../components/ReportForm";
-import { calculateReport, renderPdf, API } from "../../services/api";
+import { calculateReport, renderPdf, getPdfStatus, API } from "../../services/api";
 import type { ReportInput, ReportState, CustomerState, AstrologyState, DashaRow } from "../../types/report";
 
 const initialValue: ReportInput = {
@@ -220,6 +220,10 @@ export default function CreateReportPage() {
   const [selectedPlanet, setSelectedPlanet] = useState("");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupMahadasha, setPopupMahadasha] = useState("");
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [compilationProgress, setCompilationProgress] = useState(0);
+  const [compilationStatus, setCompilationStatus] = useState("");
+  const [pollIntervalId, setPollIntervalId] = useState<any>(null);
 
   // Nudge the selected planet position
   const nudgeSelectedPlanet = (dx: number, dy: number) => {
@@ -1309,36 +1313,20 @@ export default function CreateReportPage() {
                           ? `${formValue.name} (${dobFormatted}).pdf`
                           : `${formValue.name}.pdf`;
 
-                        // If compiled PDF URL is missing or points to undefined (older backend), fall back to print
-                        if (!compiledPdfUrl || compiledPdfUrl.endsWith("undefined")) {
-                          const iframe = document.querySelector("iframe");
-                          if (iframe && iframe.contentWindow) {
-                            const originalTitle = document.title;
-                            document.title = filename.replace(".pdf", "");
-                            iframe.contentWindow.focus();
-                            iframe.contentWindow.print();
-                            setTimeout(() => { document.title = originalTitle; }, 1000);
-                          }
-                          return;
-                        }
-
-                        setRendering(true);
-                        try {
-                          // Extract the filename from the compiledPdfUrl path
-                          const urlParts = compiledPdfUrl.split("/");
-                          const pdfFilename = urlParts[urlParts.length - 1];
-
-                          // Build the download link pointing to our download helper endpoint
-                          const downloadUrl = `${API}/api/download-pdf/${pdfFilename}?name=${encodeURIComponent(filename)}`;
-                          
-                          // Trigger native browser download directly via dynamic link navigation
+                        const reportId = reportState?.report_id;
+                        
+                        // Helper to trigger the actual download
+                        const triggerNativeDownload = () => {
+                          const downloadUrl = `${API}/api/download-pdf/report_${reportId}.pdf?name=${encodeURIComponent(filename)}`;
                           const a = document.createElement("a");
                           a.href = downloadUrl;
                           document.body.appendChild(a);
                           a.click();
                           a.remove();
-                        } catch (err) {
-                          console.error("Direct PDF download failed, falling back to iframe print", err);
+                        };
+
+                        // Fallback print helper
+                        const triggerPrintFallback = () => {
                           const iframe = document.querySelector("iframe");
                           if (iframe && iframe.contentWindow) {
                             const originalTitle = document.title;
@@ -1347,6 +1335,58 @@ export default function CreateReportPage() {
                             iframe.contentWindow.print();
                             setTimeout(() => { document.title = originalTitle; }, 1000);
                           }
+                        };
+
+                        if (!reportId) {
+                          triggerPrintFallback();
+                          return;
+                        }
+
+                        setRendering(true);
+                        try {
+                          // 1. Check current status
+                          const statusData = await getPdfStatus(reportId);
+                          if (statusData.status === "ready") {
+                            triggerNativeDownload();
+                            return;
+                          }
+
+                          // 2. If compiling or pending, open the progress modal and start polling
+                          setCompilationStatus(statusData.status);
+                          setCompilationProgress(statusData.progress || 0);
+                          setDownloadModalOpen(true);
+
+                          const pollInterval = setInterval(async () => {
+                            try {
+                              const pollData = await getPdfStatus(reportId);
+                              setCompilationStatus(pollData.status);
+                              setCompilationProgress(pollData.progress || 0);
+
+                              if (pollData.status === "ready") {
+                                clearInterval(pollInterval);
+                                setDownloadModalOpen(false);
+                                setPollIntervalId(null);
+                                triggerNativeDownload();
+                              } else if (pollData.status === "failed") {
+                                clearInterval(pollInterval);
+                                setDownloadModalOpen(false);
+                                setPollIntervalId(null);
+                                alert("PDF compilation failed on server. Falling back to print...");
+                                triggerPrintFallback();
+                              }
+                            } catch (pollErr) {
+                              console.error("Error polling PDF status:", pollErr);
+                              clearInterval(pollInterval);
+                              setDownloadModalOpen(false);
+                              setPollIntervalId(null);
+                            }
+                          }, 2000);
+
+                          setPollIntervalId(pollInterval);
+
+                        } catch (err) {
+                          console.error("Direct PDF download failed, falling back to iframe print", err);
+                          triggerPrintFallback();
                         } finally {
                           setRendering(false);
                         }
@@ -1478,6 +1518,74 @@ export default function CreateReportPage() {
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200 shadow-sm"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Download Progress Modal */}
+      {downloadModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in no-print">
+          <div className="w-full max-w-[400px] bg-[#fdfcf9] border-2 border-[#ebdcb9] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center animate-scale-up text-slate-800">
+            {/* Title / Header */}
+            <div className="text-center w-full pb-3 border-b border-[#ebdcb9] mb-4">
+              <span className="text-[0.625rem] font-bold uppercase tracking-widest block mb-0.5 text-amber-800">
+                PDF Compilation
+              </span>
+              <h3 className="text-lg font-extrabold text-[#800020] bengali-serif">
+                Preparing PDF...
+              </h3>
+            </div>
+
+            {/* Spinner and Progress Loader */}
+            <div className="w-full flex flex-col items-center py-4">
+              <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
+                {/* Circular spinner track */}
+                <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
+                {/* Spinning loader */}
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 animate-spin" />
+                {/* Percentage text */}
+                <span className="text-xs font-bold text-slate-700">
+                  {compilationProgress}%
+                </span>
+              </div>
+
+              {/* Text Description */}
+              <p className="text-xs font-semibold text-slate-500 mb-6 text-center">
+                {compilationStatus === "pending" 
+                  ? "Queued in background..." 
+                  : "Rendering charts and fonts..."}
+              </p>
+
+              {/* Progress Bar */}
+              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner mb-4">
+                <div 
+                  className="h-full bg-gradient-to-r from-indigo-500 to-indigo-700 transition-all duration-500 ease-out" 
+                  style={{ width: `${compilationProgress}%` }}
+                />
+              </div>
+
+              {/* Bengali Indicator */}
+              <span className="text-[0.6875rem] font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 text-center leading-relaxed">
+                পিডিএফ ফাইল প্রস্তুত করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...
+              </span>
+            </div>
+
+            {/* Close Button / Cancel */}
+            <div className="w-full mt-2 pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (pollIntervalId) {
+                    clearInterval(pollIntervalId);
+                    setPollIntervalId(null);
+                  }
+                  setDownloadModalOpen(false);
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200 shadow-sm"
+              >
+                Cancel
               </button>
             </div>
           </div>

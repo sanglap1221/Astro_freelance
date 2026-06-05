@@ -46,3 +46,11 @@ export async function renderPdf(state: ReportState): Promise<{ preview_url: stri
   return { preview_url, compiled_pdf_url: `${API}${data.pdf_url}` };
 }
 
+export async function getPdfStatus(reportId: string): Promise<{ status: string; progress: number }> {
+  const response = await fetch(`${API}/api/pdf-status/${reportId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch PDF status");
+  }
+  return (await response.json()) as { status: string; progress: number };
+}
+

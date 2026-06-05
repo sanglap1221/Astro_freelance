@@ -118,6 +118,7 @@ export interface AntardashaDisplayRow {
 }
 
 export interface ReportState {
+  report_id?: string;
   report_no: string;
   generated_at: string;
   customer: CustomerState;
