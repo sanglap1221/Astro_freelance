@@ -100,18 +100,18 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
   const lagnaIdx = state.summary.lagna_sign_index ?? 0;
 
   const houseLayout = [
-    { numX: 150, numY: 85, planetsX: 150, planetsY: 50, poly: "100,100 200,100 150,0", signIdx: 0 },
-    { numX: 78, numY: 45, planetsX: 65, planetsY: 35, poly: "0,0 100,0 100,100", signIdx: 1 },
-    { numX: 22, numY: 80, planetsX: 30, planetsY: 50, poly: "0,0 0,100 100,100", signIdx: 2 },
-    { numX: 50, numY: 185, planetsX: 60, planetsY: 150, poly: "100,100 100,200 0,150", signIdx: 3 },
-    { numX: 22, numY: 225, planetsX: 45, planetsY: 245, poly: "0,200 0,300 100,300", signIdx: 4 },
-    { numX: 78, numY: 280, planetsX: 65, planetsY: 245, poly: "100,200 100,300 0,300", signIdx: 5 },
-    { numX: 150, numY: 285, planetsX: 150, planetsY: 220, poly: "100,200 200,200 150,300", signIdx: 6 },
-    { numX: 222, numY: 280, planetsX: 235, planetsY: 245, poly: "200,200 200,300 300,300", signIdx: 7 },
-    { numX: 278, numY: 225, planetsX: 255, planetsY: 245, poly: "300,200 300,300 200,300", signIdx: 8 },
-    { numX: 250, numY: 185, planetsX: 240, planetsY: 150, poly: "200,100 200,200 300,150", signIdx: 9 },
-    { numX: 222, numY: 30, planetsX: 245, planetsY: 45, poly: "200,0 300,0 200,100", signIdx: 11 },
-    { numX: 278, numY: 80, planetsX: 255, planetsY: 60, poly: "300,0 200,100 300,100", signIdx: 10 }
+    { numX: 180, numY: 20, planetsX: 180, planetsY: 72, poly: "130,130 230,130 180,30", signIdx: 0 },
+    { numX: 102, numY: 20, planetsX: 105, planetsY: 55, poly: "30,30 130,30 130,130", signIdx: 1 },
+    { numX: 20, numY: 100, planetsX: 60, planetsY: 82, poly: "30,30 30,130 130,130", signIdx: 2 },
+    { numX: 20, numY: 170, planetsX: 68, planetsY: 165, poly: "130,130 130,230 30,180", signIdx: 3 },
+    { numX: 20, numY: 250, planetsX: 60, planetsY: 252, poly: "30,230 30,330 130,330", signIdx: 4 },
+    { numX: 102, numY: 350, planetsX: 105, planetsY: 282, poly: "130,230 130,330 30,330", signIdx: 5 },
+    { numX: 180, numY: 350, planetsX: 180, planetsY: 235, poly: "130,230 230,230 180,330", signIdx: 6 },
+    { numX: 258, numY: 350, planetsX: 255, planetsY: 282, poly: "230,230 230,330 330,330", signIdx: 7 },
+    { numX: 340, numY: 250, planetsX: 305, planetsY: 252, poly: "330,230 330,330 230,330", signIdx: 8 },
+    { numX: 340, numY: 170, planetsX: 292, planetsY: 165, poly: "230,130 230,230 330,180", signIdx: 9 },
+    { numX: 258, numY: 20, planetsX: 255, planetsY: 55, poly: "230,30 330,30 230,130", signIdx: 11 },
+    { numX: 340, numY: 100, planetsX: 300, planetsY: 82, poly: "330,30 230,130 330,130", signIdx: 10 }
   ];
 
   const getGroupShift = (signIdx: number): { dx: number; dy: number } => {
@@ -283,7 +283,7 @@ export default function CreateReportPage() {
     }
   }, []);
 
-  const fullPdfUrl = useMemo(() => (pdfUrl ? (pdfUrl.startsWith("blob:") ? pdfUrl : `${process.env.NEXT_PUBLIC_API_URL || "https://astro-freelance.onrender.com"}${pdfUrl}`) : ""), [pdfUrl]);
+  const fullPdfUrl = useMemo(() => (pdfUrl ? (pdfUrl.startsWith("blob:") ? pdfUrl : `${process.env.NEXT_PUBLIC_API_URL || "https://sanglap-astro-web.onrender.com"}${pdfUrl}`) : ""), [pdfUrl]);
 
   // Load the initial calculation from backend into central state
   async function handleLoadDetails(overrideValue?: ReportInput) {
@@ -1011,42 +1011,42 @@ export default function CreateReportPage() {
 
                   {/* Rashi Chakra SVG — 100% IDENTICAL LOGIC */}
                   <div className={`transition-opacity duration-200 ${!reportState.show_kundli ? "opacity-30" : ""}`}>
-                    <svg viewBox="0 0 300 300" className="w-full max-w-[17rem] aspect-square stroke-slate-700 rounded-lg shadow-sm mx-auto" style={{ background: "#faf5ff", border: "1px solid #e2e8f0" }}>
+                    <svg viewBox="0 0 360 360" className="w-full max-w-[17rem] aspect-square stroke-slate-700 rounded-lg shadow-sm mx-auto" style={{ background: "#faf5ff", border: "1px solid #e2e8f0" }}>
                       {/* Outer Border */}
-                      <rect x="0" y="0" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" strokeWidth="2.5" rx="8" />
+                      <rect x="30" y="30" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" strokeWidth="2.5" rx="8" />
 
                       {/* Grid Lines */}
-                      <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="130" y1="30" x2="130" y2="330" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="230" y1="30" x2="230" y2="330" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="30" y1="130" x2="330" y2="130" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="30" y1="230" x2="330" y2="230" stroke="#c084fc" strokeWidth="2" />
 
                       {/* Diagonals */}
-                      <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="30" y1="30" x2="130" y2="130" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="330" y1="30" x2="230" y2="130" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="30" y1="330" x2="130" y2="230" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="330" y1="330" x2="230" y2="230" stroke="#c084fc" strokeWidth="2" />
 
                       {/* Center Square decoration */}
-                      <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
-                      <text x="150" y="155" textAnchor="middle" stroke="none" className="text-[0.75rem] font-black fill-purple-900 tracking-wider select-none">
+                      <rect x="131" y="131" width="98" height="98" fill="#f3e8ff" stroke="none" />
+                      <text x="180" y="185" textAnchor="middle" stroke="none" className="text-[0.75rem] font-black fill-purple-900 tracking-wider select-none">
                         রাশি চক্র
                       </text>
 
                       {(() => {
                         const houseLayout = [
-                          { numX: 150, numY: 85, planetsX: 150, planetsY: 50, poly: "100,100 200,100 150,0", signIdx: 0 },
-                          { numX: 78, numY: 45, planetsX: 65, planetsY: 35, poly: "0,0 100,0 100,100", signIdx: 1 },
-                          { numX: 22, numY: 80, planetsX: 30, planetsY: 50, poly: "0,0 0,100 100,100", signIdx: 2 },
-                          { numX: 50, numY: 185, planetsX: 60, planetsY: 150, poly: "100,100 100,200 0,150", signIdx: 3 },
-                          { numX: 22, numY: 225, planetsX: 45, planetsY: 245, poly: "0,200 0,300 100,300", signIdx: 4 },
-                          { numX: 78, numY: 280, planetsX: 65, planetsY: 245, poly: "100,200 100,300 0,300", signIdx: 5 },
-                          { numX: 150, numY: 285, planetsX: 150, planetsY: 220, poly: "100,200 200,200 150,300", signIdx: 6 },
-                          { numX: 222, numY: 280, planetsX: 235, planetsY: 245, poly: "200,200 200,300 300,300", signIdx: 7 },
-                          { numX: 278, numY: 225, planetsX: 255, planetsY: 245, poly: "300,200 300,300 200,300", signIdx: 8 },
-                          { numX: 250, numY: 185, planetsX: 240, planetsY: 150, poly: "200,100 200,200 300,150", signIdx: 9 },
-                          { numX: 222, numY: 30, planetsX: 245, planetsY: 45, poly: "200,0 300,0 200,100", signIdx: 11 },
-                          { numX: 278, numY: 80, planetsX: 255, planetsY: 60, poly: "300,0 200,100 300,100", signIdx: 10 }
+                          { numX: 180, numY: 20, planetsX: 180, planetsY: 72, poly: "130,130 230,130 180,30", signIdx: 0 },
+                          { numX: 102, numY: 20, planetsX: 105, planetsY: 55, poly: "30,30 130,30 130,130", signIdx: 1 },
+                          { numX: 20, numY: 100, planetsX: 60, planetsY: 82, poly: "30,30 30,130 130,130", signIdx: 2 },
+                          { numX: 20, numY: 170, planetsX: 68, planetsY: 165, poly: "130,130 130,230 30,180", signIdx: 3 },
+                          { numX: 20, numY: 250, planetsX: 60, planetsY: 252, poly: "30,230 30,330 130,330", signIdx: 4 },
+                          { numX: 102, numY: 350, planetsX: 105, planetsY: 282, poly: "130,230 130,330 30,330", signIdx: 5 },
+                          { numX: 180, numY: 350, planetsX: 180, planetsY: 235, poly: "130,230 230,230 180,330", signIdx: 6 },
+                          { numX: 258, numY: 350, planetsX: 255, planetsY: 282, poly: "230,230 230,330 330,330", signIdx: 7 },
+                          { numX: 340, numY: 250, planetsX: 305, planetsY: 252, poly: "330,230 330,330 230,330", signIdx: 8 },
+                          { numX: 340, numY: 170, planetsX: 292, planetsY: 165, poly: "230,130 230,230 330,180", signIdx: 9 },
+                          { numX: 258, numY: 20, planetsX: 255, planetsY: 55, poly: "230,30 330,30 230,130", signIdx: 11 },
+                          { numX: 340, numY: 100, planetsX: 300, planetsY: 82, poly: "330,30 230,130 330,130", signIdx: 10 }
                         ];
 
                         const lagnaIdx = reportState.summary.lagna_sign_index ?? 0;

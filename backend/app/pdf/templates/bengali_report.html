@@ -355,35 +355,35 @@
       <div class="col col-40" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
         {% if show_kundli is not defined or show_kundli %}
         <div class="svg-container">
-          <svg width="215" height="215" viewBox="0 0 300 300">
-            <rect x="0" y="0" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" stroke-width="2.5" rx="8"/>
+          <svg width="260" height="260" viewBox="0 0 360 360">
+            <rect x="30" y="30" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" stroke-width="2.5" rx="8"/>
             
-            <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" stroke-width="2"/>
-            <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" stroke-width="2"/>
-            <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" stroke-width="2"/>
-            <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" stroke-width="2"/>
+            <line x1="130" y1="30" x2="130" y2="330" stroke="#c084fc" stroke-width="2"/>
+            <line x1="230" y1="30" x2="230" y2="330" stroke="#c084fc" stroke-width="2"/>
+            <line x1="30" y1="130" x2="330" y2="130" stroke="#c084fc" stroke-width="2"/>
+            <line x1="30" y1="230" x2="330" y2="230" stroke="#c084fc" stroke-width="2"/>
 
-            <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" stroke-width="2"/>
-            <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" stroke-width="2"/>
-            <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" stroke-width="2"/>
-            <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" stroke-width="2"/>
+            <line x1="30" y1="30" x2="130" y2="130" stroke="#c084fc" stroke-width="2"/>
+            <line x1="330" y1="30" x2="230" y2="130" stroke="#c084fc" stroke-width="2"/>
+            <line x1="30" y1="330" x2="130" y2="230" stroke="#c084fc" stroke-width="2"/>
+            <line x1="330" y1="330" x2="230" y2="230" stroke="#c084fc" stroke-width="2"/>
 
-            <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
-            <text x="150" y="156" text-anchor="middle" font-size="18px" font-weight="900" fill="#581c87">রাশি চক্র</text>
+            <rect x="131" y="131" width="98" height="98" fill="#f3e8ff" stroke="none" />
+            <text x="180" y="186" text-anchor="middle" font-size="18px" font-weight="900" fill="#581c87">রাশি চক্র</text>
 
             {% set chart_positions = [
-              (150, 85, 150, 50, 0),
-              (78,  45, 65,  35, 1),
-              (22,  80, 30,  50, 2),
-              (50,  185, 60,  150, 3),
-              (22,  225, 45,  245, 4),
-              (78,  280, 65,  245, 5),
-              (150, 285, 150, 220, 6),
-              (222, 280, 235, 245, 7),
-              (278, 225, 255, 245, 8),
-              (250, 185, 240, 150, 9),
-              (222, 30,  245,  45, 11),
-              (278, 80,  255,  60, 10)
+              (180, 20,  180, 72,  0),
+              (102, 20,  105, 55,  1),
+              (20,  100, 60,  82,  2),
+              (20,  170, 68,  165, 3),
+              (20,  250, 60,  252, 4),
+              (102, 350, 105, 282, 5),
+              (180, 350, 180, 235, 6),
+              (258, 350, 255, 282, 7),
+              (340, 250, 305, 252, 8),
+              (340, 170, 292, 165, 9),
+              (258, 20,  255, 55,  11),
+              (340, 100, 300, 82,  10)
             ] %}
             {% for num_x, num_y, planets_x, planets_y, sign_idx in chart_positions %}
             {% set house = house_chart[sign_idx] %}
