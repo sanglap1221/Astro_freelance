@@ -878,8 +878,8 @@ def get_traditional_lucky_info(rashi_name: str, nakshatra_name: str) -> tuple[li
 # NAKSHATRA CALCULATION
 # ===========================================================================
 
-def _calc_nakshatra(moon_longitude: float) -> NakshatraResult:
-    """Calculate nakshatra from Moon's sidereal longitude using the hardcoded 0-based table."""
+def _calc_nakshatra(moon_longitude: float, rashi_index: int) -> NakshatraResult:
+    """Calculate nakshatra from Moon's sidereal longitude using the traditional 36-condition grid."""
     NAK_SPAN = 360.0 / 27.0          # 13.3333...°
     PADA_SPAN = NAK_SPAN / 4.0       # 3.3333...°
 
@@ -889,7 +889,7 @@ def _calc_nakshatra(moon_longitude: float) -> NakshatraResult:
 
     nak_name = NAKSHATRAS[idx]
     lord = NAKSHATRA_LORD_ORDER[idx % 9]
-    gana = get_gan(0, idx)
+    gana = get_gan(rashi_index, idx)
 
     # Traditional syllable lookup remains file-backed for now.
     all_syllables = get_traditional_syllables(nak_name)
@@ -1416,19 +1416,7 @@ def calculate_chart(
     rashi_si = moon.sign_index
 
     # --- Nakshatra from Moon ---
-    nakshatra = _calc_nakshatra(moon.longitude)
-    koshti_data = get_koshti_attributes(rashi_si, nakshatra.index)
-    nakshatra = NakshatraResult(
-        index=nakshatra.index,
-        name=nakshatra.name,
-        name_bn=nakshatra.name_bn,
-        pada=nakshatra.pada,
-        lord=nakshatra.lord,
-        gana=str(koshti_data["gan"]),
-        current_pada_syllable=nakshatra.current_pada_syllable,
-        all_nakshatra_syllables=nakshatra.all_nakshatra_syllables,
-        naam_akshara=nakshatra.naam_akshara,
-    )
+    nakshatra = _calc_nakshatra(moon.longitude, rashi_si)
 
     # --- Dasha ---
     balance_info, dasha_list = _calc_dasha(moon.longitude, dob)
