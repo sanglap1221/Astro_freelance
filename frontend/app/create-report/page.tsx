@@ -101,42 +101,48 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
 
   const houseLayout = [
     { numX: 180, numY: 20, planetsX: 180, planetsY: 72, poly: "130,130 230,130 180,30", signIdx: 0 },
-    { numX: 102, numY: 20, planetsX: 105, planetsY: 55, poly: "30,30 130,30 130,130", signIdx: 1 },
-    { numX: 20, numY: 100, planetsX: 60, planetsY: 82, poly: "30,30 30,130 130,130", signIdx: 2 },
+    { numX: 102, numY: 20, planetsX: 90, planetsY: 65, poly: "30,30 130,30 130,130", signIdx: 1 },
+    { numX: 20, numY: 100, planetsX: 70, planetsY: 95, poly: "30,30 30,130 130,130", signIdx: 2 },
     { numX: 20, numY: 170, planetsX: 68, planetsY: 165, poly: "130,130 130,230 30,180", signIdx: 3 },
-    { numX: 20, numY: 250, planetsX: 60, planetsY: 252, poly: "30,230 30,330 130,330", signIdx: 4 },
-    { numX: 102, numY: 350, planetsX: 105, planetsY: 282, poly: "130,230 130,330 30,330", signIdx: 5 },
-    { numX: 180, numY: 350, planetsX: 180, planetsY: 235, poly: "130,230 230,230 180,330", signIdx: 6 },
-    { numX: 258, numY: 350, planetsX: 255, planetsY: 282, poly: "230,230 230,330 330,330", signIdx: 7 },
-    { numX: 340, numY: 250, planetsX: 305, planetsY: 252, poly: "330,230 330,330 230,330", signIdx: 8 },
+    { numX: 20, numY: 250, planetsX: 70, planetsY: 265, poly: "30,230 30,330 130,230", signIdx: 4 },
+    { numX: 102, numY: 350, planetsX: 90, planetsY: 295, poly: "130,230 130,330 30,330", signIdx: 5 },
+    { numX: 180, numY: 350, planetsX: 180, planetsY: 288, poly: "130,230 230,230 180,330", signIdx: 6 },
+    { numX: 258, numY: 350, planetsX: 270, planetsY: 295, poly: "230,230 230,330 330,330", signIdx: 7 },
+    { numX: 340, numY: 250, planetsX: 290, planetsY: 265, poly: "230,230 330,230 330,330", signIdx: 8 },
     { numX: 340, numY: 170, planetsX: 292, planetsY: 165, poly: "230,130 230,230 330,180", signIdx: 9 },
-    { numX: 258, numY: 20, planetsX: 255, planetsY: 55, poly: "230,30 330,30 230,130", signIdx: 11 },
-    { numX: 340, numY: 100, planetsX: 300, planetsY: 82, poly: "330,30 230,130 330,130", signIdx: 10 }
+    { numX: 258, numY: 20, planetsX: 270, planetsY: 65, poly: "230,30 330,30 230,130", signIdx: 11 },
+    { numX: 340, numY: 100, planetsX: 290, planetsY: 95, poly: "330,30 230,130 330,130", signIdx: 10 }
   ];
 
-  const getGroupShift = (signIdx: number): { dx: number; dy: number } => {
+  const getLagnaCoords = (signIdx: number): { x: number; y: number } => {
     switch (signIdx) {
-      case 0: return { dx: 0, dy: -12 };
-      case 1: return { dx: 12, dy: -12 };
-      case 2: return { dx: -12, dy: 12 };
-      case 3: return { dx: 0, dy: -12 };
-      case 4: return { dx: 12, dy: 12 };
-      case 5: return { dx: 12, dy: 12 };
-      case 6: return { dx: 0, dy: -12 };
-      case 7: return { dx: -12, dy: 12 };
-      case 8: return { dx: 12, dy: -12 };
-      case 9: return { dx: 0, dy: -12 };
-      case 10: return { dx: -12, dy: 12 };
-      case 11: return { dx: 12, dy: -12 };
-      default: return { dx: 0, dy: 0 };
+      case 0: return { x: 155, y: 115 };
+      case 1: return { x: 115, y: 48 };
+      case 2: return { x: 48, y: 115 };
+      case 3: return { x: 110, y: 150 };
+      case 4: return { x: 48, y: 245 };
+      case 5: return { x: 115, y: 312 };
+      case 6: return { x: 205, y: 245 };
+      case 7: return { x: 245, y: 312 };
+      case 8: return { x: 312, y: 245 };
+      case 9: return { x: 250, y: 210 };
+      case 10: return { x: 312, y: 115 };
+      case 11: return { x: 245, y: 48 };
+      default: return { x: 180, y: 180 };
     }
   };
 
   houseLayout.forEach((layout) => {
-    const items: string[] = [];
     if (layout.signIdx === lagnaIdx) {
-      items.push("ল");
+      const nudge = state.planet_nudges?.["ল"] || { dx: 0, dy: 0 };
+      const base = getLagnaCoords(layout.signIdx);
+      coords["ল"] = {
+        x: base.x + nudge.dx,
+        y: base.y + nudge.dy
+      };
     }
+
+    const items: string[] = [];
     const house = state.house_chart[layout.signIdx];
     if (house && house.planets) {
       items.push(...house.planets);
@@ -153,9 +159,10 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
       let baseY = layout.planetsY;
 
       if (isCornerHouse) {
-        const maxShift = 18;
+        // Keep original diagonal slope method for corner houses
+        const maxShift = 24;
         const maxIndexOffset = (count - 1) * 0.5;
-        const idealStep = 13;
+        const idealStep = 16;
         const step = maxIndexOffset > 0 ? Math.min(idealStep, maxShift / maxIndexOffset) : idealStep;
 
         const indexOffset = idx - maxIndexOffset;
@@ -171,35 +178,39 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
       } else {
         const isDense = count >= 4;
         if (isDense) {
+          const colSpacing = 16;
+          const rowSpacing = 16;
           const cols = count >= 5 ? 3 : 2;
           const row = Math.floor(idx / cols);
           const col = idx % cols;
           const totalRows = Math.ceil(count / cols);
-          const colSpacing = 12;
-          const rowSpacing = 13;
           const startX = layout.planetsX - ((cols - 1) * colSpacing) / 2;
           const startY = layout.planetsY - ((totalRows - 1) * rowSpacing) / 2;
           baseX = startX + col * colSpacing;
           baseY = startY + row * rowSpacing;
         } else {
-          baseY = layout.planetsY + idx * 13 - ((count - 1) * 13) / 2;
+          // Top (0) & Bottom (6) use Vertical; Left (3) & Right (9) use Horizontal
+          const isHorizontal = [3, 9].includes(layout.signIdx);
+          const spacing = 16;
+          const offset = idx * spacing - ((count - 1) * spacing) / 2;
+          if (isHorizontal) {
+            baseX = layout.planetsX + offset;
+            baseY = layout.planetsY;
+          } else {
+            baseX = layout.planetsX;
+            baseY = layout.planetsY + offset;
+          }
         }
       }
 
       houseCoords.push({ name: itemName, x: baseX, y: baseY });
     });
 
-    const hasCollision = houseCoords.some(
-      (coord) => Math.abs(coord.x - layout.numX) < 22 && Math.abs(coord.y - layout.numY) < 16
-    );
-
-    const shift = hasCollision ? getGroupShift(layout.signIdx) : { dx: 0, dy: 0 };
-
     houseCoords.forEach((coord) => {
       const nudge = state.planet_nudges?.[coord.name] || { dx: 0, dy: 0 };
       coords[coord.name] = {
-        x: coord.x + shift.dx + nudge.dx,
-        y: coord.y + shift.dy + nudge.dy
+        x: coord.x + nudge.dx,
+        y: coord.y + nudge.dy
       };
     });
   });
@@ -1036,17 +1047,17 @@ export default function CreateReportPage() {
                       {(() => {
                         const houseLayout = [
                           { numX: 180, numY: 20, planetsX: 180, planetsY: 72, poly: "130,130 230,130 180,30", signIdx: 0 },
-                          { numX: 102, numY: 20, planetsX: 105, planetsY: 55, poly: "30,30 130,30 130,130", signIdx: 1 },
-                          { numX: 20, numY: 100, planetsX: 60, planetsY: 82, poly: "30,30 30,130 130,130", signIdx: 2 },
+                          { numX: 102, numY: 20, planetsX: 90, planetsY: 65, poly: "30,30 130,30 130,130", signIdx: 1 },
+                          { numX: 20, numY: 100, planetsX: 70, planetsY: 95, poly: "30,30 30,130 130,130", signIdx: 2 },
                           { numX: 20, numY: 170, planetsX: 68, planetsY: 165, poly: "130,130 130,230 30,180", signIdx: 3 },
-                          { numX: 20, numY: 250, planetsX: 60, planetsY: 252, poly: "30,230 30,330 130,330", signIdx: 4 },
-                          { numX: 102, numY: 350, planetsX: 105, planetsY: 282, poly: "130,230 130,330 30,330", signIdx: 5 },
-                          { numX: 180, numY: 350, planetsX: 180, planetsY: 235, poly: "130,230 230,230 180,330", signIdx: 6 },
-                          { numX: 258, numY: 350, planetsX: 255, planetsY: 282, poly: "230,230 230,330 330,330", signIdx: 7 },
-                          { numX: 340, numY: 250, planetsX: 305, planetsY: 252, poly: "330,230 330,330 230,330", signIdx: 8 },
+                          { numX: 20, numY: 250, planetsX: 70, planetsY: 265, poly: "30,230 30,330 130,230", signIdx: 4 },
+                          { numX: 102, numY: 350, planetsX: 90, planetsY: 295, poly: "130,230 130,330 30,330", signIdx: 5 },
+                          { numX: 180, numY: 350, planetsX: 180, planetsY: 288, poly: "130,230 230,230 180,330", signIdx: 6 },
+                          { numX: 258, numY: 350, planetsX: 270, planetsY: 295, poly: "230,230 230,330 330,330", signIdx: 7 },
+                          { numX: 340, numY: 250, planetsX: 290, planetsY: 265, poly: "230,230 330,230 330,330", signIdx: 8 },
                           { numX: 340, numY: 170, planetsX: 292, planetsY: 165, poly: "230,130 230,230 330,180", signIdx: 9 },
-                          { numX: 258, numY: 20, planetsX: 255, planetsY: 55, poly: "230,30 330,30 230,130", signIdx: 11 },
-                          { numX: 340, numY: 100, planetsX: 300, planetsY: 82, poly: "330,30 230,130 330,130", signIdx: 10 }
+                          { numX: 258, numY: 20, planetsX: 270, planetsY: 65, poly: "230,30 330,30 230,130", signIdx: 11 },
+                          { numX: 340, numY: 100, planetsX: 290, planetsY: 95, poly: "330,30 230,130 330,130", signIdx: 10 }
                         ];
 
                         const lagnaIdx = reportState.summary.lagna_sign_index ?? 0;
@@ -1092,8 +1103,8 @@ export default function CreateReportPage() {
                                   items.push(...house.planets);
                                 }
 
-                                const isDense = items.length >= 5;
-                                const textSize = isDense ? "text-[0.6875rem]" : "text-[0.8125rem]";
+                                 const isDense = items.length >= 5;
+                                 const textSize = isDense ? "text-[0.875rem]" : "text-[1rem]";
 
                                 return items.map((itemName, idx) => {
                                   const coords = finalCoords[itemName];

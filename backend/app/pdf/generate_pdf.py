@@ -281,6 +281,120 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     # 11. Formulate empty/dummy kundli_grid matching types
     kundli_grid = [[{"empty": True} for _ in range(4)] for _ in range(4)]
 
+    def calculate_planet_coords(lagna_sign_index: int, house_chart_list: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
+        house_layout = [
+            {"numX": 180, "numY": 20, "planetsX": 180, "planetsY": 72, "signIdx": 0},
+            {"numX": 102, "numY": 20, "planetsX": 90, "planetsY": 65, "signIdx": 1},
+            {"numX": 20, "numY": 100, "planetsX": 70, "planetsY": 95, "signIdx": 2},
+            {"numX": 20, "numY": 170, "planetsX": 68, "planetsY": 165, "signIdx": 3},
+            {"numX": 20, "numY": 250, "planetsX": 70, "planetsY": 265, "signIdx": 4},
+            {"numX": 102, "numY": 350, "planetsX": 90, "planetsY": 295, "signIdx": 5},
+            {"numX": 180, "numY": 350, "planetsX": 180, "planetsY": 288, "signIdx": 6},
+            {"numX": 258, "numY": 350, "planetsX": 270, "planetsY": 295, "signIdx": 7},
+            {"numX": 340, "numY": 250, "planetsX": 290, "planetsY": 265, "signIdx": 8},
+            {"numX": 340, "numY": 170, "planetsX": 292, "planetsY": 165, "signIdx": 9},
+            {"numX": 258, "numY": 20, "planetsX": 270, "planetsY": 65, "signIdx": 11},
+            {"numX": 340, "numY": 100, "planetsX": 290, "planetsY": 95, "signIdx": 10}
+        ]
+
+        def get_lagna_coords(sign_idx: int) -> dict[str, float]:
+            coords_map = {
+                0: {"x": 155, "y": 115},
+                1: {"x": 115, "y": 48},
+                2: {"x": 48, "y": 115},
+                3: {"x": 110, "y": 150},
+                4: {"x": 48, "y": 245},
+                5: {"x": 115, "y": 312},
+                6: {"x": 205, "y": 245},
+                7: {"x": 245, "y": 312},
+                8: {"x": 312, "y": 245},
+                9: {"x": 250, "y": 210},
+                10: {"x": 312, "y": 115},
+                11: {"x": 245, "y": 48}
+            }
+            return coords_map.get(sign_idx, {"x": 180, "y": 180})
+
+        coords_dict = {}
+        for layout in house_layout:
+            sign_idx = layout["signIdx"]
+            # 1. Separate lagna
+            if sign_idx == lagna_sign_index:
+                base = get_lagna_coords(sign_idx)
+                coords_dict["ল"] = {
+                    "x": base["x"],
+                    "y": base["y"]
+                }
+
+            # 2. Planets
+            items = []
+            house = house_chart_list[sign_idx]
+            if house and house.get("planets"):
+                items.extend(house["planets"])
+
+            if not items:
+                continue
+
+            count = len(items)
+            is_corner_house = sign_idx in [1, 2, 4, 5, 7, 8, 10, 11]
+            house_coords = []
+
+            for idx, item_name in enumerate(items):
+                base_x = layout["planetsX"]
+                base_y = layout["planetsY"]
+
+                if is_corner_house:
+                    max_shift = 24
+                    max_index_offset = (count - 1) * 0.5
+                    ideal_step = 16
+                    step = ideal_step
+                    if max_index_offset > 0:
+                        step = min(ideal_step, max_shift / max_index_offset)
+
+                    index_offset = idx - max_index_offset
+                    is_positive_slope = sign_idx in [1, 2, 7, 8]
+
+                    if is_positive_slope:
+                        base_x = layout["planetsX"] + index_offset * step
+                        base_y = layout["planetsY"] + index_offset * step
+                    else:
+                        base_x = layout["planetsX"] + index_offset * step
+                        base_y = layout["planetsY"] - index_offset * step
+                else:
+                    is_dense = count >= 4
+                    if is_dense:
+                        col_spacing = 16
+                        row_spacing = 16
+                        cols = 3 if count >= 5 else 2
+                        row = idx // cols
+                        col = idx % cols
+                        total_rows = (count + cols - 1) // cols
+                        start_x = layout["planetsX"] - ((cols - 1) * col_spacing) / 2
+                        start_y = layout["planetsY"] - ((total_rows - 1) * row_spacing) / 2
+                        base_x = start_x + col * col_spacing
+                        base_y = start_y + row * row_spacing
+                    else:
+                        # Top (0) & Bottom (6) use Vertical; Left (3) & Right (9) use Horizontal
+                        is_horizontal = sign_idx in [3, 9]
+                        spacing = 16
+                        offset = idx * spacing - (count - 1) * spacing / 2
+                        if is_horizontal:
+                            base_x = layout["planetsX"] + offset
+                            base_y = layout["planetsY"]
+                        else:
+                            base_x = layout["planetsX"]
+                            base_y = layout["planetsY"] + offset
+
+                house_coords.append({"name": item_name, "x": base_x, "y": base_y})
+
+            for coord in house_coords:
+                coords_dict[coord["name"]] = {
+                    "x": coord["x"],
+                    "y": coord["y"]
+                }
+        return coords_dict
+
+    planet_coords = calculate_planet_coords(chart.lagna_sign_index, house_chart)
+
     return {
         "report_no": report_no,
         "generated_at": generated_at,
@@ -294,6 +408,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "antardasha_list": antardasha_list,
         "antardasha_display_rows": current_antardashas,
         "current_antardashas": current_antardashas,
+        "planet_coords": planet_coords,
     }
 
 
