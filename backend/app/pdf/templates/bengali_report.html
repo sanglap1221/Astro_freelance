@@ -488,9 +488,6 @@
           {% if show_antardasha is not defined or show_antardasha %}
           <div class="dasha-title-box">
             বিংশোত্তরী অন্তর্দশা :
-            {% if antardasha_list %}
-            ({{ antardasha_list[0].major_bn }} মহাদশা)
-            {% endif %}
           </div>
           <table class="dasha-table">
             <thead>
@@ -501,16 +498,12 @@
               </tr>
             </thead>
             <tbody>
-              {# Single current mahadasha group with all 9 subperiods #}
-              {% for group in antardasha_list[:1] %}
-              {% for sub in group.subperiods %}
+              {% for row in antardasha_display_rows %}
               <tr>
-                <td>{{ group.major_bn | default(group.major_lord, true) }} / {{ sub.lord_bn | default(sub.lord, true) }}
-                </td>
-                <td>{{ sub.start | default('-', true) }}</td>
-                <td>{{ sub.end | default('-', true) }}</td>
+                <td>{{ row.major_bn }} / {{ row.lord_bn }}</td>
+                <td>{{ row.start | default('-', true) }}</td>
+                <td>{{ row.end | default('-', true) }}</td>
               </tr>
-              {% endfor %}
               {% endfor %}
             </tbody>
           </table>
