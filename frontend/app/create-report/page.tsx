@@ -218,6 +218,8 @@ export default function CreateReportPage() {
   const [error, setError] = useState("");
   const [showBirthDetails, setShowBirthDetails] = useState(true);
   const [selectedPlanet, setSelectedPlanet] = useState("");
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [popupMahadasha, setPopupMahadasha] = useState("");
 
   // Nudge the selected planet position
   const nudgeSelectedPlanet = (dx: number, dy: number) => {
@@ -317,12 +319,13 @@ export default function CreateReportPage() {
   }
 
   // Render the PDF from the current edited ReportState
-  async function handleRenderPdf() {
-    if (!reportState) return;
+  async function handleRenderPdf(overrideState?: ReportState) {
+    const activeState = overrideState || reportState;
+    if (!activeState) return;
     setRendering(true);
     setError("");
     try {
-      const requestPayload = buildRequestPayload(formValue, reportState);
+      const requestPayload = buildRequestPayload(formValue, activeState);
       const recalculatedState = await calculateReport(requestPayload);
 
       const activePlanetVal = activePlanet || (recalculatedState.dasha_list.find((d) => d.is_active)?.planet || recalculatedState.dasha_list[0].planet);
@@ -336,12 +339,12 @@ export default function CreateReportPage() {
         true_node: requestPayload.true_node ?? recalculatedState.true_node ?? true,
         planet_overrides: requestPayload.planet_overrides ?? buildPlanetOverrides(recalculatedState.shorthand_planets),
         antardasha_list: orderedAntardashas,
-        antardasha_display_rows: reportState.antardasha_display_rows,
-        show_kundli: reportState.show_kundli,
-        show_mahadasha: reportState.show_mahadasha,
-        show_antardasha: reportState.show_antardasha,
-        show_lucky_info: reportState.show_lucky_info,
-        planet_nudges: reportState.planet_nudges,
+        antardasha_display_rows: activeState.antardasha_display_rows,
+        show_kundli: activeState.show_kundli,
+        show_mahadasha: activeState.show_mahadasha,
+        show_antardasha: activeState.show_antardasha,
+        show_lucky_info: activeState.show_lucky_info,
+        planet_nudges: activeState.planet_nudges,
       };
 
       const planet_coords = calculatePlanetCoords(stateToRender);
@@ -416,10 +419,13 @@ export default function CreateReportPage() {
     if (!reportState) return;
     const nextRows = [...(reportState.antardasha_display_rows || [])];
     nextRows.splice(rowIdx, 1);
-    setReportState({
+    
+    const updatedState = {
       ...reportState,
       antardasha_display_rows: nextRows,
-    });
+    };
+    setReportState(updatedState);
+    handleRenderPdf(updatedState);
   };
 
   const updateAntardashaRowField = (rowIdx: number, field: "major_bn" | "lord_bn" | "start" | "end", val: string) => {
@@ -433,6 +439,38 @@ export default function CreateReportPage() {
       ...reportState,
       antardasha_display_rows: nextRows,
     });
+  };
+
+  const addSelectedAntardasha = (major_bn: string, lord_bn: string, start: string, end: string) => {
+    if (!reportState) return;
+    const newRow = {
+      major_bn: toBengaliDigits(major_bn),
+      lord_bn: toBengaliDigits(lord_bn),
+      start: toBengaliDigits(start),
+      end: toBengaliDigits(end),
+      major_lord: activePlanet,
+      lord: "",
+    };
+    
+    const nextRows = [...(reportState.antardasha_display_rows || []), newRow];
+    
+    // Sort nextRows by Start Date
+    const parseDateStr = (dateStr: string) => {
+      const cleanStr = toEnglishDigits(dateStr);
+      const parts = cleanStr.split(/[-.\/]/);
+      if (parts.length === 3) {
+        return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])).getTime();
+      }
+      return 0;
+    };
+    nextRows.sort((a, b) => parseDateStr(a.start) - parseDateStr(b.start));
+
+    const updatedState = {
+      ...reportState,
+      antardasha_display_rows: nextRows,
+    };
+    setReportState(updatedState);
+    handleRenderPdf(updatedState);
   };
 
   const updateShorthandPlanet = (planetName: string, field: "display" | "compact_indexed", val: string) => {
@@ -664,7 +702,7 @@ export default function CreateReportPage() {
           )}
           {reportState && (
             <button
-              onClick={handleRenderPdf}
+              onClick={() => handleRenderPdf()}
               disabled={rendering}
               id="btn-update-pdf"
               className="flex items-center gap-1.5 text-[0.6875rem] sm:text-xs font-semibold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg shadow-sm transition-all disabled:opacity-60 text-white"
@@ -1101,15 +1139,18 @@ export default function CreateReportPage() {
                               key={idx}
                               className={`cursor-pointer hover:bg-amber-50/40 transition-colors ${activePlanet === dasha.planet ? "font-bold text-slate-900" : "text-slate-700"}`}
                               style={activePlanet === dasha.planet ? { background: "rgba(255, 251, 235, 0.8)" } : {}}
-                              onClick={() => setActivePlanet(dasha.planet)}
+                              onClick={() => {
+                                setActivePlanet(dasha.planet);
+                                setPopupMahadasha(dasha.planet);
+                                setIsPopupOpen(true);
+                              }}
                             >
-                              <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
+                              <td className="px-1 py-1 text-center">
                                 <input type="radio" name="activeDasha" checked={activePlanet === dasha.planet} onChange={() => setActivePlanet(dasha.planet)}
                                   className="text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" />
                               </td>
-                              <td className="px-1 py-1">
-                                <input className="bg-transparent border-0 p-0 w-[3.5rem] font-medium focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
-                                  value={toEnglishDigits(dasha.planet_bn)} onChange={(e) => updateDashaField(idx, "planet_bn", e.target.value)} onClick={(e) => e.stopPropagation()} />
+                              <td className="px-1 py-1 font-semibold text-slate-800 text-[0.6875rem]">
+                                {toEnglishDigits(dasha.planet_bn)}
                               </td>
                               <td className="px-1 py-1 text-center">
                                 <input className="bg-transparent border-0 p-0 w-[2rem] text-center font-medium focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
@@ -1137,13 +1178,6 @@ export default function CreateReportPage() {
                         Antardasha: {toEnglishDigits(reportState.dasha_list.find((d) => d.planet === activePlanet)?.planet_bn || activePlanet)}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={addAntardashaRow}
-                          className="px-1.5 py-0.5 rounded text-[0.5625rem] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 transition-colors"
-                        >
-                          <i className="fa-solid fa-plus mr-0.5"></i> Add Row
-                        </button>
                         <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]">
                           <input type="checkbox" checked={!!reportState.show_antardasha} onChange={(e) => updateToggle("show_antardasha", e.target.checked)}
                             className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" style={{ borderColor: "#cbd5e1" }} />
@@ -1151,7 +1185,7 @@ export default function CreateReportPage() {
                         </label>
                       </div>
                     </div>
-                    <div className="overflow-x-auto select-none">
+                    <div className="overflow-x-auto select-none max-h-[240px] overflow-y-auto pr-0.5 scrollbar-thin">
                       <table className="min-w-full text-left text-[0.625rem]">
                         <thead>
                           <tr className="font-bold border-b" style={{ background: "#f8fafc", color: "#64748b", borderColor: "#e2e8f0" }}>
@@ -1168,39 +1202,21 @@ export default function CreateReportPage() {
                               return (
                                 <tr>
                                   <td colSpan={4} className="px-2 py-4 text-center text-slate-400 italic">
-                                    No antardasha rows available for the selected report date.
+                                    No antardasha rows available. Click on a Mahadasha row above to add subperiods.
                                   </td>
                                 </tr>
                               );
                             }
                             return displayRows.map((row, rowIdx) => (
-                              <tr key={rowIdx} className="hover:bg-amber-50/30">
-                                <td className="px-1 py-1 flex items-center gap-0.5">
-                                  <input
-                                    className="bg-transparent border-0 p-0 w-[2.2rem] font-semibold focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
-                                    value={toEnglishDigits(row.major_bn || "")}
-                                    onChange={(e) => updateAntardashaRowField(rowIdx, "major_bn", e.target.value)}
-                                  />
-                                  <span className="text-slate-400">/</span>
-                                  <input
-                                    className="bg-transparent border-0 p-0 w-[2.2rem] font-semibold focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
-                                    value={toEnglishDigits(row.lord_bn || "")}
-                                    onChange={(e) => updateAntardashaRowField(rowIdx, "lord_bn", e.target.value)}
-                                  />
+                              <tr key={rowIdx} className="hover:bg-amber-50/30 font-medium text-slate-700 animate-scale-up">
+                                <td className="px-1 py-1 font-bold text-slate-850">
+                                  {toEnglishDigits(row.major_bn)} / {toEnglishDigits(row.lord_bn)}
                                 </td>
                                 <td className="px-1 py-1">
-                                  <input
-                                    className="bg-transparent border-0 p-0 w-[4.5rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
-                                    value={toEnglishDigits(row.start || "")}
-                                    onChange={(e) => updateAntardashaRowField(rowIdx, "start", e.target.value)}
-                                  />
+                                  {toEnglishDigits(row.start || "")}
                                 </td>
                                 <td className="px-1 py-1">
-                                  <input
-                                    className="bg-transparent border-0 p-0 w-[4.5rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
-                                    value={toEnglishDigits(row.end || "")}
-                                    onChange={(e) => updateAntardashaRowField(rowIdx, "end", e.target.value)}
-                                  />
+                                  {toEnglishDigits(row.end || "")}
                                 </td>
                                 <td className="px-1 py-1 text-center">
                                   <button
@@ -1227,7 +1243,7 @@ export default function CreateReportPage() {
                     Modifications exist in local memory. Click update to compile PDF with current configurations.
                   </div>
                   <button
-                    onClick={handleRenderPdf}
+                    onClick={() => handleRenderPdf()}
                     disabled={rendering}
                     id="btn-update-pdf-bottom"
                     className="font-semibold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all disabled:opacity-60 flex items-center gap-1.5 text-white btn-press"
@@ -1370,6 +1386,103 @@ export default function CreateReportPage() {
           </section>
         </div>
       </div>
+
+      {/* Centered Modal Popup for Antardasha selection (Parivahan style) */}
+      {isPopupOpen && reportState && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in no-print">
+          <div className="w-full max-w-[480px] bg-[#fdfcf9] border-2 border-[#ebdcb9] rounded-2xl shadow-2xl p-5 relative flex flex-col animate-scale-up text-slate-800 max-h-[85vh] overflow-hidden">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsPopupOpen(false)}
+              className="absolute top-4 right-4 text-slate-450 hover:text-slate-650 transition-colors w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shadow-sm font-bold text-sm"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div className="text-center mb-4 pb-2.5 border-b border-[#ebdcb9]">
+              <span className="text-[0.625rem] font-bold uppercase tracking-widest block mb-0.5 text-amber-800">
+                Available Antardashas
+              </span>
+              <h3 className="text-xl font-extrabold text-[#800020] bengali-serif">
+                {toEnglishDigits(
+                  reportState.dasha_list.find((d) => d.planet === popupMahadasha)?.planet_bn || popupMahadasha
+                )}{" "}
+                মহাদশা
+              </h3>
+            </div>
+
+            {/* List scroll container */}
+            <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin space-y-2 max-h-[50vh] min-h-[150px]">
+              {(() => {
+                const group = reportState.antardasha_list.find(
+                  (g) => g.major_lord === popupMahadasha || g.major_bn === popupMahadasha
+                );
+                const subperiods = group ? group.subperiods : [];
+                
+                if (!subperiods.length) {
+                  return (
+                    <p className="text-center py-10 text-slate-400 italic text-xs">
+                      No calculated subperiods found for this planet.
+                    </p>
+                  );
+                }
+
+                return subperiods.map((sub, idx) => {
+                  const majorBn = group?.major_bn || popupMahadasha;
+                  const isAlreadyAdded = reportState.antardasha_display_rows?.some(
+                    (r) => r.major_bn === majorBn && r.lord_bn === sub.lord_bn
+                  );
+
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-white shadow-sm hover:border-amber-200 transition-all"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-slate-850 text-xs">
+                          {toEnglishDigits(majorBn)} / {toEnglishDigits(sub.lord_bn)}
+                        </span>
+                        <span className="text-[0.625rem] font-semibold text-slate-500">
+                          {toEnglishDigits(sub.start)} → {toEnglishDigits(sub.end)}
+                        </span>
+                      </div>
+                      
+                      {isAlreadyAdded ? (
+                        <span className="text-[0.5625rem] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-sm flex items-center gap-0.5 select-none">
+                          ✓ Added
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addSelectedAntardasha(majorBn, sub.lord_bn, sub.start, sub.end)
+                          }
+                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[0.625rem] font-bold rounded-lg border border-indigo-200 transition-all shadow-sm"
+                        >
+                          [+] Add
+                        </button>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsPopupOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200 shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
