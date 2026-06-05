@@ -61,10 +61,10 @@ export default function HomePage() {
         {/* Brand Typography */}
         <div className="space-y-2.5">
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-500 drop-shadow-sm font-sans uppercase">
-            Astro Freelance
+            Astro 
           </h1>
           <p className="text-xs sm:text-sm font-semibold tracking-widest text-amber-500/80 uppercase">
-            Kaka Babu&apos;s Digital Astrology Board
+            Sagar Ghosh&apos;s Digital Astrology Board
           </p>
         </div>
 

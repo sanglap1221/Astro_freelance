@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "Astro FreeLance Workspace — জীবন জিজ্ঞাসা",
+  title: "Astro Workspace — জীবন জিজ্ঞাসা",
   description: "Professional Astrological Report System — WYSIWYG Editor",
 };
 

@@ -224,6 +224,7 @@ export default function CreateReportPage() {
   const [compilationProgress, setCompilationProgress] = useState(0);
   const [compilationStatus, setCompilationStatus] = useState("");
   const [pollIntervalId, setPollIntervalId] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Nudge the selected planet position
   const nudgeSelectedPlanet = (dx: number, dy: number) => {
@@ -664,21 +665,21 @@ export default function CreateReportPage() {
      JSX — Premium "Astro Freelance Workspace" UI
      ═══════════════════════════════════════════════════════════════════ */
   return (
-    <main className="min-h-screen flex flex-col justify-start relative" style={{ fontFamily: "'Inter', 'Hind Siliguri', sans-serif", background: "#f7f5f0", color: "#334155" }}>
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Inter', 'Hind Siliguri', sans-serif", background: "#f7f5f0", color: "#334155" }}>
 
       {/* ── Background Decorative Mandalas ── */}
       <div className="absolute top-0 left-0 w-[30vw] h-[30vw] min-w-[15rem] min-h-[15rem] bg-amber-100 opacity-20 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-[30vw] h-[30vw] min-w-[15rem] min-h-[15rem] bg-red-100 opacity-20 rounded-full blur-3xl pointer-events-none translate-x-1/2 translate-y-1/2" />
 
       {/* ── Header / Branding ── */}
-      <header className="no-print w-full py-3 px-3 sm:px-6 border-b flex items-center justify-between shadow-sm z-30" style={{ borderColor: "#ebdcb9", background: "#fdfcf7" }}>
+      <header className="fixed top-0 left-0 right-0 no-print w-full py-3 px-3 sm:px-6 border-b flex items-center justify-between shadow-sm z-30 h-[65px]" style={{ borderColor: "#ebdcb9", background: "#fdfcf7" }}>
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md" style={{ background: "#92400e" }}>
             🕉️
           </div>
           <div>
-            <h1 className="text-sm sm:text-lg font-bold tracking-tight" style={{ color: "#1a365d" }}>Astro Freelance Workspace</h1>
-            <p className="hidden sm:block text-xs font-medium" style={{ color: "rgba(146, 64, 14, 0.8)" }}>Kaka Babu&apos;s Digital Astrology Board</p>
+            <h1 className="text-sm sm:text-lg font-bold tracking-tight" style={{ color: "#1a365d" }}>Astro Workspace</h1>
+            <p className="hidden sm:block text-xs font-medium" style={{ color: "rgba(146, 64, 14, 0.8)" }}>Sagar Ghosh&apos;s Digital Astrology Board</p>
           </div>
         </div>
 
@@ -709,7 +710,7 @@ export default function CreateReportPage() {
               onClick={() => handleRenderPdf()}
               disabled={rendering}
               id="btn-update-pdf"
-              className="flex items-center gap-1.5 text-[0.6875rem] sm:text-xs font-semibold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg shadow-sm transition-all disabled:opacity-60 text-white"
+              className="hidden md:flex items-center gap-1.5 text-[0.6875rem] sm:text-xs font-semibold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg shadow-sm transition-all disabled:opacity-60 text-white"
               style={{ background: "linear-gradient(135deg, #800020, #590219)" }}
             >
               {rendering && <LoadingSpinner />}
@@ -717,13 +718,77 @@ export default function CreateReportPage() {
               <span className="inline sm:hidden">{rendering ? "Updating..." : "Update"}</span>
             </button>
           )}
-          <div className="text-[0.6875rem] sm:text-xs font-semibold px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg flex items-center gap-2 border" style={{ background: "#fffbeb", color: "#78350f", borderColor: "#ebdcb9" }}>
-            <i className="fa-solid fa-circle text-emerald-500 animate-pulse" style={{ fontSize: "10px" }}></i>
-            <span className="hidden sm:inline">Active Session</span>
-            <span className="inline sm:hidden">Active</span>
-          </div>
+
+          {/* Mobile Actions 3-Dot Dropdown Menu */}
+          {reportState && (
+            <div className="relative md:hidden">
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="flex items-center justify-center w-9 h-9 rounded-lg border text-slate-700 bg-white hover:bg-slate-50 active:bg-slate-100 transition-colors shadow-sm"
+                style={{ borderColor: "#ebdcb9" }}
+                aria-label="Actions menu"
+                aria-expanded={isMobileMenuOpen}
+              >
+                <i className="fa-solid fa-ellipsis-vertical text-base"></i>
+              </button>
+
+              {isMobileMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40 bg-transparent"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 mt-2 w-52 rounded-xl border bg-white shadow-xl z-50 p-1.5 flex flex-col gap-1"
+                    style={{ borderColor: "#ebdcb9" }}
+                  >
+                    <Link
+                      href="/"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors"
+                      style={{ color: "#475569" }}
+                    >
+                      <i className="fa-solid fa-plus w-4 text-center text-slate-400"></i> New Report
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBirthDetails(!showBirthDetails);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors w-full text-left"
+                      style={{ color: "#475569" }}
+                    >
+                      <i className="fa-solid fa-user-pen w-4 text-center text-slate-400"></i> Edit Birth Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleRenderPdf();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      disabled={rendering}
+                      className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2.5 rounded-lg hover:bg-red-50/50 active:bg-red-50 transition-colors w-full text-left border-t border-slate-100 mt-1 pt-2"
+                      style={{ color: "#800020" }}
+                    >
+                      {rendering ? (
+                        <div className="w-4 flex justify-center"><LoadingSpinner /></div>
+                      ) : (
+                        <i className="fa-solid fa-arrows-rotate w-4 text-center text-[#800020]/75"></i>
+                      )}
+                      <span>Update &amp; Refresh</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </header>
+
+      {/* Spacer for fixed header */}
+      <div className="h-[65px] shrink-0 no-print" />
 
       {/* ── Error Banner ── */}
       {error && (
@@ -734,14 +799,9 @@ export default function CreateReportPage() {
       )}
 
       {/* ── MAIN INTERACTIVE FLOW ── */}
-      <div className="flex-1 flex flex-col relative w-full md:overflow-hidden">
-
-        {/* ═══ WORKSPACE (Two-column editor + preview) ═══ */}
-        <div
-          className="flex-1 w-full flex flex-col md:flex-row md:overflow-hidden transition-workspace"
-        >
-          {/* ── LEFT COLUMN: Interactive Visual Editor ── */}
-          <section className="w-full md:w-[46%] flex flex-col md:overflow-y-auto overflow-visible border-b md:border-b-0 md:border-r border-[#ebdcb9]" style={{ background: "white" }}>
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden h-auto lg:h-[calc(100vh-65px)]">
+        {/* ── LEFT COLUMN: Interactive Visual Editor ── */}
+        <section className="lg:col-span-5 flex flex-col overflow-y-auto border-r border-[#ebdcb9]" style={{ background: "white" }}>
 
             {/* Editor Header */}
             <div className="p-4 flex items-center justify-between no-print border-b" style={{ background: "rgba(255, 251, 235, 0.6)", borderColor: "#ebdcb9" }}>
@@ -1260,12 +1320,10 @@ export default function CreateReportPage() {
               </div>
             )}
           </section>
-
-          {/* ── RIGHT COLUMN: Live PDF Preview ── */}
-          <section className="w-full md:w-[54%] flex flex-col h-auto md:h-full md:overflow-y-auto overflow-visible items-center p-4 relative border-t md:border-t-0 md:border-l border-[#e2e8f0] bg-[#f1f5f9]">
-
+        {/* ── RIGHT COLUMN: Live PDF Preview ── */}
+        <section className="lg:col-span-7 flex flex-col h-full overflow-y-auto items-center p-4 relative bg-[#f1f5f9] border-l border-[#e2e8f0]">
             {/* Floating Controls Bar */}
-            <div className="w-full max-w-5xl rounded-xl shadow-md p-3 mb-4 flex items-center justify-between z-10 sticky top-0 no-print" style={{ background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(8px)", border: "1px solid #ebdcb9" }}>
+            <div className="w-full max-w-5xl rounded-xl shadow-md p-3 mb-4 flex items-center justify-between z-10 sticky top-[65px] lg:top-0 no-print" style={{ background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(8px)", border: "1px solid #ebdcb9" }}>
               <span className="text-xs font-bold text-slate-700 flex items-center gap-2">
                 <i className="fa-solid fa-file-pdf" style={{ color: "#800020" }}></i> Live Report Preview
               </span>
@@ -1402,7 +1460,7 @@ export default function CreateReportPage() {
             </div>
 
             {/* PDF Viewer */}
-            <div className="w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] h-[320mm]">
+            <div className={`w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] ${fullPdfUrl ? "h-[320mm]" : "flex-1 min-h-[350px] lg:min-h-0"}`}>
               {rendering && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-slate-600 gap-3">
                   <LoadingSpinner />
@@ -1425,10 +1483,9 @@ export default function CreateReportPage() {
               )}
             </div>
           </section>
-        </div>
-      </div>
+      </main>
 
-      {/* Centered Modal Popup for Antardasha selection (Parivahan style) */}
+      {/* ── Modals ── */}
       {isPopupOpen && reportState && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in no-print">
           <div className="w-full max-w-[480px] bg-[#fdfcf9] border-2 border-[#ebdcb9] rounded-2xl shadow-2xl p-5 relative flex flex-col animate-scale-up text-slate-800 max-h-[85vh] overflow-hidden">
@@ -1592,6 +1649,6 @@ export default function CreateReportPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
