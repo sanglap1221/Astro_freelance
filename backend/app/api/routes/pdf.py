@@ -16,6 +16,7 @@ pdf_statuses: dict[str, dict[str, Any]] = {}
 def compile_pdf_task(payload: dict[str, Any], report_id: str):
     from jinja2 import Environment, FileSystemLoader
     from pathlib import Path
+    # pyrefly: ignore [missing-import]
     from playwright.sync_api import sync_playwright
     import logging
 
@@ -56,10 +57,10 @@ def compile_pdf_task(payload: dict[str, Any], report_id: str):
                     format="A4",
                     print_background=True,
                     margin={
-                        "top": "10mm",
-                        "bottom": "10mm",
-                        "left": "10mm",
-                        "right": "10mm",
+                        "top": "0mm",
+                        "bottom": "0mm",
+                        "left": "0mm",
+                        "right": "0mm",
                     },
                 )
             finally:
@@ -200,4 +201,4 @@ def download_pdf(filename: str, name: str = None):
         headers=headers
     )
 
-
+
