@@ -7,8 +7,6 @@ import uuid
 from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader
-# pyrefly: ignore [missing-import]
-from playwright.sync_api import sync_playwright
 
 from app.astrology.calculations import (
     ZODIAC_SIGNS_BN,
@@ -315,28 +313,10 @@ def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> st
         filename = f"report_{uuid.uuid4().hex}.pdf"
     output_path = generated_dir / filename
 
-    # Compile HTML to PDF using Playwright sync API
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        try:
-            page = browser.new_page()
-            # Set HTML content and wait until network is idle (to download fonts)
-            page.set_content(html_content, wait_until="networkidle")
-            
-            # Print PDF
-            page.pdf(
-                path=str(output_path),
-                format="A4",
-                print_background=True,
-                margin={
-                    "top": "0mm",
-                    "bottom": "0mm",
-                    "left": "0mm",
-                    "right": "0mm",
-                },
-            )
-        finally:
-            browser.close()
+    # Compile HTML to PDF using WeasyPrint
+    # pyrefly: ignore [missing-import]
+    from weasyprint import HTML
+    HTML(string=html_content).write_pdf(target=str(output_path))
 
     return f"/generated/{filename}"
 
