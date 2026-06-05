@@ -1228,7 +1228,6 @@ export default function CreateReportPage() {
                       style={{ background: "#800020" }}
                       onClick={async (e) => {
                         e.preventDefault();
-                        if (!compiledPdfUrl) return;
 
                         const dobFormatted = formValue.dob
                           ? formValue.dob.split('-').reverse().join('.')
@@ -1236,6 +1235,19 @@ export default function CreateReportPage() {
                         const filename = dobFormatted
                           ? `${formValue.name} (${dobFormatted}).pdf`
                           : `${formValue.name}.pdf`;
+
+                        // If compiled PDF URL is missing or points to undefined (older backend), fall back to print
+                        if (!compiledPdfUrl || compiledPdfUrl.endsWith("undefined")) {
+                          const iframe = document.querySelector("iframe");
+                          if (iframe && iframe.contentWindow) {
+                            const originalTitle = document.title;
+                            document.title = filename.replace(".pdf", "");
+                            iframe.contentWindow.focus();
+                            iframe.contentWindow.print();
+                            setTimeout(() => { document.title = originalTitle; }, 1000);
+                          }
+                          return;
+                        }
 
                         setRendering(true);
                         try {
