@@ -8,6 +8,16 @@ import swisseph as swe
 # Add backend to path
 sys.path.append(r"d:\My Projects\Astro_FreeLance\backend")
 
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from app.astrology.bengali_date import gregorian_to_bengali, BENGALI_MONTHS_EN, BENGALI_MONTHS_BN
 from app.astrology.lagna_table import lookup_table_lagna
 from app.astrology.calculations import calculate_chart, ZODIAC_SIGNS, _load_ascendant_table, _lookup_time_table_value

@@ -10,6 +10,16 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from app.astrology.calculations import ZODIAC_SIGNS_BN, calculate_chart
 from app.pdf.generate_pdf import build_report_context, generate_pdf_report
 from app.schemas import PdfRequest

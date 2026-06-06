@@ -16,8 +16,7 @@ pdf_statuses: dict[str, dict[str, Any]] = {}
 def compile_pdf_task(payload: dict[str, Any], report_id: str):
     from jinja2 import Environment, FileSystemLoader
     from pathlib import Path
-    # pyrefly: ignore [missing-import]
-    from weasyprint import HTML
+    from playwright.sync_api import sync_playwright
     import logging
 
     logger = logging.getLogger("astro_app.pdf_task")
@@ -40,10 +39,21 @@ def compile_pdf_task(payload: dict[str, Any], report_id: str):
         generated_dir.mkdir(exist_ok=True)
         output_path = generated_dir / filename
         
-        # Stage 3: Render to PDF using WeasyPrint (Progress 75)
+        # Stage 3: Render to PDF using Playwright (Progress 75)
         pdf_statuses[report_id] = {"status": "compiling", "progress": 75}
         
-        HTML(string=html_content).write_pdf(target=str(output_path))
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.set_content(html_content)
+            page.wait_for_load_state("networkidle")
+            page.pdf(
+                path=str(output_path),
+                format="A4",
+                print_background=True,
+                margin={"top": "0", "right": "0", "bottom": "0", "left": "0"}
+            )
+            browser.close()
                 
         # Stage 4: Ready (Progress 100)
         pdf_statuses[report_id] = {"status": "ready", "progress": 100}

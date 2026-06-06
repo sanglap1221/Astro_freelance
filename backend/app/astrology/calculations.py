@@ -736,14 +736,13 @@ def _lookup_time_table_value(table: dict[str, float], target_minutes: float) -> 
     return timeline[-1][1]
 
 
-def calculate_book_lagna(utc_dt: datetime, latitude: float, longitude: float) -> float:
-    """Calculate Lagna using the Lahiri ascendant tables and local sidereal time."""
-    jd = swe.julday(
-        utc_dt.year,
-        utc_dt.month,
-        utc_dt.day,
-        utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0,
-    )
+def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
+    """Calculate Lagna safely using absolute astronomical Julian Day.
+
+    Accepts the pre-computed Julian Day directly instead of a datetime,
+    avoiding timezone/date-shift bugs that occur when extracting .day
+    from a shifted UTC datetime object.
+    """
     # Pure sidereal-time approximation from Julian Day; avoids relying on Swiss houses.
     t = (jd - 2451545.0) / 36525.0
     gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * (t ** 2) - (t ** 3) / 38710000.0
@@ -1356,7 +1355,7 @@ def calculate_chart(
     ))
 
     # --- Lagna (Ascendant) — Lahiri ascendant tables ---
-    asc_lon = calculate_book_lagna(utc_dt, location.latitude, location.longitude)
+    asc_lon = calculate_book_lagna(jd, location.latitude, location.longitude)
     if override_ascendant_longitude is not None:
         asc_lon = _normalize(override_ascendant_longitude)
     lagna_si = _sign_index(asc_lon)

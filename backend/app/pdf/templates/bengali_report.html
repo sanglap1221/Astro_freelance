@@ -201,14 +201,14 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 13px;
-      margin-top: 2px;
+      font-size: 12px; /* Adjusted slightly to guarantee 1-page bounds */
+      margin-top: 1px;
     }
 
     .dasha-table td,
     .dasha-table th {
       border: 1px solid var(--border-color);
-      padding: 2px 3px;
+      padding: 1.5px 3px; /* Tighter padding for vertical conservation */
       vertical-align: top;
       line-height: 1.05;
     }
@@ -260,6 +260,59 @@
       display: inline-block;
       font-weight: 600;
       color: #333;
+    }
+
+    .remedy-section {
+      width: 100%;
+      border-top: 1.5px solid var(--border-color);
+      padding: 8px 10px;
+      background: #ffffff;
+    }
+
+    .remedy-main-title {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--brand-red);
+      margin-bottom: 2px;
+      letter-spacing: 1px;
+    }
+
+    .remedy-sub-title {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand-blue);
+      margin-bottom: 6px;
+    }
+
+    .remedy-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .remedy-grid-table th, 
+    .remedy-grid-table td {
+      border: 1px solid var(--border-color);
+      padding: 3px 6px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .remedy-grid-table th {
+      background-color: #f8fafc;
+      font-weight: 700;
+      color: var(--ink-black);
+    }
+
+    .remedy-footer-note {
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #475569;
+      margin-top: 5px;
+      font-style: italic;
     }
   </style>
 </head>
@@ -516,6 +569,33 @@
           {% endif %}
         </div>
       </div>
+
+      <div class="remedy-section">
+        <div class="remedy-main-title">-ঃ প্রতিকার ঃ-</div>
+        <div class="remedy-sub-title">-ঃ গ্রহরত্ন, শিকড় ও ধাতু ঃ-</div>
+        
+        <table class="remedy-grid-table">
+          <thead>
+            <tr>
+              <th style="width: 7%; text-anchor: center;">নং</th>
+              <th style="width: 53%;">গ্রহরত্ন (Gemstones)</th>
+              <th style="width: 40%;">শিকড় + ধাতু (Roots & Metals)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in remedies_list %}
+            <tr>
+              <td style="text-align: center; font-weight: bold;">{{ item.id }}।</td>
+              <td>{{ item.gemstone }}</td>
+              <td>{{ item.remedy_root }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        <div class="remedy-footer-note">** ধাতু ও শ্বেতচন্দন পাল্টানোর প্রয়োজন নেই **</div>
+      </div>
+
     </div>
   </div>
 </body>

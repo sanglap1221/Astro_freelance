@@ -395,6 +395,21 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
 
     planet_coords = calculate_planet_coords(chart.lagna_sign_index, house_chart)
 
+    # 12. Formulate Remedial Measures (প্রতিকার : গ্রহরত্ন, শিকড় ও ধাতু)
+    # Extracted directly from the traditional hand-written reference sheet
+    remedies = [
+        {"id": "১", "gemstone": "সহহলে নীলা - ৫/৬ রতি / নাহলে এমিথিস্ট - ২৪/২৫ রতি", "remedy_root": "শ্বেতবেড়ালা + সীসা"},
+        {"id": "২", "gemstone": "হীরে - ৪০/৪৫ সেন্ট * অথবা সাদাপলা - ১৮/২০ রতি", "remedy_root": "রামবাসক + প্ল্যাটিনাম"},
+        {"id": "৩", "gemstone": "পান্না - ৫/৬ রতি", "remedy_root": "বৃদ্ধদারক + সোনা"},
+        {"id": "৪", "gemstone": "পোখরাজ - ৫/৬ রতি", "remedy_root": "বামনহাটি + সোনা"},
+        {"id": "৫", "gemstone": "লালপলা - ১০/১১ রতি", "remedy_root": "অনন্তমূল + তামা"},
+        {"id": "৬", "gemstone": "মুক্ত - ৭/৮ রতি", "remedy_root": "ক্ষীরিকা + রূপো"},
+        {"id": "৭", "gemstone": "চুনী - ৫/৬ রতি", "remedy_root": "বিল্বমূল + তামা"},
+        {"id": "৮", "gemstone": "ক্যাটসআই - ৩/৪ রতি", "remedy_root": "অশ্বগন্ধা + রাং"},
+        {"id": "৯", "gemstone": "গোমেদ - ৭/৮ রতি", "remedy_root": "শ্বেতচন্দন + লোহা"}
+    ]
+
+    # Append these new arrays directly to the context dictionary object
     return {
         "report_no": report_no,
         "generated_at": generated_at,
@@ -409,7 +424,9 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "antardasha_display_rows": current_antardashas,
         "current_antardashas": current_antardashas,
         "planet_coords": planet_coords,
+        "remedies_list": remedies,  # Added fields
     }
+
 
 
 def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> str:
@@ -428,10 +445,20 @@ def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> st
         filename = f"report_{uuid.uuid4().hex}.pdf"
     output_path = generated_dir / filename
 
-    # Compile HTML to PDF using WeasyPrint
-    # pyrefly: ignore [missing-import]
-    from weasyprint import HTML
-    HTML(string=html_content).write_pdf(target=str(output_path))
+    # Compile HTML to PDF using Playwright
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.set_content(html_content)
+        page.wait_for_load_state("networkidle")
+        page.pdf(
+            path=str(output_path),
+            format="A4",
+            print_background=True,
+            margin={"top": "0", "right": "0", "bottom": "0", "left": "0"}
+        )
+        browser.close()
 
     return f"/generated/{filename}"
 
