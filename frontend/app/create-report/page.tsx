@@ -341,30 +341,11 @@ export default function CreateReportPage() {
     setRendering(true);
     setError("");
     try {
-      const requestPayload = buildRequestPayload(formValue, activeState);
-      const recalculatedState = await calculateReport(requestPayload);
-
-      const activePlanetVal = activePlanet || (recalculatedState.dasha_list.find((d) => d.is_active)?.planet || recalculatedState.dasha_list[0].planet);
-      const orderedAntardashas = [
-        ...recalculatedState.antardasha_list.filter((g) => groupKey(g) === activePlanetVal),
-        ...recalculatedState.antardasha_list.filter((g) => groupKey(g) !== activePlanetVal),
-      ];
-
+      const planet_coords = calculatePlanetCoords(activeState);
       const stateToRender: ReportState = {
-        ...recalculatedState,
-        true_node: requestPayload.true_node ?? recalculatedState.true_node ?? true,
-        planet_overrides: requestPayload.planet_overrides ?? buildPlanetOverrides(recalculatedState.shorthand_planets),
-        antardasha_list: orderedAntardashas,
-        antardasha_display_rows: activeState.antardasha_display_rows,
-        show_kundli: activeState.show_kundli,
-        show_mahadasha: activeState.show_mahadasha,
-        show_antardasha: activeState.show_antardasha,
-        show_lucky_info: activeState.show_lucky_info,
-        planet_nudges: activeState.planet_nudges,
+        ...activeState,
+        planet_coords: planet_coords,
       };
-
-      const planet_coords = calculatePlanetCoords(stateToRender);
-      stateToRender.planet_coords = planet_coords;
 
       setReportState(stateToRender);
 
@@ -1022,42 +1003,39 @@ export default function CreateReportPage() {
 
                   {/* Rashi Chakra SVG — 100% IDENTICAL LOGIC */}
                   <div className={`transition-opacity duration-200 ${!reportState.show_kundli ? "opacity-30" : ""}`}>
-                    <svg viewBox="0 0 360 360" className="w-full max-w-[17rem] aspect-square stroke-slate-700 rounded-lg shadow-sm mx-auto" style={{ background: "#faf5ff", border: "1px solid #e2e8f0" }}>
-                      {/* Outer Border */}
-                      <rect x="30" y="30" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" strokeWidth="2.5" rx="8" />
-
+                    <svg viewBox="0 0 300 300" className="w-full max-w-[17rem] aspect-square stroke-slate-700 mx-auto" style={{ background: "#faf5ff", overflow: "visible" }}>
                       {/* Grid Lines */}
-                      <line x1="130" y1="30" x2="130" y2="330" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="230" y1="30" x2="230" y2="330" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="30" y1="130" x2="330" y2="130" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="30" y1="230" x2="330" y2="230" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="100" y1="0"   x2="100" y2="300" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="200" y1="0"   x2="200" y2="300" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0"   y1="100" x2="300" y2="100" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0"   y1="200" x2="300" y2="200" stroke="#c084fc" strokeWidth="2" />
 
                       {/* Diagonals */}
-                      <line x1="30" y1="30" x2="130" y2="130" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="330" y1="30" x2="230" y2="130" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="30" y1="330" x2="130" y2="230" stroke="#c084fc" strokeWidth="2" />
-                      <line x1="330" y1="330" x2="230" y2="230" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0"   y1="0"   x2="100" y2="100" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="300" y1="0"   x2="200" y2="100" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="0"   y1="300" x2="100" y2="200" stroke="#c084fc" strokeWidth="2" />
+                      <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" strokeWidth="2" />
 
                       {/* Center Square decoration */}
-                      <rect x="131" y="131" width="98" height="98" fill="#f3e8ff" stroke="none" />
-                      <text x="180" y="185" textAnchor="middle" stroke="none" className="text-[0.75rem] font-black fill-purple-900 tracking-wider select-none">
+                      <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
+                      <text x="150" y="156" textAnchor="middle" stroke="none" className="text-[0.75rem] font-black fill-purple-900 tracking-wider select-none">
                         রাশি চক্র
                       </text>
 
                       {(() => {
                         const houseLayout = [
-                          { numX: 180, numY: 20, planetsX: 180, planetsY: 72, poly: "130,130 230,130 180,30", signIdx: 0 },
-                          { numX: 102, numY: 20, planetsX: 90, planetsY: 65, poly: "30,30 130,30 130,130", signIdx: 1 },
-                          { numX: 20, numY: 100, planetsX: 70, planetsY: 95, poly: "30,30 30,130 130,130", signIdx: 2 },
-                          { numX: 20, numY: 170, planetsX: 68, planetsY: 165, poly: "130,130 130,230 30,180", signIdx: 3 },
-                          { numX: 20, numY: 250, planetsX: 70, planetsY: 265, poly: "30,230 30,330 130,230", signIdx: 4 },
-                          { numX: 102, numY: 350, planetsX: 90, planetsY: 295, poly: "130,230 130,330 30,330", signIdx: 5 },
-                          { numX: 180, numY: 350, planetsX: 180, planetsY: 288, poly: "130,230 230,230 180,330", signIdx: 6 },
-                          { numX: 258, numY: 350, planetsX: 270, planetsY: 295, poly: "230,230 230,330 330,330", signIdx: 7 },
-                          { numX: 340, numY: 250, planetsX: 290, planetsY: 265, poly: "230,230 330,230 330,330", signIdx: 8 },
-                          { numX: 340, numY: 170, planetsX: 292, planetsY: 165, poly: "230,130 230,230 330,180", signIdx: 9 },
-                          { numX: 258, numY: 20, planetsX: 270, planetsY: 65, poly: "230,30 330,30 230,130", signIdx: 11 },
-                          { numX: 340, numY: 100, planetsX: 290, planetsY: 95, poly: "330,30 230,130 330,130", signIdx: 10 }
+                          { numX: 150, numY: -8, planetsX: 150, planetsY: 42, poly: "100,100 200,100 150,0", signIdx: 0 },
+                          { numX: 72,  numY: -8, planetsX: 75,  planetsY: 25, poly: "0,0 100,0 100,100", signIdx: 1 },
+                          { numX: -10, numY: 70, planetsX: 30,  planetsY: 52, poly: "0,0 0,100 100,100", signIdx: 2 },
+                          { numX: -10, numY: 140, planetsX: 38,  planetsY: 135, poly: "100,100 100,200 0,150", signIdx: 3 },
+                          { numX: -10, numY: 220, planetsX: 30,  planetsY: 222, poly: "0,200 0,300 100,200", signIdx: 4 },
+                          { numX: 72,  numY: 318, planetsX: 75,  planetsY: 252, poly: "100,200 100,300 0,300", signIdx: 5 },
+                          { numX: 150, numY: 318, planetsX: 150, planetsY: 205, poly: "100,200 200,200 150,300", signIdx: 6 },
+                          { numX: 228, numY: 318, planetsX: 225, planetsY: 252, poly: "200,200 200,300 300,300", signIdx: 7 },
+                          { numX: 310, numY: 220, planetsX: 275, planetsY: 222, poly: "200,200 300,200 300,300", signIdx: 8 },
+                          { numX: 310, numY: 140, planetsX: 262, planetsY: 135, poly: "200,100 200,200 300,150", signIdx: 9 },
+                          {numX: 228, numY: -8,  planetsX: 225, planetsY: 25, poly: "200,0 300,0 200,100", signIdx: 11},
+                          {numX: 310, numY: 70,  planetsX: 270, planetsY: 52, poly: "300,0 200,100 300,100", signIdx: 10}
                         ];
 
                         const lagnaIdx = reportState.summary.lagna_sign_index ?? 0;
@@ -1103,8 +1081,8 @@ export default function CreateReportPage() {
                                   items.push(...house.planets);
                                 }
 
-                                 const isDense = items.length >= 5;
-                                 const textSize = isDense ? "text-[0.875rem]" : "text-[1rem]";
+                                const isDense = items.length >= 4;
+                                const textSize = isDense ? "text-[0.6875rem]" : "text-[0.84375rem]";
 
                                 return items.map((itemName, idx) => {
                                   const coords = finalCoords[itemName];
@@ -1120,10 +1098,10 @@ export default function CreateReportPage() {
                                       textAnchor="middle"
                                       stroke="none"
                                       className={isLagna ? (
-                                        `${textSize} font-normal cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-red-600 hover:fill-red-500"
+                                        `${textSize} font-bold cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-red-600 hover:fill-red-500"
                                         }`
                                       ) : (
-                                        `${textSize} font-black cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-indigo-950 hover:fill-indigo-650"
+                                        `${textSize} font-extrabold tracking-[-0.5px] cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-indigo-950 hover:fill-indigo-950/80"
                                         }`
                                       )}
                                       onClick={(e) => {

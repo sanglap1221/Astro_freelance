@@ -170,9 +170,11 @@
     }
 
     .chart-planet {
-      font-size: 16px;
+      font-size: 13.5px;
+      /* Scaled down slightly from 16px to fit "কে ২৫" perfectly */
       fill: #1e1b4b;
-      font-weight: 900;
+      font-weight: 800;
+      letter-spacing: -0.5px;
     }
 
     .chart-lagna {
@@ -186,6 +188,11 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: visible;
+    }
+
+    svg {
+      overflow: visible;
     }
 
     .dasha-title-box {
@@ -201,14 +208,16 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 12px; /* Adjusted slightly to guarantee 1-page bounds */
+      font-size: 12px;
+      /* Adjusted slightly to guarantee 1-page bounds */
       margin-top: 1px;
     }
 
     .dasha-table td,
     .dasha-table th {
       border: 1px solid var(--border-color);
-      padding: 1.5px 3px; /* Tighter padding for vertical conservation */
+      padding: 1.5px 3px;
+      /* Tighter padding for vertical conservation */
       vertical-align: top;
       line-height: 1.05;
     }
@@ -292,7 +301,7 @@
       font-size: 12px;
     }
 
-    .remedy-grid-table th, 
+    .remedy-grid-table th,
     .remedy-grid-table td {
       border: 1px solid var(--border-color);
       padding: 3px 6px;
@@ -323,6 +332,7 @@
   {% set gan = astrology.gan or '-' %}
   {% set varna = astrology.varna or '-' %}
   {% set subho_bar = astrology.shubh_bar or '-' %}
+  {% set ashubh_bar = astrology.ashubh_bar or '-' %}
   {% set subho_rong = astrology.shubh_rong or '-' %}
   {% set subho_sonkha = astrology.shubh_sonkha or '-' %}
   {% set namer_adokkhyor = astrology.namer_adokkhyor or '-' %}
@@ -395,104 +405,114 @@
           <div class="shorthand-line">
             <span class="pl-name">{{ item.short }}</span>
             <span class="pl-colon">:</span>
-          <span class="pl-val">
-            {{ item.compact_indexed }}
-            {% if item.is_retrograde %}(ব){% endif %}
-            {% if item.is_combust %}(অ){% endif %}
-          </span>
+            <span class="pl-val">
+              {{ item.compact_indexed }}
+              {% if item.is_retrograde %}(ব){% endif %}
+              {% if item.is_combust %}(অ){% endif %}
+            </span>
           </div>
           {% endfor %}
+
+          <div class="shorthand-line" style="margin-top: 10px; color: var(--brand-red);">
+            <span class="pl-name" style="color: var(--brand-red);">লগ্ন</span>
+            <span class="pl-colon" style="color: var(--brand-red);">:</span>
+            <span class="pl-val" style="color: var(--brand-red); font-weight: bold;">{{ lagna_compact_indexed }}</span>
+          </div>
         </div>
 
-      <!-- Centre: Rashi Chakra (North-Indian diamond) -->
-      <div class="col col-40" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        {% if show_kundli is not defined or show_kundli %}
-        <div class="svg-container">
-          <svg width="260" height="260" viewBox="0 0 360 360">
-            <rect x="30" y="30" width="300" height="300" fill="#faf5ff" stroke="#a78bfa" stroke-width="2.5" rx="8"/>
-            
-            <line x1="130" y1="30" x2="130" y2="330" stroke="#c084fc" stroke-width="2"/>
-            <line x1="230" y1="30" x2="230" y2="330" stroke="#c084fc" stroke-width="2"/>
-            <line x1="30" y1="130" x2="330" y2="130" stroke="#c084fc" stroke-width="2"/>
-            <line x1="30" y1="230" x2="330" y2="230" stroke="#c084fc" stroke-width="2"/>
+        <!-- Centre: Rashi Chakra (North-Indian diamond) -->
+        <div class="col col-40"
+          style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+          {% if show_kundli is not defined or show_kundli %}
+          <div class="svg-container">
+            <svg width="270" height="270" viewBox="0 0 300 300">
 
-            <line x1="30" y1="30" x2="130" y2="130" stroke="#c084fc" stroke-width="2"/>
-            <line x1="330" y1="30" x2="230" y2="130" stroke="#c084fc" stroke-width="2"/>
-            <line x1="30" y1="330" x2="130" y2="230" stroke="#c084fc" stroke-width="2"/>
-            <line x1="330" y1="330" x2="230" y2="230" stroke="#c084fc" stroke-width="2"/>
+              <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" stroke-width="2" />
+              <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" stroke-width="2" />
+              <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" stroke-width="2" />
+              <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" stroke-width="2" />
 
-            <rect x="131" y="131" width="98" height="98" fill="#f3e8ff" stroke="none" />
-            <text x="180" y="186" text-anchor="middle" font-size="18px" font-weight="900" fill="#581c87">রাশি চক্র</text>
+              <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" stroke-width="2" />
+              <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" stroke-width="2" />
+              <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" stroke-width="2" />
+              <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" stroke-width="2" />
 
-            {% set chart_positions = [
-              (180, 20,  180, 72,  0),
-              (102, 20,  90,  65,  1),
-              (20,  100, 70,  95,  2),
-              (20,  170, 68,  165, 3),
-              (20,  250, 70,  265, 4),
-              (102, 350, 90,  295, 5),
-              (180, 350, 180, 288, 6),
-              (258, 350, 270, 295, 7),
-              (340, 250, 290, 265, 8),
-              (340, 170, 292, 165, 9),
-              (258, 20,  270, 65,  11),
-              (340, 100, 290, 95,  10)
-            ] %}
-            {% for num_x, num_y, planets_x, planets_y, sign_idx in chart_positions %}
-            {% set house = house_chart[sign_idx] %}
-            
-            {% set raw_house_number = ((sign_idx - summary.lagna_sign_index) % 12) + 1 %}
-            {% set bangla_digits = {'1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯', '10':'১০', '11':'১১', '12':'১২'} %}
-            {% set current_house_bn = bangla_digits[raw_house_number|string] %}
-            
-            <text x="{{ num_x }}" y="{{ num_y }}" text-anchor="middle" class="chart-house-number">{{ current_house_bn }}</text>
-            
-            {% if sign_idx == summary.lagna_sign_index %}
+              <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
+              <text x="150" y="156" text-anchor="middle" font-size="18px" font-weight="900" fill="#581c87">রাশি
+                চক্র</text>
+
+              {% set chart_positions = [
+              (150, -8, 150, 42, 0),
+              (72, -8, 75, 25, 1),
+              (-10, 70, 30, 52, 2),
+              (-10, 140, 38, 135, 3),
+              (-10, 220, 30, 222, 4),
+              (72, 318, 75, 252, 5),
+              (150, 318, 150, 205, 6),
+              (228, 318, 225, 252, 7),
+              (310, 220, 275, 222, 8),
+              (310, 140, 262, 135, 9),
+              (310, 70, 270, 52, 10),
+              (228, -8, 225, 25, 11)
+              ] %}
+              {% for num_x, num_y, planets_x, planets_y, sign_idx in chart_positions %}
+              {% set house = house_chart[sign_idx] %}
+
+              {% set raw_house_number = ((sign_idx - summary.lagna_sign_index) % 12) + 1 %}
+              {% set bangla_digits = {'1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯',
+              '10':'১০', '11':'১১', '12':'১২'} %}
+              {% set current_house_bn = bangla_digits[raw_house_number|string] %}
+
+              <text x="{{ num_x }}" y="{{ num_y }}" text-anchor="middle" class="chart-house-number"
+                style="fill: #7c3aed; font-weight: 800;">{{ current_house_bn }}</text>
+
+              {% if sign_idx == summary.lagna_sign_index %}
               {% if planet_coords and planet_coords['ল'] %}
-                <text x="{{ planet_coords['ল'].x }}" y="{{ planet_coords['ল'].y }}" text-anchor="middle" class="chart-lagna">ল</text>
+              <text x="{{ planet_coords['ল'].x }}" y="{{ planet_coords['ল'].y }}" text-anchor="middle"
+                class="chart-lagna">ল</text>
               {% else %}
-                <text x="{{ planets_x }}" y="{{ planets_y }}" text-anchor="middle" class="chart-lagna">ল</text>
+              <text x="{{ planets_x }}" y="{{ planets_y - 8 }}" text-anchor="middle" class="chart-lagna"
+                style="fill: #d32f2f; font-weight: bold; font-size: 15px;">ল</text>
               {% endif %}
-            {% endif %}
-            
-            {% if house.planets %}
+              {% endif %}
+
+              {% if house.planets %}
+              {% set base_y = planets_y - 4 if house.planets|length >= 4 else planets_y + (12 if sign_idx ==
+              summary.lagna_sign_index else 0) %}
               {% for planet_name in house.planets %}
-                {% if planet_coords and planet_coords[planet_name] %}
-                  <text x="{{ planet_coords[planet_name].x }}" y="{{ planet_coords[planet_name].y }}" text-anchor="middle" class="chart-planet">{{ planet_name }}</text>
-                {% else %}
-                  {# Fallback layout calculation if no frontend coords are passed #}
-                  {% if house.planets|length >= 4 %}
-                    {% set offset_index = loop.index0 %}
-                    {% if sign_idx == summary.lagna_sign_index %}
-                      {% set offset_index = loop.index0 + 1 %}
-                    {% endif %}
-                    {% if offset_index % 2 == 0 %}
-                      <text x="{{ planets_x - 12 }}" y="{{ (planets_y - 4) + (offset_index // 2) * 14 }}" text-anchor="middle" class="chart-planet">{{ planet_name }}</text>
-                    {% else %}
-                      <text x="{{ planets_x + 12 }}" y="{{ (planets_y - 4) + (offset_index // 2) * 14 }}" text-anchor="middle" class="chart-planet">{{ planet_name }}</text>
-                    {% endif %}
-                  {% else %}
-                    {% set offset_index = loop.index0 %}
-                    {% if sign_idx == summary.lagna_sign_index %}
-                      {% set offset_index = loop.index0 + 1 %}
-                    {% endif %}
-                    <text x="{{ planets_x }}" y="{{ planets_y + offset_index * 13 }}" text-anchor="middle" dominant-baseline="central" class="chart-planet">{{ planet_name }}</text>
-                  {% endif %}
-                {% endif %}
+              {% if planet_coords and planet_coords[planet_name] %}
+              <text x="{{ planet_coords[planet_name].x }}" y="{{ planet_coords[planet_name].y }}" text-anchor="middle"
+                class="chart-planet">{{ planet_name }}</text>
+              {% else %}
+              {# Fallback layout calculation if no frontend coords are passed #}
+              {% if house.planets|length >= 4 %}
+              {% if loop.index0 % 2 == 0 %}
+              <text x="{{ planets_x - 12 }}" y="{{ base_y + (loop.index0 // 2) * 14 }}" text-anchor="middle"
+                class="chart-planet" dominant-baseline="central">{{ planet_name }}</text>
+              {% else %}
+              <text x="{{ planets_x + 12 }}" y="{{ base_y + (loop.index0 // 2) * 14 }}" text-anchor="middle"
+                class="chart-planet" dominant-baseline="central">{{ planet_name }}</text>
+              {% endif %}
+              {% else %}
+              <text x="{{ planets_x }}" y="{{ base_y + loop.index0 * 14 }}" text-anchor="middle" class="chart-planet"
+                dominant-baseline="central">{{ planet_name }}</text>
+              {% endif %}
+              {% endif %}
               {% endfor %}
-            {% endif %}
-            {% endfor %}
-          </svg>
+              {% endif %}
+              {% endfor %}
+            </svg>
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
-      </div>
 
         <!-- Right: summary column (all Bengali) -->
         <div class="col col-30">
           <div class="info-line"><label class="highlight-blue">রাশি-</label> <span class="data-value"
               style="width: 60%;">{{ astrology.rashi | default('-', true) }}</span></div>
           <div class="info-line"><label class="highlight-blue">লগ্ন-</label> <span class="data-value"
-              style="width: 60%;">{{ astrology.lagna | default('-', true) }}</span></div>
+              style="width: 80%;">{{ astrology.lagna | default('-', true) }} {% if lagna_time_range %}({{
+              lagna_time_range }}){% endif %}</span></div>
           <div class="info-line"><label class="highlight-blue">নক্ষত্র-</label> <span class="data-value"
               style="width: 60%;">{{ astrology.nakshatra | default('-', true) }}</span></div>
           <div class="info-line"><label class="highlight-blue">গণ-</label> <span class="data-value"
@@ -502,13 +522,15 @@
           {% if show_lucky_info is not defined or show_lucky_info %}
           <div class="info-line" style="margin-top: 10px;"><label class="highlight-blue">শুভ বার-</label> <span
               class="data-value" style="width: 65%;">{{ subho_bar }}</span></div>
+          <div class="info-line"><label class="highlight-blue">অশুভ বার-</label> <span class="data-value"
+              style="width: 65%;">{{ ashubh_bar }}</span></div>
           <div class="info-line"><label class="highlight-blue">শুভ রং-</label> <span class="data-value"
               style="width: 65%;">{{ subho_rong }}</span></div>
           <div class="info-line"><label class="highlight-blue">শুভ সংখ্যা-</label> <span class="data-value"
               style="width: 50%;">{{ subho_sonkha }}</span></div>
           {% endif %}
           <div class="info-line"><label class="highlight-blue">শুভ নামের অক্ষর-</label> <span class="data-value"
-              style="width: 48%;">{{ current_pada_syllable }}</span></div>
+              style="width: 48%;">{{ namer_adokkhyor }}</span></div>
         </div>
       </div>
 
@@ -573,7 +595,7 @@
       <div class="remedy-section">
         <div class="remedy-main-title">-ঃ প্রতিকার ঃ-</div>
         <div class="remedy-sub-title">-ঃ গ্রহরত্ন, শিকড় ও ধাতু ঃ-</div>
-        
+
         <table class="remedy-grid-table">
           <thead>
             <tr>
@@ -592,7 +614,7 @@
             {% endfor %}
           </tbody>
         </table>
-        
+
         <div class="remedy-footer-note">** ধাতু ও শ্বেতচন্দন পাল্টানোর প্রয়োজন নেই **</div>
       </div>
 

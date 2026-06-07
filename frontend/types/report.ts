@@ -43,6 +43,7 @@ export interface AstrologyState {
   gan: string;
   varna: string;
   shubh_bar: string;
+  ashubh_bar?: string;
   shubh_rong: string;
   shubh_sonkha: string;
   namer_adokkhyor: string;

@@ -20,4 +20,5 @@ backend/.env.example
 backend/scripts/test_storage.py
 backend/scripts/test_dynamic_location.py
 backend/tmp_check_moons.py
-
+backend\scripts\parse_panjika_tables.py
+backend\scripts

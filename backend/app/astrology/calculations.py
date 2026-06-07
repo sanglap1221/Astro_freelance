@@ -193,7 +193,7 @@ BOOK_KOSHTI_RULES: dict[tuple[int, int], dict[str, str]] = {
     # ১০. মকর রাশি (Makara - Index 9)
     (9, 20): {"gan": "নরগণ", "varna": "বৈশ্যবর্ণ"},     # উত্তরাষাঢ়া
     (9, 21): {"gan": "দেবগণ", "varna": "বৈশ্যবর্ণ"},     # শ্রবণা
-    (9, 22): {"gan": "রাক্ষসগণ", "varna": "বৈশ্যবর্ণ"},   # ধনিষ্ঠা
+    (9, 22): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ"},   # ধনিষ্ঠা (কাকাবাবু: শূদ্রবর্ণ)
 
     # ১১. কুম্ভ রাশি (Kumbha - Index 10)
     (10, 22): {"gan": "রাক্ষসগণ", "varna": "শূদ্রবর্ণ"},   # ধনিষ্ঠা
@@ -225,85 +225,98 @@ VARNA_BN = {
     "Shudra":    "শূদ্র",
 }
 
-# ---------------------------------------------------------------------------
-# SHUBHA VARA (lucky days) — from Lagna lord
-# ---------------------------------------------------------------------------
-LAGNA_LUCKY_DAYS = {
-    # Lagna sign index → list of lucky day lords
-    0:  ["Sun", "Mars", "Jupiter"],          # Mesha — lord Mars
-    1:  ["Venus", "Mercury", "Saturn"],      # Vrishabha — lord Venus
-    2:  ["Mercury", "Venus", "Saturn"],      # Mithuna — lord Mercury
-    3:  ["Moon", "Mars", "Jupiter"],         # Karka — lord Moon
-    4:  ["Sun", "Mars", "Jupiter", "Mercury"], # Simha — lord Sun
-    5:  ["Mercury", "Venus", "Saturn"],      # Kanya — lord Mercury
-    6:  ["Venus", "Mercury", "Saturn"],      # Tula — lord Venus
-    7:  ["Mars", "Sun", "Moon"],             # Vrischika — lord Mars
-    8:  ["Jupiter", "Sun", "Mars"],          # Dhanu — lord Jupiter
-    9:  ["Saturn", "Venus", "Mercury"],      # Makara — lord Saturn
-    10: ["Saturn", "Venus", "Mercury"],      # Kumbha — lord Saturn
-    11: ["Jupiter", "Moon", "Mars"],         # Meena — lord Jupiter
+# --- KAKA BABU'S DEFINITIVE LAGNA-BASED RULES MATRIX ---
+# Maps 0-based Lagna Index to its exact book valuations
+KAKA_LAGNA_RULES = {
+    0: {
+        "shubh_bar": "রবি, সোম, মঙ্গল, বৃহস্পতিবার",
+        "ashubh_bar": "বুধ, শনি",
+        "shubh_rong": "সাদা, লাল, হলুদ, তামাটে",
+        "shubh_sonkha": "১, ২, ৩, ৯"
+    },
+    1: {
+        "shubh_bar": "বুধ, শুক্র, শনিবার",
+        "ashubh_bar": "রবি, বৃহস্পতিবার",
+        "shubh_rong": "সবুজ, নীলাভ সাদা, হলুদ",
+        "shubh_sonkha": "৫, ৬, ৮"
+    },
+    2: {
+        "shubh_bar": "বুধ, শুক্র, শনিবার",
+        "ashubh_bar": "সোম, মঙ্গলবার",
+        "shubh_rong": "সবুজ, নীলাভ সাদা, হলুদ",
+        "shubh_sonkha": "৫, ৬, ৮"
+    },
+    3: {
+        "shubh_bar": "সোম, মঙ্গল, বৃহস্পতিবার",
+        "ashubh_bar": "শনিবার",
+        "shubh_rong": "সাদা, লাল, হলুদ",
+        "shubh_sonkha": "২, ৩, ৯"
+    },
+    4: {
+        "shubh_bar": "রবি, মঙ্গল, বৃহস্পতিবার",
+        "ashubh_bar": "শুক্র, শনি",
+        "shubh_rong": "তামাটে, লাল, হলুদ",
+        "shubh_sonkha": "১, ৩, ৯"
+    },
+    5: {
+        "shubh_bar": "বুধ, শুক্র, শনিবার",
+        "ashubh_bar": "সোম, মঙ্গলবার",
+        "shubh_rong": "সবুজ, নীলাভ সাদা, নীল",
+        "shubh_sonkha": "৫, ৬, ৮"
+    },
+    6: {
+        "shubh_bar": "বুধ, শুক্র, শনিবার",
+        "ashubh_bar": "রবি, বৃহস্পতিবার",
+        "shubh_rong": "নীলাভ সাদা, নীল, সবুজ",
+        "shubh_sonkha": "৫, ৬, ৮"
+    },
+    7: {
+        "shubh_bar": "রবি, সোম, মঙ্গল, বৃহস্পতিবার",
+        "ashubh_bar": "বুধ, শনি",
+        "shubh_rong": "লাল, সাদা, তামাটে, হলুদ",
+        "shubh_sonkha": "১, ২, ৩, ৯"
+    },
+    8: {
+        "shubh_bar": "রবি, মঙ্গল, বৃহস্পতিবার",
+        "ashubh_bar": "শুক্র, শনি",
+        "shubh_rong": "হলুদ, লাল, তামাটে",
+        "shubh_sonkha": "১, ৩, ৯"
+    },
+    9: {
+        "shubh_bar": "বুধ, শুক্র, শনিবার",
+        "ashubh_bar": "রবি, বৃহস্পতিবার",
+        "shubh_rong": "নীল, নীলাভ সাদা, সবুজ",
+        "shubh_sonkha": "৫, ৬, ৮"
+    },
+    10: {
+        "shubh_bar": "বুধ, শুক্র, শনিবার",
+        "ashubh_bar": "সোম, মঙ্গলবার",
+        "shubh_rong": "নীল, নীলাভ সাদা, সবুজ",
+        "shubh_sonkha": "৫, ৬, ৮"
+    },
+    11: {
+        "shubh_bar": "সোম, মঙ্গল, বৃহস্পতিবার",
+        "ashubh_bar": "শুক্র, শনি",
+        "shubh_rong": "হলুদ, লাল, সাদা",
+        "shubh_sonkha": "২, ৩, ৯"
+    }
 }
 
-DAY_NAMES = {
-    "Sun":     "Ravivar (Sunday)",
-    "Moon":    "Somavar (Monday)",
-    "Mars":    "Mangalvar (Tuesday)",
-    "Mercury": "Budhvar (Wednesday)",
-    "Jupiter": "Brihaspativar (Thursday)",
-    "Venus":   "Shukravar (Friday)",
-    "Saturn":  "Shanivar (Saturday)",
-}
-
-DAY_NAMES_BN = {
-    "Sun":     "রবিবার",
-    "Moon":    "সোমবার",
-    "Mars":    "মঙ্গলবার",
-    "Mercury": "বুধবার",
-    "Jupiter": "বৃহস্পতিবার",
-    "Venus":   "শুক্রবার",
-    "Saturn":  "শনিবার",
-}
-
-# ---------------------------------------------------------------------------
-# SHUBHA RANG (lucky colors) — from planet
-# ---------------------------------------------------------------------------
-PLANET_COLOR = {
-    "Sun":     "Saffron/Orange",
-    "Moon":    "White",
-    "Mars":    "Red",
-    "Mercury": "Green",
-    "Jupiter": "Yellow",
-    "Venus":   "White/Pink",
-    "Saturn":  "Blue/Black",
-    "Rahu":    "Smoky/Dark Blue",
-    "Ketu":    "Multi-color",
-}
-
-PLANET_COLOR_BN = {
-    "Sun":     "গেরুয়া/কমলা",
-    "Moon":    "সাদা",
-    "Mars":    "লাল",
-    "Mercury": "সবুজ",
-    "Jupiter": "হলুদ",
-    "Venus":   "সাদা/গোলাপী",
-    "Saturn":  "নীল/কালো",
-    "Rahu":    "ধূসর/গাঢ় নীল",
-    "Ketu":    "বহুরঙা",
-}
-
-# ---------------------------------------------------------------------------
-# SHUBHA SANKHYA (lucky numbers) — from planet
-# ---------------------------------------------------------------------------
-PLANET_NUMBER = {
-    "Sun":     1,
-    "Moon":    2,
-    "Jupiter": 3,
-    "Rahu":    4,
-    "Mercury": 5,
-    "Venus":   6,
-    "Ketu":    7,
-    "Saturn":  8,
-    "Mars":    9,
+# --- KAKA BABU'S RASHI-BASED FIRST LETTERS ---
+# Maps 0-based Janma Rashi (Moon Sign) Index directly to its letters row
+KAKA_RASHI_ALPHABET = {
+    0: "অ / ল",   # মেষ (Mesha)
+    1: "উ / ব",   # বৃষ (Vrishabha)
+    2: "ক / ছ",   # মিথুন (Mithuna)
+    3: "ড / হ",   # কর্কট (Karka)
+    4: "ম / ট",   # সিংহ (Simha)
+    5: "প / ঠ",   # কন্যা (Kanya)
+    6: "র / ত",   # তুলা (Tula)
+    7: "ন / ষ",   # বৃশ্চিক (Vrischika)
+    8: "ধ / ভ",   # ধনু (Dhanu)
+    9: "খ / জ",   # মকর (Makara)
+    10: "গ / শ",  # কুম্ভ (Kumbha)
+    11: "দ / চ"   # মীন (Meena)
 }
 
 # ---------------------------------------------------------------------------
@@ -482,6 +495,8 @@ class ChartResult:
     gana: str                    # same as nakshatra.gana
     lucky_days: list[str]
     lucky_days_bn: list[str]
+    ashubh_bar: list[str]
+    ashubh_bar_bn: list[str]
     lucky_colors: list[str]
     lucky_colors_bn: list[str]
     lucky_numbers: list[int]
@@ -769,6 +784,7 @@ def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
     return (val - ayanamsa) % 360.0
 
 
+
 _TRADITIONAL_RULES = {}
 
 
@@ -1033,29 +1049,26 @@ def _calc_antardasha(
 # ===========================================================================
 
 def _calc_lucky_fields(lagna_sign_idx: int, rashi_sign_idx: int, nakshatra: NakshatraResult):
-    """Calculate Shubha Vara, Rang, Sankhya, Varna using the 36-condition koshti matrix."""
+    """Evaluates lucky attributes using Kaka Babu's static sheet."""
+    # 1. Look up exact Varna from 36-condition cross-matrix
     varna_bn = get_barna(rashi_sign_idx, nakshatra.index)
     varna = _strip_label_suffix(varna_bn, "বর্ণ")
 
-    # Janma Rashi lord and Nakshatra lord
-    rashi_lord = SIGN_LORD[rashi_sign_idx]
-    nak_lord = nakshatra.lord
+    # 2. Extract Lagna-based attributes directly from our hardcoded dictionary map
+    lagna_rules = KAKA_LAGNA_RULES.get(lagna_sign_idx, KAKA_LAGNA_RULES[0])
     
-    # Combined lords for lucky attributes (unique, ordered)
-    lucky_lords = list(dict.fromkeys([rashi_lord, nak_lord]))
+    shubh_bar_bn = [lagna_rules["shubh_bar"]]
+    ashubh_bar_bn = [lagna_rules["ashubh_bar"]]
+    shubh_rong_bn = [lagna_rules["shubh_rong"]]
+    
+    # Placeholder lists for schema structural fallback compatibilities
+    lucky_days = [lagna_rules["shubh_bar"]]
+    ashubh_bar = [lagna_rules["ashubh_bar"]]
+    lucky_colors = [lagna_rules["shubh_rong"]]
+    # Pass integers for schema safety loops parsing
+    lucky_numbers = [int(x) for x in lagna_rules["shubh_sonkha"].replace(" ", "").split(",") if x.isdigit()]
 
-    # Lucky days — from Janma Rashi & Nakshatra lords
-    lucky_days = [DAY_NAMES.get(p, "No fixed day") for p in lucky_lords]
-    lucky_days_bn = [DAY_NAMES_BN.get(p, "নির্দিষ্ট বার নেই") for p in lucky_lords]
-
-    # Lucky colors — from Janma Rashi & Nakshatra lords
-    lucky_colors = [PLANET_COLOR[p] for p in lucky_lords]
-    lucky_colors_bn = [PLANET_COLOR_BN[p] for p in lucky_lords]
-
-    # Lucky numbers — from Janma Rashi & Nakshatra lords
-    lucky_numbers = sorted(set(PLANET_NUMBER[p] for p in lucky_lords))
-
-    return varna, varna_bn, lucky_days, lucky_days_bn, lucky_colors, lucky_colors_bn, lucky_numbers
+    return varna, varna_bn, lucky_days, shubh_bar_bn, ashubh_bar, ashubh_bar_bn, lucky_colors, shubh_rong_bn, lucky_numbers
 
 
 def _build_debug_trace(
@@ -1427,7 +1440,7 @@ def calculate_chart(
     balance_info, dasha_list = _calc_dasha(moon.longitude, dob)
 
     # --- Lucky fields ---
-    varna, varna_bn, lucky_days, lucky_days_bn, lucky_colors, lucky_colors_bn, lucky_numbers = \
+    varna, varna_bn, lucky_days, lucky_days_bn, ashubh_bar, ashubh_bar_bn, lucky_colors, lucky_colors_bn, lucky_numbers = \
         _calc_lucky_fields(lagna_si, rashi_si, nakshatra)
 
     # --- Dynamic Antardasha Slicing (9 periods from current date) ---
@@ -1488,6 +1501,8 @@ def calculate_chart(
         gana=nakshatra.gana,
         lucky_days=lucky_days,
         lucky_days_bn=lucky_days_bn,
+        ashubh_bar=ashubh_bar,
+        ashubh_bar_bn=ashubh_bar_bn,
         lucky_colors=lucky_colors,
         lucky_colors_bn=lucky_colors_bn,
         lucky_numbers=lucky_numbers,

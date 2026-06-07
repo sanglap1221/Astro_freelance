@@ -153,6 +153,8 @@ def run_validation() -> int:
 
         print(f"Lagna sign index : {chart.lagna_sign_index}")
         print(f"Lagna sign name  : {chart.lagna_sign} ({ZODIAC_SIGNS_BN[chart.lagna_sign_index]})")
+        print(f"Lagna time range : {context.get('lagna_time_range')}")
+        print(f"Lagna long comp  : {context.get('lagna_compact_indexed')}")
         print(f"Rendered labels  : {', '.join(rendered_house_labels)}")
         print(f"Rendered Lagna   : {rendered_lagna_marker}")
         print("House chart      :")

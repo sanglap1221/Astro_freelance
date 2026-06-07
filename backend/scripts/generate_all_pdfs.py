@@ -27,37 +27,37 @@ def run_combined_batch_tests():
         {
             "name": "Baishakhi De",
             "dob": date(1987, 4, 26),
-            "time": time(1, 30),
+            "time": time(1, 30), # Expected Active Window: 1:30 AM to 03:03 AM
             "place": "Kolkata"
         },
         {
             "name": "Anjali Mandal",
             "dob": date(1994, 10, 9),
-            "time": time(18, 0), # 6:00 PM
+            "time": time(18, 0), # Expected Active Window: 05:38 PM to 07:17 PM 
             "place": "Kolkata"
         },
         {
             "name": "Bikash Mandal",
             "dob": date(1984, 5, 28),
-            "time": time(16, 30), # 4:30 PM
+            "time": time(16, 30), # Expected Active Window: 02:58 PM to 05:07 PM 
             "place": "Kolkata"
         },
         {
-            "name": "Sukriti Sabui",
+            "name": "SUbhajit Sabui",
             "dob": date(1991, 4, 12),
-            "time": time(8, 15), # 8:15 AM
+            "time": time(8, 15), # Expected Active Window: 7:22 AM to 9:22 AM (that is not correct almost) 
             "place": "Kolkata"
         },
         {
             "name": "Subhajit Bol",
             "dob": date(1992, 7, 25),
-            "time": time(11, 30), # 11:30 AM
+            "time": time(11, 30), # Expected Active Window: 11:09 AM to 01:22 PM 
             "place": "Kolkata"
         },
         {
             "name": "Sarodindu Karmakar",
             "dob": date(2011, 11, 6),
-            "time": time(9, 18), # 9:18 AM
+            "time": time(9, 18), # Expected Active Window: 08:58 AM to 10:59 AM 
             "place": "Kolkata"
         },
         
@@ -65,43 +65,38 @@ def run_combined_batch_tests():
         {
             "name": "Arka Mandal",
             "dob": date(2023, 10, 29),
-            "time": time(6, 42),
+            "time": time(6, 42), # Expected Active Window: 07:8 AM to 08:01 AM 
             "place": "Kolkata"
         },
-        {
-            "name": "Sounak Das",
-            "dob": date(2008, 2, 7),
-            "time": time(14, 0), # 2:00 PM
-            "place": "Kolkata"
-        },
+       
         {
             "name": "Sanglap Ghosh",
             "dob": date(2004, 8, 13),
-            "time": time(14, 42), # 2:42 PM
+            "time": time(14, 42), # Expected Active Window: 01:51 PM to 03:55 PM 
             "place": "Kolkata"
         },
         {
             "name": "Mitali Biswas",
             "dob": date(2006, 7, 18),
-            "time": time(8, 0), # 8:00 AM matching verify_kaka and comparison_validator
+            "time": time(8, 0), # Expected Active Window: 07:19 AM to 10:10 AM
             "place": "Kolkata"
         },
         {
-            "name": "Arpita Ghosh",
+            "name": "Agniv Ghosh",
             "dob": date(2018, 2, 17),
-            "time": time(11, 58),
+            "time": time(11, 58), # Expected Active Window: 10:38 AM to 12:35 PM
             "place": "Kolkata"
         },
         {
             "name": "Atyuttama Datta",
             "dob": date(2024, 11, 15),
-            "time": time(9, 53),
+            "time": time(9, 53), # Expected Active Window: 08:13 AM to 10:19 AM
             "place": "Kolkata"
         },
         {
             "name": "Unknown Client",
             "dob": date(1995, 3, 22),
-            "time": time(17, 32), # Median of 5:30 PM - 5:35 PM
+            "time": time(17, 32), # Expected Active Window: 04:58 PM to 07:12 PM 
             "place": "Kolkata"
         }
     ]

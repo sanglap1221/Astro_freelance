@@ -126,6 +126,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     }
 
     # 6. Formulate summary
+    from app.astrology.calculations import KAKA_RASHI_ALPHABET
+
     rashi_bn = ZODIAC_SIGNS_BN[chart.rashi_sign_index]
     lagna_bn = ZODIAC_SIGNS_BN[chart.lagna_sign_index]
 
@@ -148,10 +150,15 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "ayanamsa": to_bengali_digits(f"{chart.ayanamsa:.4f}"),
         "gan": chart.gana,
         "varna": chart.varna_bn,
-        "shubh_bar": ", ".join(chart.lucky_days_bn),
-        "shubh_rong": ", ".join(chart.lucky_colors_bn),
-        "shubh_sonkha": ", ".join(to_bengali_digits(str(num)) for num in chart.lucky_numbers),
-        "namer_adokkhyor": chart.nakshatra.current_pada_syllable,
+        
+        # Pull pre-joined string lists directly from the chart object structures
+        "shubh_bar": chart.lucky_days_bn[0],
+        "ashubh_bar": chart.ashubh_bar_bn[0],
+        "shubh_rong": chart.lucky_colors_bn[0],
+        "shubh_sonkha": to_bengali_digits(chart.lucky_numbers_bn[0] if hasattr(chart, 'lucky_numbers_bn') else ", ".join(str(n) for n in chart.lucky_numbers)),
+        
+        # FIXED: Rashi-based first alphabet assignment matching the last row
+        "namer_adokkhyor": KAKA_RASHI_ALPHABET.get(chart.rashi_sign_index, "-"),
         "current_pada_syllable": chart.nakshatra.current_pada_syllable,
         "all_nakshatra_syllables": list(chart.nakshatra.all_nakshatra_syllables),
         "dasha_balance": dasha_balance_str,
@@ -193,7 +200,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             "is_combust": p.is_combust,
         })
 
-    # 8. Formulate house_chart
+    # 8. Formulate house_chart (Enriched with Nakshatra Numbers)
     house_chart = []
     for sign_idx in range(12):
         house_planets = []
@@ -202,7 +209,17 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
 
         for p in chart.planets:
             if p.sign_index == sign_idx:
-                house_planets.append(PLANET_ABBR_BN.get(p.name, p.name))
+                # Get the planet abbreviation (e.g., "কে")
+                abbr = PLANET_ABBR_BN.get(p.name, p.name)
+                
+                # Calculate the 1-based Nakshatra number from absolute longitude
+                # Each Nakshatra spans exactly 13.3333° (360 / 27)
+                NAK_SPAN = 360.0 / 27.0
+                nak_1_based = (int(p.longitude / NAK_SPAN) % 27) + 1
+                nak_bn = to_bengali_digits(str(nak_1_based))
+                
+                # Combine them matching your layout specification (e.g., "কে ২৫")
+                house_planets.append(f"{abbr} {nak_bn}")
 
         house_bn = to_bengali_digits(str(house_number))
         house_chart.append({
@@ -283,36 +300,36 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
 
     def calculate_planet_coords(lagna_sign_index: int, house_chart_list: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
         house_layout = [
-            {"numX": 180, "numY": 20, "planetsX": 180, "planetsY": 72, "signIdx": 0},
-            {"numX": 102, "numY": 20, "planetsX": 90, "planetsY": 65, "signIdx": 1},
-            {"numX": 20, "numY": 100, "planetsX": 70, "planetsY": 95, "signIdx": 2},
-            {"numX": 20, "numY": 170, "planetsX": 68, "planetsY": 165, "signIdx": 3},
-            {"numX": 20, "numY": 250, "planetsX": 70, "planetsY": 265, "signIdx": 4},
-            {"numX": 102, "numY": 350, "planetsX": 90, "planetsY": 295, "signIdx": 5},
-            {"numX": 180, "numY": 350, "planetsX": 180, "planetsY": 288, "signIdx": 6},
-            {"numX": 258, "numY": 350, "planetsX": 270, "planetsY": 295, "signIdx": 7},
-            {"numX": 340, "numY": 250, "planetsX": 290, "planetsY": 265, "signIdx": 8},
-            {"numX": 340, "numY": 170, "planetsX": 292, "planetsY": 165, "signIdx": 9},
-            {"numX": 258, "numY": 20, "planetsX": 270, "planetsY": 65, "signIdx": 11},
-            {"numX": 340, "numY": 100, "planetsX": 290, "planetsY": 95, "signIdx": 10}
+            {"numX": 150, "numY": -8, "planetsX": 150, "planetsY": 42, "signIdx": 0},
+            {"numX": 72,  "numY": -8, "planetsX": 75,  "planetsY": 25, "signIdx": 1},
+            {"numX": -10, "numY": 70, "planetsX": 30,  "planetsY": 52, "signIdx": 2},
+            {"numX": -10, "numY": 140, "planetsX": 38,  "planetsY": 135, "signIdx": 3},
+            {"numX": -10, "numY": 220, "planetsX": 30,  "planetsY": 222, "signIdx": 4},
+            {"numX": 72,  "numY": 318, "planetsX": 75,  "planetsY": 252, "signIdx": 5},
+            {"numX": 150, "numY": 318, "planetsX": 150, "planetsY": 205, "signIdx": 6},
+            {"numX": 228, "numY": 318, "planetsX": 225, "planetsY": 252, "signIdx": 7},
+            {"numX": 310, "numY": 220, "planetsX": 275, "planetsY": 222, "signIdx": 8},
+            {"numX": 310, "numY": 140, "planetsX": 262, "planetsY": 135, "signIdx": 9},
+            {"numX": 228, "numY": -8,  "planetsX": 225, "planetsY": 25,  "signIdx": 11},
+            {"numX": 310, "numY": 70,  "planetsX": 270, "planetsY": 52,  "signIdx": 10}
         ]
 
         def get_lagna_coords(sign_idx: int) -> dict[str, float]:
             coords_map = {
-                0: {"x": 155, "y": 115},
-                1: {"x": 115, "y": 48},
-                2: {"x": 48, "y": 115},
-                3: {"x": 110, "y": 150},
-                4: {"x": 48, "y": 245},
-                5: {"x": 115, "y": 312},
-                6: {"x": 205, "y": 245},
-                7: {"x": 245, "y": 312},
-                8: {"x": 312, "y": 245},
-                9: {"x": 250, "y": 210},
-                10: {"x": 312, "y": 115},
-                11: {"x": 245, "y": 48}
+                0: {"x": 150, "y": 34},
+                1: {"x": 75, "y": 17},
+                2: {"x": 30, "y": 44},
+                3: {"x": 38, "y": 127},
+                4: {"x": 30, "y": 214},
+                5: {"x": 75, "y": 244},
+                6: {"x": 150, "y": 197},
+                7: {"x": 225, "y": 244},
+                8: {"x": 275, "y": 214},
+                9: {"x": 262, "y": 127},
+                10: {"x": 270, "y": 44},
+                11: {"x": 225, "y": 17}
             }
-            return coords_map.get(sign_idx, {"x": 180, "y": 180})
+            return coords_map.get(sign_idx, {"x": 150, "y": 150})
 
         coords_dict = {}
         for layout in house_layout:
@@ -409,6 +426,57 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         {"id": "৯", "gemstone": "গোমেদ - ৭/৮ রতি", "remedy_root": "শ্বেতচন্দন + লোহা"}
     ]
 
+    # --- 11b. Dynamic Lagna Timings Schedule Array (Safe Add) ---
+    from app.astrology.bengali_date import BENGALI_MONTHS_EN
+    from app.astrology.lagna_table import get_daily_lagna_timeline, SIGN_TO_INDEX
+    from app.astrology.calculations import resolve_location
+    
+    loc = resolve_location(
+        payload.place,
+        getattr(payload, 'latitude', None),
+        getattr(payload, 'longitude', None),
+        getattr(payload, 'timezone', None)
+    )
+    
+    month_name_en = BENGALI_MONTHS_EN[bm]
+    raw_timeline = get_daily_lagna_timeline(
+        month_name_en, 
+        bd, 
+        use_sidereal=True,
+        dob=payload.dob,
+        lat=loc.latitude,
+        lon=loc.longitude
+    )
+    
+    # Extract the timing of the active birth Lagna
+    lagna_time_range = ""
+    for item in raw_timeline:
+        sign_idx = SIGN_TO_INDEX.get(item["name_en"], 0)
+        if sign_idx == chart.lagna_sign_index:
+            def format_time_dot(t_str: str) -> str:
+                h, m = t_str.split(":")
+                return f"{int(h)}.{m}"
+            start_bn = to_bengali_digits(format_time_dot(item["start"]))
+            end_bn = to_bengali_digits(format_time_dot(item["end"]))
+            lagna_time_range = f"{start_bn}-{end_bn}"
+            break
+
+    # Format absolute Lagna (Ascendant) longitude
+    lagna_lon = chart.ascendant_longitude % 360.0
+    lagna_sign_idx_0b = int(lagna_lon // 30)
+    lagna_pos_in_sign = lagna_lon % 30.0
+    l_deg = int(lagna_pos_in_sign)
+    l_rem = (lagna_pos_in_sign - l_deg) * 60.0
+    l_mins = int(l_rem)
+    l_secs = int((l_rem - l_mins) * 60.0)
+    
+    l_deg_bn = to_bengali_digits(f"{l_deg:02d}")
+    l_min_bn = to_bengali_digits(f"{l_mins:02d}")
+    l_sec_bn = to_bengali_digits(f"{l_secs:02d}")
+    l_sign_index_bn = to_bengali_digits(str(lagna_sign_idx_0b))
+    
+    lagna_compact_indexed = f"{l_sign_index_bn} | {l_deg_bn}° {l_min_bn}′ {l_sec_bn}″"
+
     # Append these new arrays directly to the context dictionary object
     return {
         "report_no": report_no,
@@ -425,6 +493,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "current_antardashas": current_antardashas,
         "planet_coords": planet_coords,
         "remedies_list": remedies,  # Added fields
+        "lagna_time_range": lagna_time_range,
+        "lagna_compact_indexed": lagna_compact_indexed,
     }
 
 
@@ -446,6 +516,7 @@ def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> st
     output_path = generated_dir / filename
 
     # Compile HTML to PDF using Playwright
+    # pyrefly: ignore [missing-import]
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
