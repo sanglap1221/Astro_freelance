@@ -195,49 +195,92 @@
       overflow: visible;
     }
 
-    .dasha-title-box {
-      border: 1px solid var(--border-color);
-      display: inline-block;
-      padding: 3px 8px;
-      font-weight: bold;
-      margin-bottom: 6px;
-      color: var(--brand-blue);
-    }
-
-    .dasha-table {
+    /* Traditional Notebook Ledger Styling */
+    .ledger-container {
+      display: flex;
       width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
+      background: #ffffff;
+    }
+
+    .ledger-sheet {
+      width: 100%;
+      background-color: #fdfbf7;
+      background-image: linear-gradient(#e6dec9 1px, transparent 1px);
+      background-size: 100% 19px; /* Matches line alignment precisely */
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-family: 'Noto Sans Bengali', monospace;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.02);
+    }
+
+    .ledger-title-box {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--brand-blue);
+      border-bottom: 1.5px solid var(--border-color);
+      padding: 1px 6px;
+      margin-bottom: 4px;
+      display: inline-block;
+      background: #fcfcfc;
+    }
+
+    .ledger-row {
+      display: flex;
+      height: 19px;
+      line-height: 19px;
       font-size: 12px;
-      /* Adjusted slightly to guarantee 1-page bounds */
-      margin-top: 1px;
+      font-weight: 700;
+      color: #2c3e50;
+      align-items: center;
     }
 
-    .dasha-table td,
-    .dasha-table th {
-      border: 1px solid var(--border-color);
-      padding: 1.5px 3px;
-      /* Tighter padding for vertical conservation */
-      vertical-align: top;
-      line-height: 1.05;
-    }
-
-    .dasha-table th {
+    .ledger-label {
+      width: 80px;
       color: var(--brand-blue);
-      font-weight: 700;
-      text-align: left;
-      background: #f4f4f4;
+      font-size: 11px;
+      white-space: nowrap;
     }
 
-    .dasha-table tr.active-row td {
-      background: #fff9c4;
-      font-weight: 700;
+    .ledger-math {
+      flex-grow: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 2px;
+      font-variant-numeric: tabular-nums;
     }
 
-    .antardasha-header-row td {
-      background: #e3f0ff;
-      font-weight: 700;
-      color: var(--brand-blue);
+    .math-part {
+      display: inline-block;
+      text-align: right;
+    }
+    .math-part.year {
+      width: 40px;
+    }
+    .math-part.month {
+      width: 20px;
+    }
+    .math-part.day {
+      width: 20px;
+    }
+
+    .ledger-age {
+      width: 45px;
+      text-align: right;
+      color: var(--brand-red);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .ledger-divider {
+      height: 1px;
+      border-bottom: 1.2px solid #7f8c8d;
+      margin: 1px 0;
+      width: 85%;
+    }
+
+    .ledger-row.active-row {
+      background-color: rgba(255, 249, 196, 0.5);
     }
 
     .shorthand-line {
@@ -338,6 +381,28 @@
   {% set namer_adokkhyor = astrology.namer_adokkhyor or '-' %}
   {% set current_pada_syllable = astrology.current_pada_syllable or namer_adokkhyor %}
   {% set all_nakshatra_syllables = astrology.all_nakshatra_syllables or [namer_adokkhyor] %}
+  {% set bn_nums = {'0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'} %}
+  
+  {# Universal Bengali Digit Converter Macro #}
+  {% macro to_bn(num) %}
+    {%- set num_str = num | string -%}
+    {%- for char in num_str -%}
+      {{ bn_nums[char] | default(char) }}
+    {%- endfor -%}
+  {% endmacro %}
+
+  {# Year — Month — Day Date Formatting Macro #}
+  {% macro to_bn_date_parts(date_str) %}
+    {% set date_str_clean = date_str | string %}
+    {% set parts = date_str_clean.split('-') if '-' in date_str_clean else date_str_clean.split('/') %}
+    {% if parts|length == 3 %}
+      <span class="math-part year">{{ to_bn(parts[2]|int) }}</span> — 
+      <span class="math-part month">{{ to_bn(parts[1]|int) }}</span> — 
+      <span class="math-part day">{{ to_bn(parts[0]|int) }}</span>
+    {% else %}
+      {{ to_bn(date_str) }}
+    {% endif %}
+  {% endmacro %}
   <div class="a4-page">
     <div class="form-wrapper">
       <div class="header-section">
@@ -534,60 +599,110 @@
         </div>
       </div>
 
-      <!-- ── DASHA | ANTARDASHA ──────────────────────────────────── -->
+      <!-- ── DASHA | ANTARDASHA (ASTRO KAKA'S LEDGER CALCULATION STYLE) ──────────────── -->
       <div class="row">
-        <!-- Mahadasha — ALL 9 rows, NO truncation -->
-        <div class="col col-50">
+        <!-- Mahadasha Ledger Column -->
+        <div class="col col-50" style="padding: 4px 8px;">
           {% if show_mahadasha is not defined or show_mahadasha %}
-          <div class="dasha-title-box">বিংশোত্তরী দশা :</div>
-          <table class="dasha-table">
-            <thead>
-              <tr>
-                <th style="width:38%">দশা</th>
-                <th style="width:12%">বছর</th>
-                <th style="width:25%">শুরু</th>
-                <th style="width:25%">শেষ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {# All 9 mahadashas — Bengali digits, Bengali planet names #}
-              {% for dasha in dasha_list %}
-              <tr{% if dasha.is_active %} class="active-row" {% endif %}>
-                <td>{{ dasha.planet_bn | default(dasha.planet, true) }}</td>
-                <td>{{ dasha.years | default('-', true) }}</td>
-                <td>{{ dasha.start | default('-', true) }}</td>
-                <td>{{ dasha.end | default('-', true) }}</td>
-                </tr>
+          <div class="ledger-title-box">বিংশোত্তরী দশা :</div>
+          <div class="ledger-container">
+            <div class="ledger-sheet">
+              {% set first_dasha = dasha_list[0] if dasha_list else none %}
+              {% if first_dasha %}
+                {# Extract and store the exact starting birth year #}
+                {% set birth_clean = first_dasha.start | string %}
+                {% set birth_parts = birth_clean.split('-') if '-' in birth_clean else birth_clean.split('/') %}
+                {% set birth_year = birth_parts[2]|int if birth_parts|length == 3 else 2005 %}
+
+                {# Birth Base Row #}
+                <div class="ledger-row" style="color: #27ae60;">
+                  <span class="ledger-label"></span>
+                  <span class="ledger-math">
+                    {{ to_bn_date_parts(first_dasha.start) }}
+                  </span>
+                  <span class="ledger-age"></span>
+                </div>
+                
+                {% for dasha in dasha_list %}
+                  {# Dasha Lord Period Addition Line #}
+                  <div class="ledger-row {% if dasha.is_active %}active-row{% endif %}">
+                    <span class="ledger-label">{{ dasha.planet_bn | default(dasha.planet, true) }} -</span>
+                    <span class="ledger-math">
+                      <span class="math-part year">{{ dasha.dur_y }}</span> — 
+                      <span class="math-part month">{{ dasha.dur_m }}</span> — 
+                      <span class="math-part day">{{ dasha.dur_d }}</span>
+                    </span>
+                    <span class="ledger-age"></span>
+                  </div>
+                  
+                  {# Hand-drawn Arithmetic Underline #}
+                  <div class="ledger-divider"></div>
+                  
+                  {# Resulting Ending Date with Age at transition #}
+                  {% set end_clean = dasha.end | string %}
+                  {% set end_parts = end_clean.split('-') if '-' in end_clean else end_clean.split('/') %}
+                  {% set end_year = end_parts[2]|int if end_parts|length == 3 else birth_year %}
+                  {% set age_at_end = end_year - birth_year %}
+
+                  <div class="ledger-row {% if dasha.is_active %}active-row{% endif %}" style="font-weight: bold; color: #111;">
+                    <span class="ledger-label"></span>
+                    <span class="ledger-math">
+                      {{ to_bn_date_parts(dasha.end) }}
+                    </span>
+                    <span class="ledger-age">| {{ to_bn(age_at_end) }}</span>
+                  </div>
                 {% endfor %}
-            </tbody>
-          </table>
+              {% endif %}
+            </div>
+          </div>
           {% endif %}
         </div>
 
-        <!-- Antardasha — current mahadasha only, compact traditional view -->
-        <div class="col col-50">
+        <!-- Antardasha Ledger Column -->
+        <div class="col col-50" style="padding: 4px 8px;">
           {% if show_antardasha is not defined or show_antardasha %}
-          <div class="dasha-title-box">
-            বিংশোত্তরী অন্তর্দশা :
+          <div class="ledger-title-box">বিংশোত্তরী অন্তর্দশা :</div>
+          <div class="ledger-container">
+            <div class="ledger-sheet">
+              {% if antardasha_display_rows|length > 0 %}
+                {% set first_antar = antardasha_display_rows[0] %}
+                
+                {# Antardasha Base Row #}
+                <div class="ledger-row" style="color: #27ae60;">
+                  <span class="ledger-label"></span>
+                  <span class="ledger-math">
+                    {{ to_bn_date_parts(first_antar.start) }}
+                  </span>
+                  <span class="ledger-age"></span>
+                </div>
+                
+                {% for row in antardasha_display_rows %}
+                  {# Antardasha Lord Period Addition Line #}
+                  <div class="ledger-row">
+                    <span class="ledger-label">{{ row.lord_bn }} -</span>
+                    <span class="ledger-math">
+                      <span class="math-part year">{{ row.dur_y }}</span> — 
+                      <span class="math-part month">{{ row.dur_m }}</span> — 
+                      <span class="math-part day">{{ row.dur_d }}</span>
+                    </span>
+                    <span class="ledger-age"></span>
+                  </div>
+                  
+                  {# Hand-drawn Arithmetic Underline #}
+                  <div class="ledger-divider"></div>
+                  
+                  {# Resulting Ending Date #}
+                  <div class="ledger-row" style="font-weight: bold; color: #111;">
+                    <span class="ledger-label"></span>
+                    <span class="ledger-math">
+                      {{ to_bn_date_parts(row.end) }}
+                    </span>
+                    <span class="ledger-age"></span>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
           </div>
-          <table class="dasha-table">
-            <thead>
-              <tr>
-                <th style="width:34%">মহা/অন্তর</th>
-                <th style="width:33%">শুরু</th>
-                <th style="width:33%">শেষ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in antardasha_display_rows %}
-              <tr>
-                <td>{{ row.major_bn }} / {{ row.lord_bn }}</td>
-                <td>{{ row.start | default('-', true) }}</td>
-                <td>{{ row.end | default('-', true) }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
           {% endif %}
         </div>
       </div>

@@ -99,36 +99,53 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
   const coords: Record<string, { x: number, y: number }> = {};
   const lagnaIdx = state.summary.lagna_sign_index ?? 0;
 
+  // FIXED: Symmetrical Anchor Points mapped precisely near structural dividing line intersections
   const houseLayout = [
-    { numX: 180, numY: 20, planetsX: 180, planetsY: 72, poly: "130,130 230,130 180,30", signIdx: 0 },
-    { numX: 102, numY: 20, planetsX: 90, planetsY: 65, poly: "30,30 130,30 130,130", signIdx: 1 },
-    { numX: 20, numY: 100, planetsX: 70, planetsY: 95, poly: "30,30 30,130 130,130", signIdx: 2 },
-    { numX: 20, numY: 170, planetsX: 68, planetsY: 165, poly: "130,130 130,230 30,180", signIdx: 3 },
-    { numX: 20, numY: 250, planetsX: 70, planetsY: 265, poly: "30,230 30,330 130,230", signIdx: 4 },
-    { numX: 102, numY: 350, planetsX: 90, planetsY: 295, poly: "130,230 130,330 30,330", signIdx: 5 },
-    { numX: 180, numY: 350, planetsX: 180, planetsY: 288, poly: "130,230 230,230 180,330", signIdx: 6 },
-    { numX: 258, numY: 350, planetsX: 270, planetsY: 295, poly: "230,230 230,330 330,330", signIdx: 7 },
-    { numX: 340, numY: 250, planetsX: 290, planetsY: 265, poly: "230,230 330,230 330,330", signIdx: 8 },
-    { numX: 340, numY: 170, planetsX: 292, planetsY: 165, poly: "230,130 230,230 330,180", signIdx: 9 },
-    { numX: 258, numY: 20, planetsX: 270, planetsY: 65, poly: "230,30 330,30 230,130", signIdx: 11 },
-    { numX: 340, numY: 100, planetsX: 290, planetsY: 95, poly: "330,30 230,130 330,130", signIdx: 10 }
+    { numX: 150, numY: -10, planetsX: 150, planetsY: 34,  poly: "100,100 200,100 150,0", signIdx: 0 },
+    { numX: 72,  numY: -10, planetsX: 95,  planetsY: 12,  poly: "0,0 100,0 100,100", signIdx: 1 },
+    { numX: -12, numY: 68,  planetsX: 12,  planetsY: 95,  poly: "0,0 0,100 100,100", signIdx: 2 },
+    { numX: -12, numY: 140, planetsX: 34,  planetsY: 140, poly: "100,100 100,200 0,150", signIdx: 3 },
+    { numX: -12, numY: 212, planetsX: 12,  planetsY: 205, poly: "0,200 0,300 100,200", signIdx: 4 },
+    { numX: 72,  numY: 320, planetsX: 95,  planetsY: 288, poly: "100,200 100,300 0,300", signIdx: 5 },
+    { numX: 150, numY: 320, planetsX: 150, planetsY: 266, poly: "100,200 200,200 150,300", signIdx: 6 },
+    { numX: 228, numY: 320, planetsX: 205, planetsY: 288, poly: "200,200 200,300 300,300", signIdx: 7 },
+    { numX: 312, numY: 212, planetsX: 288, planetsY: 205, poly: "200,200 300,200 300,300", signIdx: 8 },
+    { numX: 312, numY: 140, planetsX: 266, planetsY: 140, poly: "200,100 200,200 300,150", signIdx: 9 },
+    { numX: 312, numY: 68,  planetsX: 288, planetsY: 95,  poly: "300,0 200,100 300,100", signIdx: 10 },
+    { numX: 228, numY: -10, planetsX: 205, planetsY: 12,  poly: "200,0 300,0 200,100", signIdx: 11 }
   ];
+
+  // The true geometric centers (Center of Mass) for all 12 Bengali Chart cells
+  const centers = {
+    0:  { x: 150, y: 50 },
+    1:  { x: 67,  y: 33 },
+    2:  { x: 33,  y: 67 },
+    3:  { x: 50,  y: 150 },
+    4:  { x: 33,  y: 233 },
+    5:  { x: 67,  y: 267 },
+    6:  { x: 150, y: 250 },
+    7:  { x: 233, y: 267 },
+    8:  { x: 267, y: 233 },
+    9:  { x: 250, y: 150 },
+    10: { x: 267, y: 67 },
+    11: { x: 233, y: 33 }
+  };
 
   const getLagnaCoords = (signIdx: number): { x: number; y: number } => {
     switch (signIdx) {
-      case 0: return { x: 155, y: 115 };
-      case 1: return { x: 115, y: 48 };
-      case 2: return { x: 48, y: 115 };
-      case 3: return { x: 110, y: 150 };
-      case 4: return { x: 48, y: 245 };
-      case 5: return { x: 115, y: 312 };
-      case 6: return { x: 205, y: 245 };
-      case 7: return { x: 245, y: 312 };
-      case 8: return { x: 312, y: 245 };
-      case 9: return { x: 250, y: 210 };
-      case 10: return { x: 312, y: 115 };
-      case 11: return { x: 245, y: 48 };
-      default: return { x: 180, y: 180 };
+      case 0:  return { x: 150, y: 16 };
+      case 1:  return { x: 84,  y: 22 };
+      case 2:  return { x: 22,  y: 84 };
+      case 3:  return { x: 16,  y: 150 };
+      case 4:  return { x: 22,  y: 216 };
+      case 5:  return { x: 84,  y: 278 };
+      case 6:  return { x: 150, y: 284 };
+      case 7:  return { x: 216, y: 278 };
+      case 8:  return { x: 278, y: 216 };
+      case 9:  return { x: 284, y: 150 };
+      case 10: return { x: 278, y: 84 };
+      case 11: return { x: 216, y: 22 };
+      default: return { x: 150, y: 150 };
     }
   };
 
@@ -155,52 +172,54 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
     const houseCoords: { name: string; x: number; y: number }[] = [];
 
     items.forEach((itemName, idx) => {
-      let baseX = layout.planetsX;
-      let baseY = layout.planetsY;
+      let baseX = 0;
+      let baseY = 0;
+      const Cx = centers[layout.signIdx as keyof typeof centers].x;
+      const Cy = centers[layout.signIdx as keyof typeof centers].y;
 
       if (isCornerHouse) {
-        // Keep original diagonal slope method for corner houses
-        const maxShift = 24;
-        const maxIndexOffset = (count - 1) * 0.5;
-        const idealStep = 16;
-        const step = maxIndexOffset > 0 ? Math.min(idealStep, maxShift / maxIndexOffset) : idealStep;
-
-        const indexOffset = idx - maxIndexOffset;
+        // ── 1. CORNER HOUSES: Grouped Diagonal Alignment ──
         const isPositiveSlope = [1, 2, 7, 8].includes(layout.signIdx);
-
-        if (isPositiveSlope) {
-          baseX = layout.planetsX + indexOffset * step;
-          baseY = layout.planetsY + indexOffset * step;
-        } else {
-          baseX = layout.planetsX + indexOffset * step;
-          baseY = layout.planetsY - indexOffset * step;
-        }
+        
+        // Define usable diagonal span bounding limit
+        const MAX_DIAGONAL_SPAN = 64; 
+        const BASE_STEP = 14;
+        
+        // Compress step if total expected span exceeds boundaries
+        const step = Math.min(BASE_STEP, MAX_DIAGONAL_SPAN / Math.max(count, 1));
+        
+        const dx = step;
+        const dy = isPositiveSlope ? step : -step;
+        
+        const offset = idx - (count - 1) / 2.0;
+        
+        baseX = Cx + offset * dx;
+        baseY = Cy + offset * dy;
       } else {
-        const isDense = count >= 4;
-        if (isDense) {
-          const colSpacing = 16;
-          const rowSpacing = 16;
-          const cols = count >= 5 ? 3 : 2;
-          const row = Math.floor(idx / cols);
-          const col = idx % cols;
-          const totalRows = Math.ceil(count / cols);
-          const startX = layout.planetsX - ((cols - 1) * colSpacing) / 2;
-          const startY = layout.planetsY - ((totalRows - 1) * rowSpacing) / 2;
-          baseX = startX + col * colSpacing;
-          baseY = startY + row * rowSpacing;
-        } else {
-          // Top (0) & Bottom (6) use Vertical; Left (3) & Right (9) use Horizontal
-          const isHorizontal = [3, 9].includes(layout.signIdx);
-          const spacing = 16;
-          const offset = idx * spacing - ((count - 1) * spacing) / 2;
-          if (isHorizontal) {
-            baseX = layout.planetsX + offset;
-            baseY = layout.planetsY;
-          } else {
-            baseX = layout.planetsX;
-            baseY = layout.planetsY + offset;
-          }
-        }
+        // ── 2. SQUARE HOUSES: Centered Bounding Matrix ──
+        const cols = count >= 5 ? 3 : (count >= 2 ? 2 : 1);
+        const rows = Math.ceil(count / cols);
+        
+        // Define usable bounding box limits for square houses
+        const MAX_WIDTH = 64;
+        const MAX_HEIGHT = 64;
+        
+        const BASE_COL_SPACING = 24;
+        const BASE_ROW_SPACING = 16;
+        
+        // Dynamically shrink spacing to fit inside the bounding box
+        const colSpacing = Math.min(BASE_COL_SPACING, MAX_WIDTH / Math.max(cols, 1));
+        const rowSpacing = Math.min(BASE_ROW_SPACING, MAX_HEIGHT / Math.max(rows, 1));
+        
+        const row = Math.floor(idx / cols);
+        const colInRow = idx % cols;
+        const itemsInThisRow = Math.min(cols, count - row * cols);
+        
+        const offsetX = (colInRow - (itemsInThisRow - 1) / 2.0) * colSpacing;
+        const offsetY = (row - (rows - 1) / 2.0) * rowSpacing;
+        
+        baseX = Cx + offsetX;
+        baseY = Cy + offsetY;
       }
 
       houseCoords.push({ name: itemName, x: baseX, y: baseY });
@@ -497,6 +516,19 @@ export default function CreateReportPage() {
       ...reportState,
       [field]: val,
     });
+  };
+
+  const updateRemedyRating = (index: number, type: "gemstone_rating" | "root_rating", rating: number) => {
+    if (!reportState) return;
+    // @ts-ignore
+    const nextRemedies = [...((reportState as any).remedies_list || [])];
+    nextRemedies[index] = { ...nextRemedies[index], [type]: rating };
+    const nextState = {
+      ...reportState,
+      remedies_list: nextRemedies,
+    } as any;
+    setReportState(nextState);
+    handleRenderPdf(nextState);
   };
 
   // Drag and Drop Logic: ড্রপ হলে লোকাল স্টেট এবং ওভাররাইড পেলোড আপডেট করবে
@@ -1002,8 +1034,8 @@ export default function CreateReportPage() {
                   )}
 
                   {/* Rashi Chakra SVG — 100% IDENTICAL LOGIC */}
-                  <div className={`transition-opacity duration-200 ${!reportState.show_kundli ? "opacity-30" : ""}`}>
-                    <svg viewBox="0 0 300 300" className="w-full max-w-[17rem] aspect-square stroke-slate-700 mx-auto" style={{ background: "#faf5ff", overflow: "visible" }}>
+                  <div className={`transition-opacity duration-200 ${!reportState.show_kundli ? "opacity-30" : ""}`} style={{ padding: 0, margin: 0 }}>
+                    <svg viewBox="0 0 300 300" className="w-full max-w-[17rem] aspect-square stroke-slate-700 mx-auto" style={{ background: "transparent", overflow: "visible" }}>
                       {/* Grid Lines */}
                       <line x1="100" y1="0"   x2="100" y2="300" stroke="#c084fc" strokeWidth="2" />
                       <line x1="200" y1="0"   x2="200" y2="300" stroke="#c084fc" strokeWidth="2" />
@@ -1016,26 +1048,24 @@ export default function CreateReportPage() {
                       <line x1="0"   y1="300" x2="100" y2="200" stroke="#c084fc" strokeWidth="2" />
                       <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" strokeWidth="2" />
 
-                      {/* Center Square decoration */}
-                      <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
                       <text x="150" y="156" textAnchor="middle" stroke="none" className="text-[0.75rem] font-black fill-purple-900 tracking-wider select-none">
                         রাশি চক্র
                       </text>
 
                       {(() => {
                         const houseLayout = [
-                          { numX: 150, numY: -8, planetsX: 150, planetsY: 42, poly: "100,100 200,100 150,0", signIdx: 0 },
-                          { numX: 72,  numY: -8, planetsX: 75,  planetsY: 25, poly: "0,0 100,0 100,100", signIdx: 1 },
-                          { numX: -10, numY: 70, planetsX: 30,  planetsY: 52, poly: "0,0 0,100 100,100", signIdx: 2 },
-                          { numX: -10, numY: 140, planetsX: 38,  planetsY: 135, poly: "100,100 100,200 0,150", signIdx: 3 },
-                          { numX: -10, numY: 220, planetsX: 30,  planetsY: 222, poly: "0,200 0,300 100,200", signIdx: 4 },
-                          { numX: 72,  numY: 318, planetsX: 75,  planetsY: 252, poly: "100,200 100,300 0,300", signIdx: 5 },
-                          { numX: 150, numY: 318, planetsX: 150, planetsY: 205, poly: "100,200 200,200 150,300", signIdx: 6 },
-                          { numX: 228, numY: 318, planetsX: 225, planetsY: 252, poly: "200,200 200,300 300,300", signIdx: 7 },
-                          { numX: 310, numY: 220, planetsX: 275, planetsY: 222, poly: "200,200 300,200 300,300", signIdx: 8 },
-                          { numX: 310, numY: 140, planetsX: 262, planetsY: 135, poly: "200,100 200,200 300,150", signIdx: 9 },
-                          {numX: 228, numY: -8,  planetsX: 225, planetsY: 25, poly: "200,0 300,0 200,100", signIdx: 11},
-                          {numX: 310, numY: 70,  planetsX: 270, planetsY: 52, poly: "300,0 200,100 300,100", signIdx: 10}
+                          { numX: 150, numY: -10, planetsX: 150, planetsY: 34, poly: "100,100 200,100 150,0", signIdx: 0 },
+                          { numX: 72,  numY: -10, planetsX: 95,  planetsY: 12, poly: "0,0 100,0 100,100", signIdx: 1 },
+                          { numX: -12, numY: 68,  planetsX: 12,  planetsY: 95, poly: "0,0 0,100 100,100", signIdx: 2 },
+                          { numX: -12, numY: 140, planetsX: 34,  planetsY: 140, poly: "100,100 100,200 0,150", signIdx: 3 },
+                          { numX: -12, numY: 212, planetsX: 12,  planetsY: 205, poly: "0,200 0,300 100,200", signIdx: 4 },
+                          { numX: 72,  numY: 320, planetsX: 95,  planetsY: 288, poly: "100,200 100,300 0,300", signIdx: 5 },
+                          { numX: 150, numY: 320, planetsX: 150, planetsY: 266, poly: "100,200 200,200 150,300", signIdx: 6 },
+                          { numX: 228, numY: 320, planetsX: 205, planetsY: 288, poly: "200,200 200,300 300,300", signIdx: 7 },
+                          { numX: 312, numY: 212, planetsX: 288, planetsY: 205, poly: "200,200 300,200 300,300", signIdx: 8 },
+                          { numX: 312, numY: 140, planetsX: 266, planetsY: 140, poly: "200,100 200,200 300,150", signIdx: 9 },
+                          { numX: 312, numY: 68,  planetsX: 288, planetsY: 95, poly: "300,0 200,100 300,100", signIdx: 10 },
+                          { numX: 228, numY: -10, planetsX: 205, planetsY: 12, poly: "200,0 300,0 200,100", signIdx: 11 }
                         ];
 
                         const lagnaIdx = reportState.summary.lagna_sign_index ?? 0;
@@ -1073,44 +1103,55 @@ export default function CreateReportPage() {
                                 {currentHouseBn}
                               </text>
                               {(() => {
-                                const items: string[] = [];
-                                if (layout.signIdx === lagnaIdx) {
-                                  items.push("ল");
-                                }
-                                if (house && house.planets) {
-                                  items.push(...house.planets);
-                                }
-
+                                const isLagnaHouse = layout.signIdx === lagnaIdx;
+                                const lagnaCoords = isLagnaHouse ? finalCoords["ল"] : null;
+                                const items = house?.planets || [];
                                 const isDense = items.length >= 4;
                                 const textSize = isDense ? "text-[0.6875rem]" : "text-[0.84375rem]";
 
-                                return items.map((itemName, idx) => {
-                                  const coords = finalCoords[itemName];
-                                  if (!coords) return null;
-                                  const isSelected = selectedPlanet === itemName;
-                                  const isLagna = itemName === "ল";
+                                const elements = [];
 
-                                  return (
+                                // Render Lagna First, independently
+                                if (lagnaCoords) {
+                                  const isSelected = selectedPlanet === "ল";
+                                  elements.push(
                                     <text
-                                      key={idx}
+                                      key="lagna"
+                                      x={lagnaCoords.x}
+                                      y={lagnaCoords.y}
+                                      textAnchor="middle"
+                                      stroke="none"
+                                      className={`${textSize} font-bold cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-red-600 hover:fill-red-500"}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedPlanet(isSelected ? "" : "ল");
+                                      }}
+                                    >
+                                      ল
+                                    </text>
+                                  );
+                                }
+
+                                // Render Planets Afterwards
+                                items.forEach((itemName, idx) => {
+                                  const coords = finalCoords[itemName];
+                                  if (!coords) return;
+                                  const isSelected = selectedPlanet === itemName;
+
+                                  elements.push(
+                                    <text
+                                      key={`planet-${idx}`}
                                       x={coords.x}
                                       y={coords.y}
                                       textAnchor="middle"
                                       stroke="none"
-                                      className={isLagna ? (
-                                        `${textSize} font-bold cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-red-600 hover:fill-red-500"
-                                        }`
-                                      ) : (
-                                        `${textSize} font-extrabold tracking-[-0.5px] cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-indigo-950 hover:fill-indigo-950/80"
-                                        }`
-                                      )}
+                                      className={`${textSize} font-extrabold tracking-[-0.5px] cursor-pointer select-none transition-all ${isSelected ? "fill-amber-500 text-[1.0625rem] animate-pulse" : "fill-indigo-950 hover:fill-indigo-950/80"}`}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedPlanet(isSelected ? "" : itemName);
                                       }}
-                                      {...(!isLagna ? ({ draggable: true } as any) : {})}
+                                      draggable
                                       onDragStart={(e) => {
-                                        if (isLagna) return;
                                         e.dataTransfer.effectAllowed = "move";
                                         e.dataTransfer.setData("text/plain", itemName);
                                         setSelectedPlanet(itemName);
@@ -1120,6 +1161,8 @@ export default function CreateReportPage() {
                                     </text>
                                   );
                                 });
+
+                                return elements;
                               })()}
                             </g>
                           );
@@ -1287,6 +1330,63 @@ export default function CreateReportPage() {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                </div>
+
+                {/* ── SECTION E: Remedies Ratings (18 Options) ── */}
+                <div className="rounded-xl p-3 shadow-sm mt-4" style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
+                  <div className="flex items-center justify-between pb-1.5 mb-2" style={{ borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                    <span className="font-bold text-slate-800 text-[0.6875rem]">
+                      <i className="fa-solid fa-gem mr-1" style={{ color: "#92400e" }}></i> Remedies Ratings (18 Options) - Auto Refreshes
+                    </span>
+                  </div>
+                  {/* ── Table Headers for Visual Clarity ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2.5 pb-1 mb-1 border-b border-slate-200">
+                    <span className="text-[0.6875rem] font-bold text-slate-600">গ্রহরত্ন (Gemstones)</span>
+                    <span className="text-[0.6875rem] font-bold text-slate-600 hidden sm:block">শিকড় + ধাতু (Roots & Metals)</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {((reportState as any).remedies_list || []).map((remedy: any, idx: number) => (
+                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-white border border-slate-100 p-2.5 rounded shadow-sm items-center hover:border-amber-200 transition-colors">
+                        {/* Gemstones Column */}
+                        <div className="flex items-start justify-between gap-2 border-b sm:border-b-0 sm:border-r border-slate-100 pb-2 sm:pb-0 sm:pr-4">
+                          <span className="text-[0.6875rem] text-slate-700 font-medium leading-snug">
+                            <span className="font-bold">{remedy.id}।</span> {remedy.gemstone}
+                          </span>
+                          <div className="flex items-center gap-0.5 cursor-pointer shrink-0 mt-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <i
+                                key={star}
+                                onClick={() => updateRemedyRating(idx, "gemstone_rating", remedy.gemstone_rating === star ? 0 : star)}
+                                className={`fa-solid fa-star text-[0.8rem] transition-all hover:scale-110 ${
+                                  star <= (remedy.gemstone_rating || 0) ? "text-amber-400 drop-shadow-sm" : "text-slate-200"
+                                }`}
+                              ></i>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Roots & Metals Column */}
+                        <div className="flex items-start justify-between gap-2 sm:pl-1">
+                          <span className="text-[0.6875rem] text-slate-700 font-medium leading-snug">
+                            {remedy.remedy_root}
+                          </span>
+                          <div className="flex items-center gap-0.5 cursor-pointer shrink-0 mt-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <i
+                                key={star}
+                                onClick={() => updateRemedyRating(idx, "root_rating", remedy.root_rating === star ? 0 : star)}
+                                className={`fa-solid fa-star text-[0.8rem] transition-all hover:scale-110 ${
+                                  star <= (remedy.root_rating || 0) ? "text-amber-400 drop-shadow-sm" : "text-slate-200"
+                                }`}
+                              ></i>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-center text-[0.6875rem] font-bold text-slate-500 italic">
+                    ** ধাতু ও শ্বেতচন্দন পাল্টানোর প্রয়োজন নেই **
                   </div>
                 </div>
 
@@ -1639,5 +1739,5 @@ export default function CreateReportPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

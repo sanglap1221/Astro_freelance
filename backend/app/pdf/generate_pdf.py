@@ -231,16 +231,62 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             "planets_text": ", ".join(house_planets),
         })
 
-    # 9. Formulate dasha_list
+    # Helper function to calculate age at the start of a period
+    def calculate_age_at_start(birth_date: date, start_date: date) -> str:
+        if start_date <= birth_date:
+            return to_bengali_digits("0") + " দিন"
+        
+        years = start_date.year - birth_date.year
+        months = start_date.month - birth_date.month
+        days = start_date.day - birth_date.day
+
+        if days < 0:
+            # Borrow days from the previous month
+            months -= 1
+            import calendar
+            prev_month = start_date.month - 1 if start_date.month > 1 else 12
+            prev_year = start_date.year if start_date.month > 1 else start_date.year - 1
+            days += calendar.monthrange(prev_year, prev_month)[1]
+            
+        if months < 0:
+            months += 12
+            years -= 1
+            
+        years_bn = to_bengali_digits(str(years))
+        months_bn = to_bengali_digits(str(months))
+        days_bn = to_bengali_digits(str(days))
+        
+        if years > 0:
+            if months > 0:
+                return f"{years_bn} বছর {months_bn} মাস"
+            return f"{years_bn} বছর"
+        elif months > 0:
+            if days > 0:
+                return f"{months_bn} মাস {days_bn} দিন"
+            return f"{months_bn} মাস"
+        else:
+            return f"{days_bn} দিন"
+
+    # 9. Formulate dasha_list (Enriched with Age profiles)
+    from app.astrology.calculations import _calendar_ymd_diff
+
     dasha_list = []
     for d in chart.mahadasha_list:
         is_active = d.start_date <= current_date < d.end_date
+        age_at_start = calculate_age_at_start(payload.dob, d.start_date)
+        
+        dur_y, dur_m, dur_d = _calendar_ymd_diff(d.start_date, d.end_date)
+        
         dasha_list.append({
             "planet": d.planet,
             "planet_bn": PLANETS_BN.get(d.planet, d.planet),
             "years": to_bengali_digits(str(d.years)),
             "start": to_bengali_digits(d.start_date.strftime("%d-%m-%Y")),
             "end": to_bengali_digits(d.end_date.strftime("%d-%m-%Y")),
+            "dur_y": to_bengali_digits(str(dur_y)),
+            "dur_m": to_bengali_digits(str(dur_m)),
+            "dur_d": to_bengali_digits(str(dur_d)),
+            "age_bn": age_at_start,
             "is_active": is_active,
         })
 
@@ -261,10 +307,12 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             "subperiods": subperiods,
         })
 
-    # 10b. Flatten antardashas into a chronological display window starting at the active row
+    # 10b. Flatten antardashas (Enriched with Age profiles)
     flattened_antardashas: list[dict[str, Any]] = []
     for d in chart.mahadasha_list:
         for ad in d.antardashas:
+            age_at_start = calculate_age_at_start(payload.dob, ad.start_date)
+            
             flattened_antardashas.append({
                 "major_lord": d.planet,
                 "major_bn": PLANETS_BN.get(d.planet, d.planet),
@@ -274,11 +322,15 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
                 "end": to_bengali_digits(ad.end_date.strftime("%d-%m-%Y")),
                 "start_date": ad.start_date,
                 "end_date": ad.end_date,
+                "age_bn": age_at_start,
                 "mahadasha_bn": PLANETS_BN.get(d.planet, d.planet),
                 "antardasha_bn": PLANETS_BN.get(ad.planet, ad.planet),
                 "start_date_bn": to_bengali_digits(ad.start_date.strftime("%Y - %m - %d")),
                 "end_date_bn": to_bengali_digits(ad.end_date.strftime("%Y - %m - %d")),
                 "duration_bn": f"{to_bengali_digits(str(ad.duration_years))} - {to_bengali_digits(str(ad.duration_months))} - {to_bengali_digits(str(ad.duration_days))}",
+                "dur_y": to_bengali_digits(str(ad.duration_years)),
+                "dur_m": to_bengali_digits(str(ad.duration_months)),
+                "dur_d": to_bengali_digits(str(ad.duration_days)),
             })
 
     today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
@@ -299,132 +351,123 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     kundli_grid = [[{"empty": True} for _ in range(4)] for _ in range(4)]
 
     def calculate_planet_coords(lagna_sign_index: int, house_chart_list: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
-        house_layout = [
-            {"numX": 150, "numY": -8, "planetsX": 150, "planetsY": 42, "signIdx": 0},
-            {"numX": 72,  "numY": -8, "planetsX": 75,  "planetsY": 25, "signIdx": 1},
-            {"numX": -10, "numY": 70, "planetsX": 30,  "planetsY": 52, "signIdx": 2},
-            {"numX": -10, "numY": 140, "planetsX": 38,  "planetsY": 135, "signIdx": 3},
-            {"numX": -10, "numY": 220, "planetsX": 30,  "planetsY": 222, "signIdx": 4},
-            {"numX": 72,  "numY": 318, "planetsX": 75,  "planetsY": 252, "signIdx": 5},
-            {"numX": 150, "numY": 318, "planetsX": 150, "planetsY": 205, "signIdx": 6},
-            {"numX": 228, "numY": 318, "planetsX": 225, "planetsY": 252, "signIdx": 7},
-            {"numX": 310, "numY": 220, "planetsX": 275, "planetsY": 222, "signIdx": 8},
-            {"numX": 310, "numY": 140, "planetsX": 262, "planetsY": 135, "signIdx": 9},
-            {"numX": 228, "numY": -8,  "planetsX": 225, "planetsY": 25,  "signIdx": 11},
-            {"numX": 310, "numY": 70,  "planetsX": 270, "planetsY": 52,  "signIdx": 10}
-        ]
+        # The true geometric centers (Center of Mass) for all 12 Bengali Chart cells
+        centers = {
+            0:  {"x": 150, "y": 50},
+            1:  {"x": 67,  "y": 33},
+            2:  {"x": 33,  "y": 67},
+            3:  {"x": 50,  "y": 150},
+            4:  {"x": 33,  "y": 233},
+            5:  {"x": 67,  "y": 267},
+            6:  {"x": 150, "y": 250},
+            7:  {"x": 233, "y": 267},
+            8:  {"x": 267, "y": 233},
+            9:  {"x": 250, "y": 150},
+            10: {"x": 267, "y": 67},
+            11: {"x": 233, "y": 33}
+        }
 
         def get_lagna_coords(sign_idx: int) -> dict[str, float]:
             coords_map = {
-                0: {"x": 150, "y": 34},
-                1: {"x": 75, "y": 17},
-                2: {"x": 30, "y": 44},
-                3: {"x": 38, "y": 127},
-                4: {"x": 30, "y": 214},
-                5: {"x": 75, "y": 244},
-                6: {"x": 150, "y": 197},
-                7: {"x": 225, "y": 244},
-                8: {"x": 275, "y": 214},
-                9: {"x": 262, "y": 127},
-                10: {"x": 270, "y": 44},
-                11: {"x": 225, "y": 17}
+                0: {"x": 150, "y": 16},
+                1: {"x": 84,  "y": 22},
+                2: {"x": 22,  "y": 84},
+                3: {"x": 16,  "y": 150},
+                4: {"x": 22,  "y": 216},
+                5: {"x": 84,  "y": 278},
+                6: {"x": 150, "y": 284},
+                7: {"x": 216, "y": 278},
+                8: {"x": 278, "y": 216},
+                9: {"x": 284, "y": 150},
+                10: {"x": 278, "y": 84},
+                11: {"x": 216, "y": 22}
             }
             return coords_map.get(sign_idx, {"x": 150, "y": 150})
 
         coords_dict = {}
-        for layout in house_layout:
-            sign_idx = layout["signIdx"]
-            # 1. Separate lagna
-            if sign_idx == lagna_sign_index:
-                base = get_lagna_coords(sign_idx)
-                coords_dict["ল"] = {
-                    "x": base["x"],
-                    "y": base["y"]
-                }
+        
+        # 1. Separate lagna
+        base = get_lagna_coords(lagna_sign_index)
+        coords_dict["ল"] = {
+            "x": base["x"],
+            "y": base["y"]
+        }
 
-            # 2. Planets
-            items = []
-            house = house_chart_list[sign_idx]
-            if house and house.get("planets"):
-                items.extend(house["planets"])
-
+        # 2. Planets
+        for sign_idx, house in enumerate(house_chart_list):
+            items = house.get("planets", [])
             if not items:
                 continue
 
             count = len(items)
             is_corner_house = sign_idx in [1, 2, 4, 5, 7, 8, 10, 11]
-            house_coords = []
+            cx = centers[sign_idx]["x"]
+            cy = centers[sign_idx]["y"]
 
             for idx, item_name in enumerate(items):
-                base_x = layout["planetsX"]
-                base_y = layout["planetsY"]
-
                 if is_corner_house:
-                    max_shift = 24
-                    max_index_offset = (count - 1) * 0.5
-                    ideal_step = 16
-                    step = ideal_step
-                    if max_index_offset > 0:
-                        step = min(ideal_step, max_shift / max_index_offset)
-
-                    index_offset = idx - max_index_offset
-                    is_positive_slope = sign_idx in [1, 2, 7, 8]
-
-                    if is_positive_slope:
-                        base_x = layout["planetsX"] + index_offset * step
-                        base_y = layout["planetsY"] + index_offset * step
-                    else:
-                        base_x = layout["planetsX"] + index_offset * step
-                        base_y = layout["planetsY"] - index_offset * step
+                    is_pos_slope = sign_idx in [1, 2, 7, 8]
+                    
+                    max_diagonal_span = 64.0
+                    base_step = 14.0
+                    step = min(base_step, max_diagonal_span / max(count, 1))
+                    
+                    dx = step
+                    dy = step if is_pos_slope else -step
+                    
+                    offset = idx - (count - 1) / 2.0
+                    
+                    base_x = cx + offset * dx
+                    base_y = cy + offset * dy
                 else:
-                    is_dense = count >= 4
-                    if is_dense:
-                        col_spacing = 16
-                        row_spacing = 16
-                        cols = 3 if count >= 5 else 2
-                        row = idx // cols
-                        col = idx % cols
-                        total_rows = (count + cols - 1) // cols
-                        start_x = layout["planetsX"] - ((cols - 1) * col_spacing) / 2
-                        start_y = layout["planetsY"] - ((total_rows - 1) * row_spacing) / 2
-                        base_x = start_x + col * col_spacing
-                        base_y = start_y + row * row_spacing
-                    else:
-                        # Top (0) & Bottom (6) use Vertical; Left (3) & Right (9) use Horizontal
-                        is_horizontal = sign_idx in [3, 9]
-                        spacing = 16
-                        offset = idx * spacing - (count - 1) * spacing / 2
-                        if is_horizontal:
-                            base_x = layout["planetsX"] + offset
-                            base_y = layout["planetsY"]
-                        else:
-                            base_x = layout["planetsX"]
-                            base_y = layout["planetsY"] + offset
+                    cols = 3 if count >= 5 else (2 if count >= 2 else 1)
+                    rows = (count + cols - 1) // cols
+                    
+                    max_width = 64.0
+                    max_height = 64.0
+                    base_col_spacing = 24.0
+                    base_row_spacing = 16.0
+                    
+                    col_spacing = min(base_col_spacing, max_width / max(cols, 1))
+                    row_spacing = min(base_row_spacing, max_height / max(rows, 1))
+                    
+                    row = idx // cols
+                    col_in_row = idx % cols
+                    items_in_this_row = min(cols, count - row * cols)
+                    
+                    offset_x = (col_in_row - (items_in_this_row - 1) / 2.0) * col_spacing
+                    offset_y = (row - (rows - 1) / 2.0) * row_spacing
+                    
+                    base_x = cx + offset_x
+                    base_y = cy + offset_y
 
-                house_coords.append({"name": item_name, "x": base_x, "y": base_y})
-
-            for coord in house_coords:
-                coords_dict[coord["name"]] = {
-                    "x": coord["x"],
-                    "y": coord["y"]
+                coords_dict[item_name] = {
+                    "x": base_x,
+                    "y": base_y
                 }
+
         return coords_dict
 
     planet_coords = calculate_planet_coords(chart.lagna_sign_index, house_chart)
 
     # 12. Formulate Remedial Measures (প্রতিকার : গ্রহরত্ন, শিকড় ও ধাতু)
-    # Extracted directly from the traditional hand-written reference sheet
-    remedies = [
-        {"id": "১", "gemstone": "সহহলে নীলা - ৫/৬ রতি / নাহলে এমিথিস্ট - ২৪/২৫ রতি", "remedy_root": "শ্বেতবেড়ালা + সীসা"},
-        {"id": "২", "gemstone": "হীরে - ৪০/৪৫ সেন্ট * অথবা সাদাপলা - ১৮/২০ রতি", "remedy_root": "রামবাসক + প্ল্যাটিনাম"},
-        {"id": "৩", "gemstone": "পান্না - ৫/৬ রতি", "remedy_root": "বৃদ্ধদারক + সোনা"},
-        {"id": "৪", "gemstone": "পোখরাজ - ৫/৬ রতি", "remedy_root": "বামনহাটি + সোনা"},
-        {"id": "৫", "gemstone": "লালপলা - ১০/১১ রতি", "remedy_root": "অনন্তমূল + তামা"},
-        {"id": "৬", "gemstone": "মুক্ত - ৭/৮ রতি", "remedy_root": "ক্ষীরিকা + রূপো"},
-        {"id": "৭", "gemstone": "চুনী - ৫/৬ রতি", "remedy_root": "বিল্বমূল + তামা"},
-        {"id": "৮", "gemstone": "ক্যাটসআই - ৩/৪ রতি", "remedy_root": "অশ্বগন্ধা + রাং"},
-        {"id": "৯", "gemstone": "গোমেদ - ৭/৮ রতি", "remedy_root": "শ্বেতচন্দন + লোহা"}
-    ]
+    # Allows overriding from payload to support visual editor star ratings
+    frontend_remedies = getattr(payload, 'remedies_list', None)
+    if frontend_remedies:
+        remedies = frontend_remedies
+    else:
+        # Extracted directly from the traditional hand-written reference sheet
+        remedies = [
+            {"id": "১", "gemstone": "সহ্যহলে নীলা - ৫/৬ রতি / নাহলে এমিথিস্ট - ২৪/২৫ রতি", "remedy_root": "শ্বেতবেড়ালা + সীসা", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "২", "gemstone": "হীরে - ৪৫/৫০ সেন্ট অথবা সাদাপলা - ১৮/২০ রতি অথবা সাদা জারকন - ৫/৬ রতি", "remedy_root": "রামবাসক + প্ল্যাটিনাম", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৩", "gemstone": "পান্না - ৫/৬ রতি", "remedy_root": "বৃদ্ধদারক + সোনা", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৪", "gemstone": "পোখরাজ - ৫/৬ রতি", "remedy_root": "বামনহাটি + সোনা", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৫", "gemstone": "লালপলা - ১০/১১ রতি", "remedy_root": "অনন্তমূল + তামা", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৬", "gemstone": "মুক্ত - ৭/৮ রতি", "remedy_root": "ক্ষীরিকা + রূপো", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৭", "gemstone": "চুনী - ৫/৬ রতি", "remedy_root": "বিল্বমূল + তামা", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৮", "gemstone": "ক্যাটসআই - ৩/৪ রতি", "remedy_root": "অশ্বগন্ধা + রাং", "gemstone_rating": 0, "root_rating": 0},
+            {"id": "৯", "gemstone": "গোমেদ - ৭/৮ রতি", "remedy_root": "শ্বেতচন্দন + লোহা", "gemstone_rating": 0, "root_rating": 0}
+        ]
 
     # --- 11b. Dynamic Lagna Timings Schedule Array (Safe Add) ---
     from app.astrology.bengali_date import BENGALI_MONTHS_EN

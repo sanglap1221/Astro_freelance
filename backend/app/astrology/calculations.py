@@ -933,6 +933,35 @@ def _calc_nakshatra(moon_longitude: float, rashi_index: int) -> NakshatraResult:
 # VIMSHOTTARI DASHA CALCULATION
 # ===========================================================================
 
+def add_calendar_ymd(start: date, y: int, m: int, d: int) -> date:
+    import calendar
+    day = start.day + d
+    month = start.month + m
+    year = start.year + y
+    
+    while day > 30:
+        day -= 30
+        month += 1
+        
+    while month > 12:
+        month -= 12
+        year += 1
+        
+    while True:
+        try:
+            return date(year, month, day)
+        except ValueError:
+            max_days = calendar.monthrange(year, month)[1]
+            if day > max_days:
+                day -= max_days
+                month += 1
+                if month > 12:
+                    month = 1
+                    year += 1
+            else:
+                day = max_days
+
+
 def _calc_dasha(moon_longitude: float, birth_date: date) -> tuple[tuple, list[DashaPeriod]]:
     """
     Calculate complete Vimshottari Dasha timeline.
@@ -968,12 +997,12 @@ def _calc_dasha(moon_longitude: float, birth_date: date) -> tuple[tuple, list[Da
         full_years = DASHA_YEARS[planet]
 
         if i == 0:
-            # First dasha: only the balance remains
+            dasha_end = add_calendar_ymd(current_start, bal_y, bal_m, bal_d)
+            # Store balance days for antardasha scaling
             dasha_days = balance_days
         else:
+            dasha_end = add_calendar_ymd(current_start, full_years, 0, 0)
             dasha_days = full_years * 365.25
-
-        dasha_end = _add_days_to_date(current_start, dasha_days)
 
         # Build antardashas for this mahadasha
         antardashas = _calc_antardasha(planet, current_start, dasha_days, i == 0, balance_days, full_years)
@@ -1017,18 +1046,27 @@ def _calc_antardasha(
         ad_planet = DASHA_SEQUENCE[ad_idx]
         ad_years = DASHA_YEARS[ad_planet]
 
-        # Full AD duration = (MD_full_years × AD_years / 120) years
-        full_ad_days = (md_full_years * ad_years / 120.0) * 365.25
-
         if is_first:
-            # Scale down proportionally to balance
+            # Scale down proportionally to balance (for the first broken dasha)
+            full_ad_days = (md_full_years * ad_years / 120.0) * 365.25
             ad_days = full_ad_days * (balance_days / (md_full_years * 365.25))
+            ad_end = current_start + timedelta(days=ad_days)
+            y, m, d = _calendar_ymd_diff(current_start, ad_end)
         else:
-            ad_days = full_ad_days
-
-        ad_end = _add_days_to_date(current_start, ad_days)
-
-        y, m, d = _calendar_ymd_diff(current_start, ad_end)
+            # Use exact calendar arithmetic (for all other full dashas)
+            frac_years = md_full_years * ad_years / 120.0
+            y = int(frac_years)
+            frac_months = (frac_years - y) * 12.0
+            m = int(frac_months)
+            frac_days = (frac_months - m) * 30.0
+            d = int(round(frac_days))
+            if d >= 30:
+                d -= 30
+                m += 1
+            if m >= 12:
+                m -= 12
+                y += 1
+            ad_end = add_calendar_ymd(current_start, y, m, d)
 
         antardashas.append(AntarDasha(
             planet=ad_planet,
