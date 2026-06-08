@@ -454,6 +454,22 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         return coords_dict
 
     planet_coords = calculate_planet_coords(chart.lagna_sign_index, house_chart)
+    
+    # Apply any drag-and-drop planet nudges from the frontend payload
+    frontend_nudges = getattr(payload, 'planet_nudges', None)
+    if frontend_nudges is None:
+        if hasattr(payload, 'model_dump'):
+            frontend_nudges = payload.model_dump().get('planet_nudges')
+        elif hasattr(payload, 'dict'):
+            frontend_nudges = payload.dict().get('planet_nudges')
+        elif isinstance(payload, dict):
+            frontend_nudges = payload.get('planet_nudges')
+            
+    if frontend_nudges:
+        for p_name, nudge in frontend_nudges.items():
+            if p_name in planet_coords and isinstance(nudge, dict):
+                planet_coords[p_name]["x"] += nudge.get("dx", 0)
+                planet_coords[p_name]["y"] += nudge.get("dy", 0)
 
     # 12. Formulate Remedial Measures (প্রতিকার : গ্রহরত্ন, শিকড় ও ধাতু)
     # Allows overriding from payload to support visual editor star ratings

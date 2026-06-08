@@ -93,7 +93,8 @@ function buildRequestPayload(formValue: ReportInput, reportState: ReportState | 
     planet_overrides: planetOverrides,
     override_moon_longitude: formValue.override_moon_longitude?.trim() || undefined,
     override_ascendant_longitude: Number.isFinite(overrideAscendant) ? String(overrideAscendant) : undefined,
-  };
+    planet_nudges: reportState?.planet_nudges || {},
+  } as any;
 }
 function calculatePlanetCoords(state: ReportState): Record<string, { x: number, y: number }> {
   const coords: Record<string, { x: number, y: number }> = {};
