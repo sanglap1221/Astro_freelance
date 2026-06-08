@@ -509,6 +509,7 @@ class ChartResult:
     current_dasha_balance: tuple   # (planet, remaining_years, months, days)
     mahadasha_list: list[DashaPeriod]
     current_antardashas: list[dict[str, Any]] = field(default_factory=list)
+    remedies_list: list[dict[str, Any]] = field(default_factory=list)
     debug_trace: dict[str, Any] | None = None
 
 
@@ -1519,6 +1520,19 @@ def calculate_chart(
     if not current_ads:
         current_ads = all_ads[:9]
 
+    # Populate default remedies to ensure they are available in the visual editor
+    remedies = [
+        {"id": "১", "gemstone": "সহ্যহলে নীলা - ৫/৬ রতি / নাহলে এমিথিস্ট - ২৪/২৫ রতি", "remedy_root": "শ্বেতবেড়ালা + সীসা", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "২", "gemstone": "হীরে - ৪৫/৫০ সেন্ট অথবা সাদাপলা - ১৮/২০ রতি অথবা সাদা জারকন - ৫/৬ রতি", "remedy_root": "রামবাসক + প্ল্যাটিনাম", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৩", "gemstone": "পান্না - ৫/৬ রতি", "remedy_root": "বৃদ্ধদারক + সোনা", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৪", "gemstone": "পোখরাজ - ৫/৬ রতি", "remedy_root": "বামনহাটি + সোনা", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৫", "gemstone": "লালপলা - ১০/১১ রতি", "remedy_root": "অনন্তমূল + তামা", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৬", "gemstone": "মুক্ত - ৭/৮ রতি", "remedy_root": "ক্ষীরিকা + রূপো", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৭", "gemstone": "চুনী - ৫/৬ রতি", "remedy_root": "বিল্বমূল + তামা", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৮", "gemstone": "ক্যাটসআই - ৩/৪ রতি", "remedy_root": "অশ্বগন্ধা + রাং", "gemstone_rating": 0, "root_rating": 0},
+        {"id": "৯", "gemstone": "গোমেদ - ৭/৮ রতি", "remedy_root": "শ্বেতচন্দন + লোহা", "gemstone_rating": 0, "root_rating": 0}
+    ]
+
     return ChartResult(
         dob=dob,
         birth_time=birth_time,
@@ -1549,6 +1563,7 @@ def calculate_chart(
         current_dasha_balance=balance_info,
         mahadasha_list=dasha_list,
         current_antardashas=current_ads,
+        remedies_list=remedies,
         debug_trace=(
             _build_debug_trace(
                 location=location,

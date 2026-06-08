@@ -346,6 +346,9 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     current_antardashas = flattened_antardashas[active_antardasha_index:active_antardasha_index + 9]
     if not current_antardashas:
         current_antardashas = flattened_antardashas[:9]
+        future_antardashas = flattened_antardashas[9:]
+    else:
+        future_antardashas = flattened_antardashas[active_antardasha_index + 9:]
 
     # 11. Formulate empty/dummy kundli_grid matching types
     kundli_grid = [[{"empty": True} for _ in range(4)] for _ in range(4)]
@@ -453,6 +456,16 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     # 12. Formulate Remedial Measures (প্রতিকার : গ্রহরত্ন, শিকড় ও ধাতু)
     # Allows overriding from payload to support visual editor star ratings
     frontend_remedies = getattr(payload, 'remedies_list', None)
+    
+    # Robust extraction for Pydantic models where field might be in extra attributes
+    if frontend_remedies is None:
+        if hasattr(payload, 'model_dump'):
+            frontend_remedies = payload.model_dump().get('remedies_list')
+        elif hasattr(payload, 'dict'):
+            frontend_remedies = payload.dict().get('remedies_list')
+        elif isinstance(payload, dict):
+            frontend_remedies = payload.get('remedies_list')
+
     if frontend_remedies:
         remedies = frontend_remedies
     else:
@@ -501,7 +514,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
                 return f"{int(h)}.{m}"
             start_bn = to_bengali_digits(format_time_dot(item["start"]))
             end_bn = to_bengali_digits(format_time_dot(item["end"]))
-            lagna_time_range = f"{start_bn}-{end_bn}"
+            lagna_time_range = f"{start_bn} - {end_bn}"
             break
 
     # Format absolute Lagna (Ascendant) longitude
@@ -534,6 +547,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "antardasha_list": antardasha_list,
         "antardasha_display_rows": current_antardashas,
         "current_antardashas": current_antardashas,
+        "future_antardashas": future_antardashas,
         "planet_coords": planet_coords,
         "remedies_list": remedies,  # Added fields
         "lagna_time_range": lagna_time_range,

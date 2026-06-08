@@ -1357,7 +1357,11 @@ export default function CreateReportPage() {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <i
                                 key={star}
-                                onClick={() => updateRemedyRating(idx, "gemstone_rating", remedy.gemstone_rating === star ? 0 : star)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  updateRemedyRating(idx, "gemstone_rating", remedy.gemstone_rating === star ? 0 : star);
+                                }}
                                 className={`fa-solid fa-star text-[0.8rem] transition-all hover:scale-110 ${
                                   star <= (remedy.gemstone_rating || 0) ? "text-amber-400 drop-shadow-sm" : "text-slate-200"
                                 }`}
@@ -1374,7 +1378,11 @@ export default function CreateReportPage() {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <i
                                 key={star}
-                                onClick={() => updateRemedyRating(idx, "root_rating", remedy.root_rating === star ? 0 : star)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  updateRemedyRating(idx, "root_rating", remedy.root_rating === star ? 0 : star);
+                                }}
                                 className={`fa-solid fa-star text-[0.8rem] transition-all hover:scale-110 ${
                                   star <= (remedy.root_rating || 0) ? "text-amber-400 drop-shadow-sm" : "text-slate-200"
                                 }`}
@@ -1549,7 +1557,7 @@ export default function CreateReportPage() {
             </div>
 
             {/* PDF Viewer */}
-            <div className={`w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] ${fullPdfUrl ? "h-[320mm]" : "flex-1 min-h-[350px] lg:min-h-0"}`}>
+            <div className={`w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] ${fullPdfUrl ? "h-[640mm]" : "flex-1 min-h-[350px] lg:min-h-0"}`}>
               {rendering && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-slate-600 gap-3">
                   <LoadingSpinner />
