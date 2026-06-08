@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="bn">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,7 +31,7 @@
       background: #f0f0f0;
       color: var(--ink-black);
       font-family: 'Noto Sans Bengali', sans-serif;
-      font-size: 13.5px;
+      font-size: 14px;
       line-height: 1.4;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
@@ -38,38 +39,46 @@
 
     .a4-page {
       width: 210mm;
-      height: 297mm;
       min-height: 297mm;
-      max-height: 297mm;
       margin: 10mm auto;
       background: var(--bg-color);
-      padding: 12mm 10mm;
+      padding: 8mm;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      position: relative;
-      overflow: hidden;
-      page-break-after: always; /* Forces clean break onto a fresh sheet */
+      overflow: visible;
     }
 
     @media print {
-      body { background: #fff; margin: 0 !important; padding: 0 !important; }
+      body {
+        background: #fff;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
       .a4-page {
         margin: 0 !important;
+        padding: 8mm !important;
         box-shadow: none !important;
         border: none !important;
         width: 210mm !important;
         height: 297mm !important;
+        min-height: 297mm !important;
+        max-height: 297mm !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        page-break-inside: avoid !important;
       }
     }
 
     .form-wrapper {
       border: 1.5px solid var(--border-color);
       width: 100%;
-      height: 100%;
     }
 
     .header-section {
       text-align: center;
-      padding: 10px;
+      padding: 10px 10px;
       border-bottom: 1.5px solid var(--border-color);
       position: relative;
     }
@@ -83,76 +92,326 @@
     }
 
     .header-title {
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 800;
       color: var(--brand-red);
       letter-spacing: 2px;
-      margin-bottom: 2px;
+      margin-bottom: 5px;
       text-shadow: 1px 1px 0px #000;
     }
 
-    .row { display: flex; border-bottom: 1.5px solid var(--border-color); }
-    .row:last-child { border-bottom: none; }
-    .col { padding: 6px 10px; border-right: 1.5px solid var(--border-color); }
-    .col:last-child { border-right: none; }
-    .col-30 { width: 30%; } .col-40 { width: 40%; } .col-50 { width: 50%; }
+    .row {
+      display: flex;
+      border-bottom: 1.5px solid var(--border-color);
+    }
 
-    .highlight-blue { color: var(--brand-blue); font-weight: 700; }
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .col {
+      padding: 10px 14px;
+      border-right: 1.5px solid var(--border-color);
+    }
+
+    .col:last-child {
+      border-right: none;
+    }
+
+    .col-30 {
+      width: 30%;
+    }
+
+    .col-40 {
+      width: 40%;
+    }
+
+    .col-50 {
+      width: 50%;
+    }
+
+    .highlight-blue {
+      color: var(--brand-blue);
+      font-weight: 700;
+    }
+
     .data-value {
       font-weight: 600;
       color: #333;
       border-bottom: 1px dotted #888;
       display: inline-block;
+      min-width: 50px;
     }
 
-    .info-line { margin-bottom: 5px; display: flex; align-items: baseline; }
-    .info-line label { margin-right: 5px; white-space: nowrap; }
-    .kundli-title { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+    .info-line {
+      margin-bottom: 4px;
+      display: flex;
+      align-items: baseline;
+    }
 
-    .chart-house-number { font-size: 13px; fill: #9333ea; font-weight: 800; }
-    .chart-planet { font-size: 11px; fill: #1e1b4b; font-weight: 800; letter-spacing: -0.3px; }
-    .chart-lagna { font-size: 14px; fill: #d32f2f; font-weight: bold; }
+    .info-line label {
+      margin-right: 5px;
+      white-space: nowrap;
+    }
 
-    .svg-container { width: 100%; display: flex; justify-content: center; align-items: center; overflow: visible; }
-    svg { overflow: visible; }
+    .kundli-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 5px;
+      color: var(--ink-black);
+    }
 
-    /* Dasha Tables Grid layout styling */
-    .dasha-title-box { font-size: 14px; font-weight: bold; color: var(--brand-blue); margin-bottom: 6px; text-decoration: underline; }
-    .dasha-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .dasha-table th, .dasha-table td { border: 1px solid var(--border-color); padding: 3px 4px; text-align: center; }
-    .dasha-table th { background-color: #f7f9fa; font-weight: bold; }
-    .active-row { background-color: rgba(255, 249, 196, 0.6); font-weight: bold; }
+    .chart-house-number {
+      font-size: 14px;
+      fill: #9333ea;
+      font-weight: 800;
+    }
 
-    .shorthand-line { margin-bottom: 4px; font-weight: 600; font-size: 13px; display: flex; align-items: center; }
-    .pl-name { display: inline-block; width: 65px; font-weight: bold; }
-    .pl-colon { display: inline-block; width: 12px; text-align: center; }
+    .chart-planet {
+      font-size: 15px;
+      fill: #1e1b4b;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
 
-    .remedy-section { width: 100%; padding: 10px; background: #ffffff; }
-    .remedy-main-title { text-align: center; font-size: 16px; font-weight: 800; color: var(--brand-red); margin-bottom: 2px; }
-    .remedy-sub-title { text-align: center; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin-bottom: 8px; }
-    .remedy-grid-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    .remedy-grid-table th, .remedy-grid-table td { border: 1px solid var(--border-color); padding: 5px 8px; text-align: left; }
-    .remedy-grid-table th { background-color: #f8fafc; font-weight: 700; }
+    .chart-lagna {
+      font-size: 16px;
+      fill: #d32f2f;
+      font-weight: bold;
+    }
+
+    .svg-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: visible;
+    }
+
+    svg {
+      overflow: visible;
+    }
+
+    /* Traditional Notebook Ledger Styling */
+    .ledger-container {
+      display: flex;
+      width: 100%;
+      background: #ffffff;
+    }
+
+    .ledger-sheet {
+      width: 100%;
+      background-color: #fdfbf7;
+      background-image: linear-gradient(#e6dec9 1px, transparent 1px);
+      background-size: 100% 22px;
+      /* Matches line alignment precisely */
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-family: 'Noto Sans Bengali', monospace;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .ledger-title-box {
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--brand-blue);
+      border-bottom: 1.5px solid var(--border-color);
+      padding: 1px 6px;
+      margin-bottom: 4px;
+      display: inline-block;
+      background: #fcfcfc;
+    }
+
+    .ledger-row {
+      display: flex;
+      height: 22px;
+      line-height: 22px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #2c3e50;
+      align-items: center;
+    }
+
+    .ledger-label {
+      width: 80px;
+      color: var(--brand-blue);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .ledger-math {
+      flex-grow: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .math-part {
+      display: inline-block;
+      text-align: right;
+    }
+
+    .math-part.year {
+      width: 40px;
+    }
+
+    .math-part.month {
+      width: 20px;
+    }
+
+    .math-part.day {
+      width: 20px;
+    }
+
+    .ledger-age {
+      width: 45px;
+      text-align: right;
+      color: var(--brand-red);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .ledger-divider {
+      height: 1px;
+      border-bottom: 1.2px solid #7f8c8d;
+      margin: 1px 0;
+      width: 85%;
+    }
+
+    .ledger-row.active-row {
+      background-color: rgba(255, 249, 196, 0.5);
+    }
+
+    .shorthand-line {
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 14px;
+      text-align: left;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+
+    .pl-name {
+      display: inline-block;
+      width: 65px;
+      font-weight: bold;
+      color: var(--ink-black);
+      white-space: nowrap;
+    }
+
+    .pl-colon {
+      display: inline-block;
+      width: 15px;
+      text-align: center;
+      color: var(--ink-black);
+    }
+
+    .pl-val {
+      display: inline-block;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .remedy-section {
+      width: 100%;
+      border-top: 1.5px solid var(--border-color);
+      padding: 8px 10px;
+      background: #ffffff;
+    }
+
+    .remedy-main-title {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--brand-red);
+      margin-bottom: 2px;
+      letter-spacing: 1px;
+    }
+
+    .remedy-sub-title {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand-blue);
+      margin-bottom: 6px;
+    }
+
+    .remedy-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .remedy-grid-table th,
+    .remedy-grid-table td {
+      border: 1px solid var(--border-color);
+      padding: 3px 6px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .remedy-grid-table th {
+      background-color: #f8fafc;
+      font-weight: 700;
+      color: var(--ink-black);
+    }
+
+    .remedy-footer-note {
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #475569;
+      margin-top: 5px;
+      font-style: italic;
+    }
   </style>
 </head>
-<body>
 
+<body>
   {% set user = customer %}
   {% set astrology = summary %}
+  {% set gan = astrology.gan or '-' %}
+  {% set varna = astrology.varna or '-' %}
+  {% set subho_bar = astrology.shubh_bar or '-' %}
+  {% set ashubh_bar = astrology.ashubh_bar or '-' %}
+  {% set subho_rong = astrology.shubh_rong or '-' %}
+  {% set subho_sonkha = astrology.shubh_sonkha or '-' %}
+  {% set namer_adokkhyor = astrology.namer_adokkhyor or '-' %}
+  {% set current_pada_syllable = astrology.current_pada_syllable or namer_adokkhyor %}
+  {% set all_nakshatra_syllables = astrology.all_nakshatra_syllables or [namer_adokkhyor] %}
   {% set bn_nums = {'0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'} %}
-  
+
+  {# Universal Bengali Digit Converter Macro #}
   {% macro to_bn(num) %}
-    {%- set num_str = num | string -%}
-    {%- for char in num_str -%}{{ bn_nums[char] | default(char) }}{%- endfor -%}
+  {%- set num_str = num | string -%}
+  {%- for char in num_str -%}
+  {{ bn_nums[char] | default(char) }}
+  {%- endfor -%}
   {% endmacro %}
 
+  {# Year — Month — Day Date Formatting Macro #}
+  {% macro to_bn_date_parts(date_str) %}
+  {% set date_str_clean = date_str | string %}
+  {% set parts = date_str_clean.split('-') if '-' in date_str_clean else date_str_clean.split('/') %}
+  {% if parts|length == 3 %}
+  <span class="math-part year">{{ to_bn(parts[2]|int) }}</span> —
+  <span class="math-part month">{{ to_bn(parts[1]|int) }}</span> —
+  <span class="math-part day">{{ to_bn(parts[0]|int) }}</span>
+  {% else %}
+  {{ to_bn(date_str) }}
+  {% endif %}
+  {% endmacro %}
   <div class="a4-page">
     <div class="form-wrapper">
       <div class="header-section">
         <div class="form-number">{{ report_no }}</div>
         <h1 class="header-title">জীবন জিজ্ঞাসা</h1>
-        <div style="position: absolute; top: 12px; right: 15px;">
-          <svg width="35" height="35" viewBox="0 0 40 40">
+        <div style="position: absolute; top: 15px; right: 15px; text-align: center;">
+          <svg width="40" height="40" viewBox="0 0 40 40">
             <polygon points="20,0 40,20 20,40 0,20" fill="none" stroke="#1565c0" stroke-width="2" />
             <line x1="0" y1="20" x2="40" y2="20" stroke="#1565c0" stroke-width="1" />
             <line x1="20" y1="0" x2="20" y2="40" stroke="#1565c0" stroke-width="1" />
@@ -160,31 +419,53 @@
         </div>
       </div>
 
+      <!-- ── TOP INFO ROW ─────────────────────────────────────────── -->
       <div class="row">
         <div class="col col-30">
           <div class="info-line"><span class="highlight-blue">জ্যোতিষী: এস. ঘোষ</span></div>
-          <div style="font-size: 10px; margin-bottom: 5px;">জ্যোতিষ সম্রাট, স্বর্ণপদক প্রাপ্ত<br>(এম.এ), এম.বি.পি.পি</div>
-          <div class="info-line">মোবা: <span class="data-value">৯১৫৩০৮৭৮৭০</span></div>
+          <div style="font-size: 10px; margin-bottom: 8px;">জ্যোতিষ সম্রাট, স্বর্ণপদক প্রাপ্ত<br>(এম.এ), এম.বি.পি.পি
+          </div>
+          <div class="info-line">মোবা : <span class="data-value">৯১৫৩০৮৭৮৭০</span></div>
           <div class="info-line" style="margin-left: 32px;"><span class="data-value">৯৭৩২৮৩০৩৫৩</span></div>
+          <div style="color: var(--brand-red); font-weight: bold; font-size: 10px; margin-top: 5px;">ONLINE দেখার করা
+            হয়।</div>
         </div>
+
         <div class="col col-40">
-          <div class="info-line"><label>নাম:</label> <span class="data-value" style="width: 80%;">{{ user.name }}</span></div>
-          <div class="info-line"><label>ইংরেজি জন্ম তাং:</label> <span class="data-value" style="width: 55%;">{{ user.dob }}</span></div>
-          <div class="info-line"><label>জন্ম সময়:</label> <span class="data-value" style="width: 65%;">{{ user.time }}</span></div>
-          <div class="info-line"><label>বার:</label> <span class="data-value" style="width: 80%;">{{ user.weekday }}</span></div>
+          <div class="info-line"><label>নাম:</label> <span class="data-value" style="width: 80%;">{{ user.name }}</span>
+          </div>
+          <div class="info-line"><label>পিতার নাম:</label> <span class="data-value" style="width: 70%;">{{
+              user.father_name | default('-', true) }}</span></div>
+          <div class="info-line"><label>ইংরেজী জন্ম তাং:</label> <span class="data-value" style="width: 60%;">{{
+              user.dob | default('-', true) }}</span></div>
+          {# বাংলা তারিখ — the report generation date in Bengali digits #}
+          <div class="info-line"><label>বাংলা তারিখ:</label> <span class="data-value" style="width: 65%;">{{
+              user.bengali_dob | default('-', true) }}</span></div>
+          <div class="info-line"><label>জন্ম সময়:</label> <span class="data-value" style="width: 70%;">{{ user.time |
+              default('-', true) }}</span></div>
+          {# বার — weekday of birth, NOT place name #}
+          <div class="info-line"><label>বার:</label> <span class="data-value" style="width: 85%;">{{ user.weekday |
+              default('-', true) }}</span></div>
         </div>
+
         <div class="col col-30">
-          <div style="font-size: 10px; color: var(--brand-blue); line-height: 1.3;">
-            প্রতিদিন - সন্ধ্যা ৭:০০টা থেকে ১০টা<br>
-            রবিবার সকাল ১১:০০ থেকে ১:০০ মি:<br>
+          <div style="color: var(--brand-red); font-weight: bold; margin-bottom: 5px;">বিঃ দ্রঃ - গ্রহ-রত্নের<br>যোগাযোগ
+            কেন্দ্র।</div>
+          <div style="font-size: 10px; color: var(--brand-blue);">
+            বাড়িতে : প্রতিদিন - (শনি, মঙ্গল<br>
+            ব্যতীত) সন্ধ্যা ৭:০০টা থেকে ১০টা<br>
+            এবং রবিবার সকাল ১১থেকে ১:০০ মি:।<br>
             (রাজস্থান মার্বেলের পাশে)<br>
             পশ্চিমপাড়া, বনগাঁ, উত্তর ২৪ পরগণা।
           </div>
-          <div class="info-line" style="margin-top: 5px;"><label>তারিখ:</label> <span class="data-value" style="width: 70%;">{{ generated_at }}</span></div>
+          <div class="info-line" style="margin-top: 5px;"><label>তারিখ:</label> <span class="data-value"
+              style="width: 70%;">{{ generated_at | default('-', true) }}</span></div>
         </div>
       </div>
 
-      <div class="row" style="flex-grow: 1;">
+      <!-- ── PLANET LIST | KUNDLI | SUMMARY ─────────────────────── -->
+      <div class="row">
+        <!-- Left: planet shorthand list (Bengali format) -->
         <div class="col col-30">
           <div class="kundli-title">—ঃ গ্রহাবস্থান ঃ—</div>
           {% for item in shorthand_planets %}
@@ -198,212 +479,370 @@
             </span>
           </div>
           {% endfor %}
-          <div class="shorthand-line" style="margin-top: 8px; color: var(--brand-red);">
+
+          <div class="shorthand-line" style="margin-top: 10px; color: var(--brand-red);">
             <span class="pl-name" style="color: var(--brand-red);">লগ্ন</span>
             <span class="pl-colon" style="color: var(--brand-red);">:</span>
-            <span class="pl-val" style="font-weight: bold;">{{ lagna_compact_indexed }}</span>
+            <span class="pl-val" style="color: var(--brand-red); font-weight: bold;">{{ lagna_compact_indexed }}</span>
           </div>
         </div>
 
-        <div class="col col-40" style="display: flex; justify-content: center; align-items: center; padding: 15px 5px;">
+        <!-- Centre: Rashi Chakra (North-Indian diamond) -->
+        <div class="col col-40"
+          style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+          {% if show_kundli is not defined or show_kundli %}
           <div class="svg-container">
-            <svg width="270" height="270" viewBox="0 0 300 300" style="overflow: visible;">
-              <rect x="0" y="0" width="300" height="300" fill="none" stroke="none" pointer-events="none" />
-              
-              <line x1="100" y1="0"   x2="100" y2="300" stroke="#c084fc" stroke-width="2" />
-              <line x1="200" y1="0"   x2="200" y2="300" stroke="#c084fc" stroke-width="2" />
-              <line x1="0"   y1="100" x2="300" y2="100" stroke="#c084fc" stroke-width="2" />
-              <line x1="0"   y1="200" x2="300" y2="200" stroke="#c084fc" stroke-width="2" />
+            <svg width="270" height="270" viewBox="0 0 300 300">
 
-              <line x1="0"   y1="0"   x2="100" y2="100" stroke="#c084fc" stroke-width="2" />
-              <line x1="300" y1="0"   x2="200" y2="100" stroke="#c084fc" stroke-width="2" />
-              <line x1="0"   y1="300" x2="100" y2="200" stroke="#c084fc" stroke-width="2" />
+              <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" stroke-width="2" />
+              <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" stroke-width="2" />
+              <line x1="0" y1="100" x2="300" y2="100" stroke="#c084fc" stroke-width="2" />
+              <line x1="0" y1="200" x2="300" y2="200" stroke="#c084fc" stroke-width="2" />
+
+              <line x1="0" y1="0" x2="100" y2="100" stroke="#c084fc" stroke-width="2" />
+              <line x1="300" y1="0" x2="200" y2="100" stroke="#c084fc" stroke-width="2" />
+              <line x1="0" y1="300" x2="100" y2="200" stroke="#c084fc" stroke-width="2" />
               <line x1="300" y1="300" x2="200" y2="200" stroke="#c084fc" stroke-width="2" />
 
               <rect x="101" y="101" width="98" height="98" fill="#f3e8ff" stroke="none" />
-              <text x="150" y="156" text-anchor="middle" font-size="16px" font-weight="900" fill="#581c87">রাশি চক্র</text>
+              <text x="150" y="156" text-anchor="middle" font-size="18px" font-weight="900" fill="#581c87">রাশি
+                চক্র</text>
 
               {% set chart_positions = [
-                (150, -10, 150, 40,  0),  (72,  -10, 95,  12,  1),
-                (-12, 68,  12,  95,  2),  (-12, 140, 34,  140, 3),
-                (-12, 212, 12,  205, 4),  (72,  320, 95,  288, 5),
-                (150, 320, 150, 266, 6),  (228, 320, 205, 288, 7),
-                (312, 212, 288, 205, 8),  (312, 140, 266, 140, 9),
-                (312, 68,  288, 95,  10), (228, -10, 205, 12,  11)
+              (150, -8, 150, 42, 0),
+              (72, -8, 75, 25, 1),
+              (-10, 70, 30, 52, 2),
+              (-10, 140, 38, 135, 3),
+              (-10, 220, 30, 222, 4),
+              (72, 318, 75, 252, 5),
+              (150, 318, 150, 205, 6),
+              (228, 318, 225, 252, 7),
+              (310, 220, 275, 222, 8),
+              (310, 140, 262, 135, 9),
+              (310, 70, 270, 52, 10),
+              (228, -8, 225, 25, 11)
               ] %}
-              
               {% for num_x, num_y, planets_x, planets_y, sign_idx in chart_positions %}
               {% set house = house_chart[sign_idx] %}
-              {% set raw_house_number = ((sign_idx - summary.lagna_sign_index + 12) % 12) + 1 %}
-              {% set bangla_digits = {'1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯', '10':'১০', '11':'১১', '12':'১২'} %}
-              
-              <text x="{{ num_x }}" y="{{ num_y }}" text-anchor="middle" class="chart-house-number">{{ bangla_digits[raw_house_number|string] }}</text>
+
+              {% set raw_house_number = ((sign_idx - summary.lagna_sign_index) % 12) + 1 %}
+              {% set bangla_digits = {'1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯',
+              '10':'১০', '11':'১১', '12':'১২'} %}
+              {% set current_house_bn = bangla_digits[raw_house_number|string] %}
+
+              <text x="{{ num_x }}" y="{{ num_y }}" text-anchor="middle" class="chart-house-number"
+                style="fill: #7c3aed; font-weight: 800;">{{ current_house_bn }}</text>
 
               {% if sign_idx == summary.lagna_sign_index %}
-                <text x="{{ planets_x }}" y="{{ planets_y - 12 }}" text-anchor="middle" class="chart-lagna" style="fill:#d32f2f; font-weight:900; font-size:13px;">ল</text>
+              {% if planet_coords and planet_coords['ল'] %}
+              <text x="{{ planet_coords['ল'].x }}" y="{{ planet_coords['ল'].y }}" text-anchor="middle"
+                class="chart-lagna">ল</text>
+              {% else %}
+              <text x="{{ planets_x }}" y="{{ planets_y - 8 }}" text-anchor="middle" class="chart-lagna"
+                style="fill: #d32f2f; font-weight: bold; font-size: 15px;">ল</text>
+              {% endif %}
               {% endif %}
 
               {% if house.planets %}
-                {% set count = house.planets|length %}
-                {% set is_corner = sign_idx in [1, 2, 4, 5, 7, 8, 10, 11] %}
-                {% for planet_name in house.planets %}
-                  {% set idx = loop.index0 %}
-                  {% set row = idx // 3 %}
-                  {% set col = idx % 3 %}
-                  {% set step = 15 %}
-                  
-                  {% if is_corner %}
-                    {% if sign_idx == 1 %}
-                      {% set calc_x = planets_x - (col * step) - (row * step * 0.4) %}
-                      {% set calc_y = planets_y + (row * step) + (col * step * 0.4) %}
-                    {% elif sign_idx == 2 %}
-                      {% set calc_x = planets_x + (row * step) + (col * step * 0.4) %}
-                      {% set calc_y = planets_y - (col * step) - (row * step * 0.4) %}
-                    {% elif sign_idx == 4 %}
-                      {% set calc_x = planets_x + (row * step) + (col * step * 0.4) %}
-                      {% set calc_y = planets_y + (col * step) + (row * step * 0.4) %}
-                    {% elif sign_idx == 5 %}
-                      {% set calc_x = planets_x - (col * step) - (row * step * 0.4) %}
-                      {% set calc_y = planets_y - (row * step) - (col * step * 0.4) %}
-                    {% elif sign_idx == 7 %}
-                      {% set calc_x = planets_x + (col * step) + (row * step * 0.4) %}
-                      {% set calc_y = planets_y - (row * step) - (col * step * 0.4) %}
-                    {% elif sign_idx == 8 %}
-                      {% set calc_x = planets_x - (row * step) - (col * step * 0.4) %}
-                      {% set calc_y = planets_y - (col * step) - (row * step * 0.4) %}
-                    {% elif sign_idx == 10 %}
-                      {% set calc_x = planets_x - (row * step) - (col * step * 0.4) %}
-                      {% set calc_y = planets_y + (col * step) + (row * step * 0.4) %}
-                    {% elif sign_idx == 11 %}
-                      {% set calc_x = planets_x + (col * step) + (row * step * 0.4) %}
-                      {% set calc_y = planets_y + (row * step) + (col * step * 0.4) %}
-                    {% endif %}
-                  {% else %}
-                    {% set col_sq = idx % 2 %}
-                    {% set row_sq = idx // 2 %}
-                    {% set col_spacing = 24 %}
-                    {% set row_spacing = 16 %}
-                    {% if sign_idx == 0 %}
-                      {% set calc_x = planets_x if (count % 2 != 0 and idx == count - 1) else planets_x + (col_sq - 0.5) * col_spacing %}
-                      {% set calc_y = planets_y + (row_sq * row_spacing) %}
-                    {% elif sign_idx == 6 %}
-                      {% set calc_x = planets_x if (count % 2 != 0 and idx == count - 1) else planets_x + (col_sq - 0.5) * col_spacing %}
-                      {% set calc_y = planets_y - (row_sq * row_spacing) %}
-                    {% elif sign_idx == 3 %}
-                      {% set calc_x = planets_x + (row_sq * row_spacing) %}
-                      {% set calc_y = planets_y if (count % 2 != 0 and idx == count - 1) else planets_y + (col_sq - 0.5) * col_spacing %}
-                    {% elif sign_idx == 9 %}
-                      {% set calc_x = planets_x - (row_sq * row_spacing) %}
-                      {% set calc_y = planets_y if (count % 2 != 0 and idx == count - 1) else planets_y + (col_sq - 0.5) * col_spacing %}
-                    {% endif %}
-                  {% endif %}
-                  <text x="{{ calc_x }}" y="{{ calc_y }}" text-anchor="middle" dominant-baseline="central" class="chart-planet">{{ planet_name }}</text>
-                {% endfor %}
+              {% set base_y = planets_y - 4 if house.planets|length >= 4 else planets_y + (12 if sign_idx ==
+              summary.lagna_sign_index else 0) %}
+              {% for planet_name in house.planets %}
+              {% if planet_coords and planet_coords[planet_name] %}
+              <text x="{{ planet_coords[planet_name].x }}" y="{{ planet_coords[planet_name].y }}" text-anchor="middle"
+                class="chart-planet">{{ planet_name }}</text>
+              {% else %}
+              {# Fallback layout calculation if no frontend coords are passed #}
+              {% if house.planets|length >= 4 %}
+              {% if loop.index0 % 2 == 0 %}
+              <text x="{{ planets_x - 12 }}" y="{{ base_y + (loop.index0 // 2) * 14 }}" text-anchor="middle"
+                class="chart-planet" dominant-baseline="central">{{ planet_name }}</text>
+              {% else %}
+              <text x="{{ planets_x + 12 }}" y="{{ base_y + (loop.index0 // 2) * 14 }}" text-anchor="middle"
+                class="chart-planet" dominant-baseline="central">{{ planet_name }}</text>
+              {% endif %}
+              {% else %}
+              <text x="{{ planets_x }}" y="{{ base_y + loop.index0 * 14 }}" text-anchor="middle" class="chart-planet"
+                dominant-baseline="central">{{ planet_name }}</text>
+              {% endif %}
+              {% endif %}
+              {% endfor %}
               {% endif %}
               {% endfor %}
             </svg>
           </div>
+          {% endif %}
         </div>
 
+        <!-- Right: summary column (all Bengali) -->
         <div class="col col-30">
-          <div class="info-line"><label class="highlight-blue">রাশি:</label> <span class="data-value" style="width:65%;">{{ astrology.rashi }}</span></div>
-          <div class="info-line"><label class="highlight-blue">লগ্ন:</label> <span class="data-value" style="width:65%;">{{ astrology.lagna }}</span></div>
-          <div class="info-line"><label class="highlight-blue">নক্ষত্র:</label> <span class="data-value" style="width:55%;">{{ astrology.nakshatra }}</span></div>
-          <div class="info-line"><label class="highlight-blue">গণ:</label> <span class="data-value" style="width:70%;">{{ astrology.gan }}</span></div>
-          <div class="info-line"><label class="highlight-blue">বর্ণ:</label> <span class="data-value" style="width:70%;">{{ astrology.varna_bn }}</span></div>
-          
-          <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 5px;">
-            <div class="info-line"><label class="highlight-blue">শুভ বার:</label> <span class="data-value" style="width:55%;">{{ astrology.shubh_bar }}</span></div>
-            <div class="info-line"><label class="highlight-blue">অশুভ বার:</label> <span class="data-value" style="width:50%;">{{ astrology.ashubh_bar }}</span></div>
-            <div class="info-line"><label class="highlight-blue">শুভ রং:</label> <span class="data-value" style="width:55%;">{{ astrology.shubh_rong }}</span></div>
-            <div class="info-line"><label class="highlight-blue">শুভ সংখ্যা:</label> <span class="data-value" style="width:45%;">{{ astrology.shubh_sonkha }}</span></div>
-            <div class="info-line"><label class="highlight-blue">আদ্যক্ষর:</label> <span class="data-value" style="width:50%;">{{ astrology.namer_adokkhyor }}</span></div>
+          <div class="info-line"><label class="highlight-blue">রাশি-</label> <span class="data-value"
+              style="width: 60%;">{{ astrology.rashi | default('-', true) }}</span></div>
+          <div class="info-line"><label class="highlight-blue">লগ্ন-</label> <span class="data-value"
+              style="width: 80%;">{{ astrology.lagna | default('-', true) }} {% if lagna_time_range %}<span
+                style="color: var(--brand-red);">({{
+                lagna_time_range }})</span>{% endif %}</span></div>
+          <div class="info-line"><label class="highlight-blue">নক্ষত্র-</label> <span class="data-value"
+              style="width: 60%;">{{ astrology.nakshatra | default('-', true) }}</span></div>
+          <div class="info-line"><label class="highlight-blue">গণ-</label> <span class="data-value"
+              style="width: 60%;">{{ gan }}</span></div>
+          <div class="info-line"><label class="highlight-blue">বর্ণ-</label> <span class="data-value"
+              style="width: 60%;">{{ varna }}</span></div>
+          {% if show_lucky_info is not defined or show_lucky_info %}
+          <div class="info-line" style="margin-top: 10px;"><label class="highlight-blue">শুভ বার-</label> <span
+              class="data-value" style="width: 65%;">{{ subho_bar }}</span></div>
+          <div class="info-line"><label class="highlight-blue">অশুভ বার-</label> <span class="data-value"
+              style="width: 65%;">{{ ashubh_bar }}</span></div>
+          <div class="info-line"><label class="highlight-blue">শুভ রং-</label> <span class="data-value"
+              style="width: 65%;">{{ subho_rong }}</span></div>
+          <div class="info-line"><label class="highlight-blue">শুভ সংখ্যা-</label> <span class="data-value"
+              style="width: 50%;">{{ subho_sonkha }}</span></div>
+          {% endif %}
+          <div class="info-line"><label class="highlight-blue">শুভ নামের অক্ষর-</label> <span class="data-value"
+              style="width: 48%;">{{ namer_adokkhyor }}</span></div>
+        </div>
+      </div>
+
+      <!-- ── DASHA | ANTARDASHA (ASTRO KAKA'S LEDGER CALCULATION STYLE) ──────────────── -->
+      <div class="row">
+        <!-- Mahadasha Ledger Column -->
+        <div class="col col-50" style="padding: 4px 8px;">
+          {% if show_mahadasha is not defined or show_mahadasha %}
+          <div class="ledger-title-box">বিংশোত্তরী দশা :</div>
+          <div class="ledger-container">
+            <div class="ledger-sheet">
+              {% set first_dasha = dasha_list[0] if dasha_list else none %}
+              {% if first_dasha %}
+              {# Extract and store the exact starting birth year #}
+              {% set birth_clean = first_dasha.start | string %}
+              {% set birth_parts = birth_clean.split('-') if '-' in birth_clean else birth_clean.split('/') %}
+              {% set birth_year = birth_parts[2]|int if birth_parts|length == 3 else 2005 %}
+
+              {# Birth Base Row #}
+              <div class="ledger-row" style="color: #27ae60;">
+                <span class="ledger-label"></span>
+                <span class="ledger-math">
+                  {{ to_bn_date_parts(first_dasha.start) }}
+                </span>
+                <span class="ledger-age"></span>
+              </div>
+
+              {% for dasha in dasha_list %}
+              {# Dasha Lord Period Addition Line #}
+              <div class="ledger-row {% if dasha.is_active %}active-row{% endif %}">
+                <span class="ledger-label">{{ dasha.planet_bn | default(dasha.planet, true) }} -</span>
+                <span class="ledger-math">
+                  <span class="math-part year">{{ dasha.dur_y }}</span> —
+                  <span class="math-part month">{{ dasha.dur_m }}</span> —
+                  <span class="math-part day">{{ dasha.dur_d }}</span>
+                </span>
+                <span class="ledger-age"></span>
+              </div>
+
+              {# Hand-drawn Arithmetic Underline #}
+              <div class="ledger-divider"></div>
+
+              {# Resulting Ending Date with Age at transition #}
+              {% set end_clean = dasha.end | string %}
+              {% set end_parts = end_clean.split('-') if '-' in end_clean else end_clean.split('/') %}
+              {% set end_year = end_parts[2]|int if end_parts|length == 3 else birth_year %}
+              {% set age_at_end = end_year - birth_year %}
+
+              <div class="ledger-row {% if dasha.is_active %}active-row{% endif %}"
+                style="font-weight: bold; color: #111;">
+                <span class="ledger-label"></span>
+                <span class="ledger-math">
+                  {{ to_bn_date_parts(dasha.end) }}
+                </span>
+                <span class="ledger-age">| {{ to_bn(age_at_end) }}</span>
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
           </div>
+          {% endif %}
+        </div>
+
+        <!-- Antardasha Ledger Column -->
+        <div class="col col-50" style="padding: 4px 8px;">
+          {% if show_antardasha is not defined or show_antardasha %}
+          <div class="ledger-title-box">বিংশোত্তরী অন্তর্দশা :</div>
+          <div class="ledger-container">
+            <div class="ledger-sheet">
+              {% if antardasha_display_rows|length > 0 %}
+              {% set first_antar = antardasha_display_rows[0] %}
+
+              {% set birth_clean = customer.dob | string %}
+              {% set birth_parts = birth_clean.split('-') if '-' in birth_clean else birth_clean.split('/') %}
+              {% set birth_year = birth_parts[2]|int if birth_parts|length == 3 else 2006 %}
+
+              {# Antardasha Base Row #}
+              <div class="ledger-row" style="color: #27ae60;">
+                <span class="ledger-label"></span>
+                <span class="ledger-math">
+                  {{ to_bn_date_parts(first_antar.start) }}
+                </span>
+                <span class="ledger-age"></span>
+              </div>
+
+              {% for row in antardasha_display_rows %}
+              {# Antardasha Lord Period Addition Line #}
+              <div class="ledger-row">
+                <span class="ledger-label">{{ row.lord_bn }} -</span>
+                <span class="ledger-math">
+                  <span class="math-part year">{{ row.dur_y }}</span> —
+                  <span class="math-part month">{{ row.dur_m }}</span> —
+                  <span class="math-part day">{{ row.dur_d }}</span>
+                </span>
+                <span class="ledger-age"></span>
+              </div>
+
+              {# Hand-drawn Arithmetic Underline #}
+              <div class="ledger-divider"></div>
+
+              {# Resulting Ending Date #}
+              {% set end_clean = row.end | string %}
+              {% set end_parts = end_clean.split('-') if '-' in end_clean else end_clean.split('/') %}
+              {% set end_year = end_parts[2]|int if end_parts|length == 3 else birth_year %}
+              {% set age_at_end = end_year - birth_year %}
+
+              <div class="ledger-row" style="font-weight: bold; color: #111;">
+                <span class="ledger-label"></span>
+                <span class="ledger-math">
+                  {{ to_bn_date_parts(row.end) }}
+                </span>
+                <span class="ledger-age"></span>
+                <span class="ledger-age">| {{ to_bn(age_at_end) }}</span>
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
   </div>
 
-  <div class="a4-page">
-    <div class="form-wrapper" style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
-      
-      <div style="display: flex; gap: 15px; width: 100%;">
-        <div style="width: 50%;">
-          <div class="dasha-title-box">বিংশোত্তরী মহাদশা বিবরণী :</div>
-          <table class="dasha-table">
-            <thead>
-              <tr>
-                <th>দশা স্বামী</th>
-                <th>ভোগকাল</th>
-                <th>আরম্ভ তারিখ</th>
-                <th>সমাপ্তি তারিখ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for dasha in dasha_list %}
-              <tr {% if dasha.is_active %}class="active-row"{% endif %}>
-                <td><b>{{ dasha.planet_bn }}</b></td>
-                <td>{{ dasha.years }} বছর</td>
-                <td>{{ dasha.start }}</td>
-                <td>{{ dasha.end }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+  <!-- ================== PAGE 2 ================== -->
+  <div style="page-break-before: always;"></div>
 
-        <div style="width: 50%;">
-          <div class="dasha-title-box">বিংশোত্তরী অন্তর্দশা বিবরণী :</div>
-          <table class="dasha-table">
-            <thead>
-              <tr>
-                <th>মহাদশা / অন্তর</th>
-                <th>আরম্ভ সময়</th>
-                <th>সমাপ্তি সময়</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in antardasha_display_rows %}
-              <tr>
-                <td>{{ row.major_bn }} / <b>{{ row.lord_bn }}</b></td>
-                <td>{{ row.start }}</td>
-                <td>{{ row.end }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+  <div class="a4-page">
+    <div class="form-wrapper"
+      style="padding: 10px; height: 281mm; max-height: 281mm; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
+
+      <!-- 1. FUTURE ANTARDASHAS (4 COLUMNS LEDGER FORMAT) -->
+      {% if show_future_antardashas is not defined or show_future_antardashas %}
+      <div class="remedy-section"
+        style="border-top: none; padding-bottom: 0px; flex: 1 1 auto; min-height: 0; overflow: hidden;">
+        <div class="remedy-main-title" style="margin-bottom: 15px;">-ঃ ভবিষ্যৎ অন্তর্দশা সমূহ ঃ-</div>
+
+        <div class="ledger-container" style="overflow: hidden; height: calc(100% - 30px);">
+          <div class="ledger-sheet"
+            style="column-count: 4; column-gap: 15px; column-rule: 1px dashed #ccc; padding: 10px 10px; overflow: hidden; height: 100%;">
+            {% set birth_clean = customer.dob | string %}
+            {% set birth_parts = birth_clean.split('-') if '-' in birth_clean else birth_clean.split('/') %}
+            {% set birth_year = birth_parts[2]|int if birth_parts|length == 3 else 2006 %}
+
+            {% set current_md = namespace(name='') %}
+            {% for row in future_antardashas %}
+            {# Create a Mahadasha Header when starting a new major period #}
+            {% if row.mahadasha_bn != current_md.name %}
+            {% set current_md.name = row.mahadasha_bn %}
+            <div style="break-inside: avoid; margin-bottom: 5px;">
+              <div class="ledger-row" style="color: var(--brand-red); font-weight: 900; font-size: 13px;">
+                <span class="ledger-label" style="width: auto; border-bottom: 1.5px solid var(--brand-red);">{{
+                  row.mahadasha_bn }} মহাদশা</span>
+              </div>
+              <div class="ledger-row" style="color: #27ae60;">
+                <span class="ledger-label" style="width: 45px;"></span>
+                <span class="ledger-math" style="font-size: 12px;">
+                  {{ to_bn_date_parts(row.start) }}
+                </span>
+              </div>
+            </div>
+            {% endif %}
+
+            {# The exact ledger format lines used on page 1 #}
+            <div style="break-inside: avoid; margin-bottom: 8px;">
+              <div class="ledger-row">
+                <span class="ledger-label" style="width: 45px; font-size: 11px;">{{ row.antardasha_bn }} -</span>
+                <span class="ledger-math" style="font-size: 11px;">
+                  <span class="math-part year" style="width: 25px;">{{ row.dur_y }}</span> —
+                  <span class="math-part month" style="width: 15px;">{{ row.dur_m }}</span> —
+                  <span class="math-part day" style="width: 15px;">{{ row.dur_d }}</span>
+                </span>
+              </div>
+              <div class="ledger-divider" style="width: 100%;"></div>
+
+              {% set end_clean = row.end | string %}
+              {% set end_parts = end_clean.split('-') if '-' in end_clean else end_clean.split('/') %}
+              {% set end_year = end_parts[2]|int if end_parts|length == 3 else birth_year %}
+              {% set age_at_end = end_year - birth_year %}
+
+              <div class="ledger-row" style="font-weight: bold; color: #111;">
+                <span class="ledger-label" style="width: 45px;"></span>
+                <span class="ledger-math" style="font-size: 12px; flex-grow: 1;">
+                  {{ to_bn_date_parts(row.end) }}
+                </span>
+                <span class="ledger-age"
+                  style="width: auto; text-align: right; color: var(--brand-red); font-size: 12px; font-weight: 800; margin-left: 2px;">|
+                  {{ to_bn(age_at_end) }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
+      {% endif %}
 
-      <div class="remedy-section" style="border: 1px solid var(--border-color); flex-grow: 1;">
+      <!-- 2. REMEDIES SECTION (pinned to bottom) -->
+      <div class="remedy-section"
+        style="flex-shrink: 0; margin-top: 10px; border-top: 1.5px dashed var(--border-color);">
         <div class="remedy-main-title">-ঃ প্রতিকার ঃ-</div>
         <div class="remedy-sub-title">-ঃ গ্রহরত্ন, শিকড় ও ধাতু ঃ-</div>
 
         <table class="remedy-grid-table">
           <thead>
             <tr>
-              <th style="width: 8%; text-align: center;">ক্রঃ নং</th>
-              <th style="width: 52%;">গ্রহরত্ন (Gemstones)</th>
+              <th style="width: 7%; text-align: center;">নং</th>
+              <th style="width: 53%;">গ্রহরত্ন (Gemstones)</th>
               <th style="width: 40%;">শিকড় + ধাতু (Roots & Metals)</th>
             </tr>
           </thead>
           <tbody>
             {% for item in remedies_list %}
             <tr>
-              <td style="text-align: center; font-weight: bold;">{{ to_bn(loop.index) }}।</td>
-              <td>{{ item.gemstone }}</td>
-              <td>{{ item.remedy_root }}</td>
+              <td style="text-align: center; font-weight: bold;">{{ item.id }}।</td>
+              <td>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>{{ item.gemstone }}</span>
+                  {% if item.gemstone_rating %}
+                  <span style="color: #eab308; font-size: 11px; white-space: nowrap; margin-left: 8px;">
+                    {% for _ in range(item.gemstone_rating) %}★{% endfor %}
+                  </span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>{{ item.remedy_root }}</span>
+                  {% if item.root_rating %}
+                  <span style="color: #eab308; font-size: 11px; white-space: nowrap; margin-left: 8px;">
+                    {% for _ in range(item.root_rating) %}★{% endfor %}
+                  </span>
+                  {% endif %}
+                </div>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
-        <div class="remedy-footer-note" style="margin-top: 15px; font-weight: bold; text-align: center; color: #555;">
-          ** ধাতু ও শ্বেতচন্দন পাল্টানোর কোনো প্রয়োজন নেই **
-        </div>
+        <div class="remedy-footer-note">** ধাতু ও শ্বেতচন্দন পাল্টানোর প্রয়োজন নেই **</div>
       </div>
 
     </div>
   </div>
 
 </body>
+
 </html>

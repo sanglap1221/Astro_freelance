@@ -312,6 +312,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     for d in chart.mahadasha_list:
         for ad in d.antardashas:
             age_at_start = calculate_age_at_start(payload.dob, ad.start_date)
+            age_at_end = calculate_age_at_start(payload.dob, ad.end_date)
             
             flattened_antardashas.append({
                 "major_lord": d.planet,
@@ -323,6 +324,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
                 "start_date": ad.start_date,
                 "end_date": ad.end_date,
                 "age_bn": age_at_start,
+                "age_end_bn": age_at_end,
                 "mahadasha_bn": PLANETS_BN.get(d.planet, d.planet),
                 "antardasha_bn": PLANETS_BN.get(ad.planet, ad.planet),
                 "start_date_bn": to_bengali_digits(ad.start_date.strftime("%Y - %m - %d")),
@@ -593,11 +595,22 @@ def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> st
 
 def generate_pdf_report(payload: PdfRequest) -> PdfReportResult:
     context = build_report_context(payload)
-    # Default layout options
-    context["show_kundli"] = True
-    context["show_mahadasha"] = True
-    context["show_antardasha"] = True
-    context["show_lucky_info"] = True
+    
+    # Dynamically extract layout toggles from payload, defaulting to True
+    def get_toggle(field_name: str, default: bool = True) -> bool:
+        val = getattr(payload, field_name, None)
+        if val is not None: return val
+        if hasattr(payload, 'model_dump') and payload.model_dump().get(field_name) is not None:
+            return payload.model_dump().get(field_name)
+        if hasattr(payload, 'dict') and payload.dict().get(field_name) is not None:
+            return payload.dict().get(field_name)
+        return default
+
+    context["show_kundli"] = get_toggle("show_kundli", True)
+    context["show_mahadasha"] = get_toggle("show_mahadasha", True)
+    context["show_antardasha"] = get_toggle("show_antardasha", True)
+    context["show_lucky_info"] = get_toggle("show_lucky_info", True)
+    context["show_future_antardashas"] = get_toggle("show_future_antardashas", True)
     
     pdf_url = render_pdf_from_context(context)
     return PdfReportResult(pdf_url=pdf_url)

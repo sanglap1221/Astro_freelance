@@ -510,12 +510,12 @@ export default function CreateReportPage() {
     )
     : [];
 
-  const updateToggle = (field: "show_kundli" | "show_mahadasha" | "show_antardasha" | "show_lucky_info", val: boolean) => {
+  const updateToggle = (field: "show_kundli" | "show_mahadasha" | "show_antardasha" | "show_lucky_info" | "show_future_antardashas", val: boolean) => {
     if (!reportState) return;
     setReportState({
       ...reportState,
       [field]: val,
-    });
+    } as any);
   };
 
   const updateRemedyRating = (index: number, type: "gemstone_rating" | "root_rating", rating: number) => {
@@ -823,7 +823,7 @@ export default function CreateReportPage() {
       )}
 
       {/* ── MAIN INTERACTIVE FLOW ── */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden h-auto lg:h-[calc(100vh-65px)]">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 items-stretch overflow-y-auto lg:overflow-hidden h-auto lg:h-[calc(100vh-65px)]">
         {/* ── LEFT COLUMN: Interactive Visual Editor ── */}
         <section className="lg:col-span-5 flex flex-col overflow-y-auto border-r border-[#ebdcb9]" style={{ background: "white" }}>
 
@@ -1150,7 +1150,7 @@ export default function CreateReportPage() {
                                         e.stopPropagation();
                                         setSelectedPlanet(isSelected ? "" : itemName);
                                       }}
-                                      draggable
+                                        {...({ draggable: true } as any)}
                                       onDragStart={(e) => {
                                         e.dataTransfer.effectAllowed = "move";
                                         e.dataTransfer.setData("text/plain", itemName);
@@ -1277,7 +1277,12 @@ export default function CreateReportPage() {
                         <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]">
                           <input type="checkbox" checked={!!reportState.show_antardasha} onChange={(e) => updateToggle("show_antardasha", e.target.checked)}
                             className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" style={{ borderColor: "#cbd5e1" }} />
-                          <span>Show PDF</span>
+                        <span>Current (Pg 1)</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 text-[0.5625rem]" title="Show future antardashas on Page 2">
+                        <input type="checkbox" checked={(reportState as any).show_future_antardashas !== false} onChange={(e) => updateToggle("show_future_antardashas", e.target.checked)}
+                          className="rounded text-indigo-600 focus:ring-0 h-3 w-3 cursor-pointer" style={{ borderColor: "#cbd5e1" }} />
+                        <span>Future (Pg 2)</span>
                         </label>
                       </div>
                     </div>
@@ -1418,7 +1423,7 @@ export default function CreateReportPage() {
             )}
           </section>
         {/* ── RIGHT COLUMN: Live PDF Preview ── */}
-        <section className="lg:col-span-7 flex flex-col h-full overflow-y-auto items-center p-4 relative bg-[#f1f5f9] border-l border-[#e2e8f0]">
+        <section className="lg:col-span-7 flex flex-col items-center p-4 relative bg-[#f1f5f9] border-l border-[#e2e8f0] h-full overflow-y-auto">
             {/* Floating Controls Bar */}
             <div className="w-full max-w-5xl rounded-xl shadow-md p-3 mb-4 flex items-center justify-between z-10 sticky top-[65px] lg:top-0 no-print" style={{ background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(8px)", border: "1px solid #ebdcb9" }}>
               <span className="text-xs font-bold text-slate-700 flex items-center gap-2">
@@ -1557,7 +1562,7 @@ export default function CreateReportPage() {
             </div>
 
             {/* PDF Viewer */}
-            <div className={`w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] ${fullPdfUrl ? "h-[640mm]" : "flex-1 min-h-[350px] lg:min-h-0"}`}>
+            <div className="w-full max-w-5xl rounded-xl relative overflow-hidden bg-[#f1f5f9] border border-[#e2e8f0] flex-1">
               {rendering && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-slate-600 gap-3">
                   <LoadingSpinner />
