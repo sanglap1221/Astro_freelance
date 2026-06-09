@@ -172,8 +172,14 @@ function createWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.includes('/api/download-pdf/') || url.includes('.pdf')) {
+    // 1. Download action
+    if (url.includes('/api/download-pdf/')) {
       handlePdfDownload(url);
+      return { action: 'deny' };
+    }
+    // 2. Open/View action - allows target="_blank" to open in a new popup window
+    if (url.includes('.pdf') || url.includes('blob:') || url.includes('/pdf') || url.includes('localhost')) {
+      return { action: 'allow' };
     }
     return { action: 'deny' };
   });
@@ -208,8 +214,14 @@ app.whenReady().then(async () => {
 
 app.on('web-contents-created', (_, contents) => {
   contents.setWindowOpenHandler(({ url }) => {
-    if (url.includes('/api/download-pdf/') || url.includes('.pdf')) {
+    // 1. Download action
+    if (url.includes('/api/download-pdf/')) {
       handlePdfDownload(url);
+      return { action: 'deny' };
+    }
+    // 2. Open/View action - allows target="_blank" to open in a new popup window
+    if (url.includes('.pdf') || url.includes('blob:') || url.includes('/pdf') || url.includes('localhost')) {
+      return { action: 'allow' };
     }
     return { action: 'deny' };
   });
