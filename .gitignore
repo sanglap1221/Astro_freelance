@@ -11,7 +11,7 @@ frontend/.turbo/
 frontend/.vercel/
 __pycache__/
 *.pyc
-
+D:\My Projects\Astro_FreeLance\desktop_app\node_modules
 # Local Environment Variables
 backend/.env
 backend/.env.example

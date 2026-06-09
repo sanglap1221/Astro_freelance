@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -7,7 +8,14 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routes.report import router as report_router
 from app.api.routes.pdf import router as pdf_router
 
-generated_dir = Path(__file__).resolve().parents[1] / "generated"
+if getattr(sys, 'frozen', False):
+    # If running as PyInstaller .exe, save PDFs next to the .exe
+    base_dir = Path(sys.executable).parent
+else:
+    # If running normally via Python script
+    base_dir = Path(__file__).resolve().parents[1]
+
+generated_dir = base_dir / "generated"
 generated_dir.mkdir(exist_ok=True)
 
 app = FastAPI(title="Astro FreeLance Backend", version="0.1.0")

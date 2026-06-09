@@ -1,0 +1,20 @@
+{
+  "name": "jibon-jiggasa",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^26.15.2"
+  },
+  "build": {
+    "appId": "com.jibon.jiggasa",
+    "productName": "জীবন জিজ্ঞাসা",
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

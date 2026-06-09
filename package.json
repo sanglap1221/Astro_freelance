@@ -1,5 +1,25 @@
 {
   "dependencies": {
     "react-pdf": "^10.4.1"
-  }
+  },
+  "name": "astro_freelance",
+  "version": "1.0.0",
+  "description": "---",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanglap1221/Astro_freelance.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sanglap1221/Astro_freelance/issues"
+  },
+  "homepage": "https://github.com/sanglap1221/Astro_freelance#readme"
 }

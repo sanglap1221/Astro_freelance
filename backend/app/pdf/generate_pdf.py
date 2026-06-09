@@ -575,14 +575,22 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
 
 
 def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> str:
+    import sys
     # Set up Jinja2 environment and load template
-    templates_dir = Path(__file__).parent / "templates"
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        templates_dir = Path(sys._MEIPASS) / "app" / "pdf" / "templates"
+    else:
+        templates_dir = Path(__file__).parent / "templates"
+        
     env = Environment(loader=FileSystemLoader(str(templates_dir)))
     template = env.get_template("bengali_report.html")
     html_content = template.render(**context)
 
     # Output file setup in the backend's generated directory
-    backend_root = Path(__file__).resolve().parents[2]
+    if getattr(sys, 'frozen', False):
+        backend_root = Path(sys.executable).parent
+    else:
+        backend_root = Path(__file__).resolve().parents[2]
     generated_dir = backend_root / "generated"
     generated_dir.mkdir(exist_ok=True)
 

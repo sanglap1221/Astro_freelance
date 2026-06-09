@@ -16,6 +16,7 @@ pdf_statuses: dict[str, dict[str, Any]] = {}
 def compile_pdf_task(payload: dict[str, Any], report_id: str):
     from jinja2 import Environment, FileSystemLoader
     from pathlib import Path
+    import sys
     # pyrefly: ignore [missing-import]
     from playwright.sync_api import sync_playwright
     import logging
@@ -27,7 +28,11 @@ def compile_pdf_task(payload: dict[str, Any], report_id: str):
         # Stage 1: Render Jinja2 template (Progress 25)
         pdf_statuses[report_id] = {"status": "compiling", "progress": 25}
         
-        templates_dir = Path(__file__).parent.parent.parent / "pdf" / "templates"
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            templates_dir = Path(sys._MEIPASS) / "app" / "pdf" / "templates"
+        else:
+            templates_dir = Path(__file__).parent.parent.parent / "pdf" / "templates"
+            
         env = Environment(loader=FileSystemLoader(str(templates_dir)))
         template = env.get_template("bengali_report.html")
         html_content = template.render(**payload)
@@ -35,7 +40,10 @@ def compile_pdf_task(payload: dict[str, Any], report_id: str):
         # Stage 2: Initialize Playwright (Progress 50)
         pdf_statuses[report_id] = {"status": "compiling", "progress": 50}
         
-        backend_root = Path(__file__).resolve().parents[3]
+        if getattr(sys, 'frozen', False):
+            backend_root = Path(sys.executable).parent
+        else:
+            backend_root = Path(__file__).resolve().parents[3]
         generated_dir = backend_root / "generated"
         generated_dir.mkdir(exist_ok=True)
         output_path = generated_dir / filename
@@ -101,13 +109,17 @@ def render_pdf(payload: dict[str, Any], background_tasks: BackgroundTasks) -> di
     try:
         from jinja2 import Environment, FileSystemLoader
         from pathlib import Path
+        import sys
         
         report_id = payload.get("report_id")
         if not report_id:
             report_id = str(uuid.uuid4())
             payload["report_id"] = report_id
             
-        templates_dir = Path(__file__).parent.parent.parent / "pdf" / "templates"
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            templates_dir = Path(sys._MEIPASS) / "app" / "pdf" / "templates"
+        else:
+            templates_dir = Path(__file__).parent.parent.parent / "pdf" / "templates"
         env = Environment(loader=FileSystemLoader(str(templates_dir)))
         template = env.get_template("bengali_report.html")
         html_content = template.render(**payload)
@@ -129,13 +141,17 @@ def render_pdf(payload: dict[str, Any], background_tasks: BackgroundTasks) -> di
 @router.get("/api/pdf-status/{report_id}")
 def get_pdf_status(report_id: str):
     from pathlib import Path
+    import sys
     
     # 1. Check in-memory status dictionary first
     if report_id in pdf_statuses:
         return pdf_statuses[report_id]
         
     # 2. Check if the PDF file exists on disk
-    backend_root = Path(__file__).resolve().parents[3]
+    if getattr(sys, 'frozen', False):
+        backend_root = Path(sys.executable).parent
+    else:
+        backend_root = Path(__file__).resolve().parents[3]
     file_path = backend_root / "generated" / f"report_{report_id}.pdf"
     if file_path.exists():
         return {"status": "ready", "progress": 100}
@@ -150,8 +166,12 @@ def download_pdf(filename: str, name: str = None):
     import urllib.parse
     from fastapi.responses import FileResponse
     from pathlib import Path
+    import sys
     
-    backend_root = Path(__file__).resolve().parents[3]
+    if getattr(sys, 'frozen', False):
+        backend_root = Path(sys.executable).parent
+    else:
+        backend_root = Path(__file__).resolve().parents[3]
     file_path = backend_root / "generated" / filename
     
     # Extract report_id from filename to check active compilation status
@@ -190,5 +210,3 @@ def download_pdf(filename: str, name: str = None):
         media_type="application/pdf",
         headers=headers
     )
-
-
