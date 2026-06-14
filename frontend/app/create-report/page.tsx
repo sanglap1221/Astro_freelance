@@ -1205,7 +1205,7 @@ export default function CreateReportPage() {
                 </div>
 
                 {/* ── SECTION D: Vimshottari Dasha & Antardasha ── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-[53%_47%] gap-4">
 
                   {/* Mahadasha Table */}
                   <div className={`rounded-xl p-3 shadow-sm transition-opacity duration-200 ${!reportState.show_mahadasha ? "opacity-30" : ""}`} style={{ background: "#fcfcf9", border: "1px solid #ebdcb9" }}>
@@ -1254,11 +1254,11 @@ export default function CreateReportPage() {
                                   value={toEnglishDigits(dasha.years)} onChange={(e) => updateDashaField(idx, "years", e.target.value)} onClick={(e) => e.stopPropagation()} />
                               </td>
                               <td className="px-1 py-1">
-                                <input className="bg-transparent border-0 p-0 w-[4rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
+                                <input className="bg-transparent border-0 p-0 w-[4.4rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
                                   value={toEnglishDigits(dasha.start)} onChange={(e) => updateDashaField(idx, "start", e.target.value)} onClick={(e) => e.stopPropagation()} />
                               </td>
                               <td className="px-1 py-1">
-                                <input className="bg-transparent border-0 p-0 w-[4rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
+                                <input className="bg-transparent border-0 p-0 w-[4.4rem] focus:outline-none focus:bg-white focus:border focus:border-slate-300 rounded px-0.5 text-[0.6875rem]"
                                   value={toEnglishDigits(dasha.end)} onChange={(e) => updateDashaField(idx, "end", e.target.value)} onClick={(e) => e.stopPropagation()} />
                               </td>
                             </tr>

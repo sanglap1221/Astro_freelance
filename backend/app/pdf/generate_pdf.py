@@ -316,9 +316,9 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             
             flattened_antardashas.append({
                 "major_lord": d.planet,
-                "major_bn": PLANETS_BN.get(d.planet, d.planet),
+                "major_bn": PLANET_ABBR_BN.get(d.planet, d.planet),
                 "lord": ad.planet,
-                "lord_bn": PLANETS_BN.get(ad.planet, ad.planet),
+                "lord_bn": PLANET_ABBR_BN.get(ad.planet, ad.planet),
                 "start": to_bengali_digits(ad.start_date.strftime("%d-%m-%Y")),
                 "end": to_bengali_digits(ad.end_date.strftime("%d-%m-%Y")),
                 "start_date": ad.start_date,
@@ -351,6 +351,18 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         future_antardashas = flattened_antardashas[9:]
     else:
         future_antardashas = flattened_antardashas[active_antardasha_index + 9:]
+
+    for row in current_antardashas:
+        planet_major = row.get("major_lord", row.get("major_bn"))
+        planet_lord = row.get("lord", row.get("lord_bn"))
+        row["major_bn"] = PLANET_ABBR_BN.get(planet_major, row.get("major_bn"))
+        row["lord_bn"] = PLANET_ABBR_BN.get(planet_lord, row.get("lord_bn"))
+
+    for row in future_antardashas:
+        planet_major = row.get("major_lord", row.get("major_bn"))
+        planet_lord = row.get("lord", row.get("lord_bn"))
+        row["major_bn"] = PLANET_ABBR_BN.get(planet_major, row.get("major_bn"))
+        row["lord_bn"] = PLANET_ABBR_BN.get(planet_lord, row.get("lord_bn"))
 
     # 11. Formulate empty/dummy kundli_grid matching types
     kundli_grid = [[{"empty": True} for _ in range(4)] for _ in range(4)]

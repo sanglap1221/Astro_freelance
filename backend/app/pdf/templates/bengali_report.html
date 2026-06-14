@@ -687,7 +687,7 @@
               {% for row in antardasha_display_rows %}
               {# Antardasha Lord Period Addition Line #}
               <div class="ledger-row">
-                <span class="ledger-label">{{ row.lord_bn }} -</span>
+                <span class="ledger-label"><span style="font-weight:700;">{{ row.major_bn }}/{{ row.lord_bn }}</span> -</span>
                 <span class="ledger-math">
                   <span class="math-part year">{{ row.dur_y }}</span> —
                   <span class="math-part month">{{ row.dur_m }}</span> —
@@ -765,7 +765,7 @@
             {# The exact ledger format lines used on page 1 #}
             <div style="break-inside: avoid; margin-bottom: 8px;">
               <div class="ledger-row">
-                <span class="ledger-label" style="width: 45px; font-size: 11px;">{{ row.antardasha_bn }} -</span>
+                <span class="ledger-label" style="width: 45px; font-size: 11px;"><span style="font-weight:700;">{{ row.major_bn }}/{{ row.lord_bn }}</span> -</span>
                 <span class="ledger-math" style="font-size: 11px;">
                   <span class="math-part year" style="width: 25px;">{{ row.dur_y }}</span> —
                   <span class="math-part month" style="width: 15px;">{{ row.dur_m }}</span> —
