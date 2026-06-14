@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
+import AboutModal from "../../components/AboutModal";
 import {
   getDashboardStats,
   getReports,
@@ -33,6 +35,7 @@ interface DashboardStats {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const { user, isAdmin, isAuthenticated, isLoading: authLoading, logout } = useAuth();
 
   // Dashboard state
@@ -61,6 +64,7 @@ export default function AdminPage() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState<"dashboard" | "reports" | "password">("dashboard");
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   // ── Load Data ──
 
@@ -286,6 +290,14 @@ export default function AdminPage() {
         style={{ borderColor: "#ebdcb9", background: "#fdfcf7" }}
       >
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-amber-100/80 transition-colors border shadow-sm"
+            style={{ color: "#92400e", borderColor: "rgba(245, 158, 11, 0.25)", background: "#fffbeb" }}
+            title="Go Back"
+          >
+            <i className="fa-solid fa-arrow-left text-xs" />
+          </button>
           <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-md" style={{ background: "#92400e" }}>
             <i className="fa-solid fa-shield-halved" />
           </div>
@@ -305,6 +317,14 @@ export default function AdminPage() {
             title="Reload Page"
           >
             <i className="fa-solid fa-arrows-rotate" /> Reload
+          </button>
+          <button
+            onClick={() => setIsAboutOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
+            style={{ color: "#b45309", background: "#fffbeb", borderColor: "#fde68a" }}
+            id="admin-about-btn"
+          >
+            <i className="fa-solid fa-circle-info" /> About
           </button>
           <Link
             href="/"
@@ -371,7 +391,7 @@ export default function AdminPage() {
                 <div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Actions</p>
                   <Link
-                    href="/"
+                    href="/?new=true"
                     className="text-sm font-bold hover:underline"
                     style={{ color: "#059669" }}
                   >
@@ -620,6 +640,39 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Footer Branding */}
+      <footer 
+        className="w-full py-4 px-4 sm:px-6 text-center border-t text-xs font-sans mt-auto"
+        style={{ borderColor: "#ebdcb9", background: "#fdfcf7" }}
+      >
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500">
+          <div>
+            <strong>Version 1.0</strong>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-4">
+            <span>
+              Software Developed By:{" "}
+              <span 
+                onClick={() => window.open("https://sanglap-s-portfolio.vercel.app/", "_blank")}
+                className="font-bold text-amber-800 hover:text-amber-950 hover:underline cursor-pointer"
+              >
+                Sanglap Ghosh
+              </span>
+            </span>
+            <span className="hidden sm:inline">|</span>
+            <span>
+              Contact:{" "}
+              <a href="tel:+919883483390" className="font-semibold text-slate-700 hover:text-amber-800">
+                +91 9883483390
+              </a>
+            </span>
+          </div>
+        </div>
+      </footer>
+
+      {/* About Modal */}
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );
 }

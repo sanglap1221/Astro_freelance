@@ -118,6 +118,17 @@ function waitForFrontend(win) {
   });
 }
 
+// ── Helper to intercept external links and open in system browser ──
+function handleExternalLinks(url) {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (!url.includes('localhost') && !url.includes('127.0.0.1')) {
+      shell.openExternal(url).catch(err => console.error('Failed to open external link:', err));
+      return true;
+    }
+  }
+  return false;
+}
+
 // ── Show Save dialog and download PDF ──
 function handlePdfDownload(url) {
   let suggestedName = 'report.pdf';
@@ -168,6 +179,9 @@ function openReportWindow(url, title) {
 
   // Handle PDF download from report window
   reportWin.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+    if (handleExternalLinks(targetUrl)) {
+      return { action: 'deny' };
+    }
     if (targetUrl.includes('/api/download-pdf/')) {
       handlePdfDownload(targetUrl);
       return { action: 'deny' };
@@ -203,6 +217,9 @@ function createWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (handleExternalLinks(url)) {
+      return { action: 'deny' };
+    }
     // 1. Download action
     if (url.includes('/api/download-pdf/')) {
       handlePdfDownload(url);
@@ -251,6 +268,9 @@ app.whenReady().then(async () => {
 
 app.on('web-contents-created', (_, contents) => {
   contents.setWindowOpenHandler(({ url }) => {
+    if (handleExternalLinks(url)) {
+      return { action: 'deny' };
+    }
     // 1. Download action
     if (url.includes('/api/download-pdf/')) {
       handlePdfDownload(url);

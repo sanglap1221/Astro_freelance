@@ -8,6 +8,7 @@ import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { PdfViewer } from "../../components/PdfViewer";
 import { ReportForm } from "../../components/ReportForm";
 import { useAuth } from "../../components/AuthProvider";
+import AboutModal from "../../components/AboutModal";
 import { calculateReport, renderPdf, getPdfStatus, API } from "../../services/api";
 import type { ReportInput, ReportState, CustomerState, AstrologyState, DashaRow } from "../../types/report";
 
@@ -240,7 +241,7 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
 
 export default function CreateReportPage() {
   const router = useRouter();
-  const { user, isAdmin, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const { user, isAdmin, isAuthenticated, isLoading: authLoading, logout, token } = useAuth();
   const [formValue, setFormValue] = useState<ReportInput>(initialValue);
   const [reportState, setReportState] = useState<ReportState | null>(null);
   const [activePlanet, setActivePlanet] = useState<string>("");
@@ -258,6 +259,7 @@ export default function CreateReportPage() {
   const [compilationStatus, setCompilationStatus] = useState("");
   const [pollIntervalId, setPollIntervalId] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   // Nudge the selected planet position
   const nudgeSelectedPlanet = (dx: number, dy: number) => {
@@ -700,6 +702,14 @@ export default function CreateReportPage() {
       {/* ── Header / Branding ── */}
       <header className="fixed top-0 left-0 right-0 no-print w-full py-3 px-3 sm:px-6 border-b flex items-center justify-between shadow-sm z-30 h-[65px]" style={{ borderColor: "#ebdcb9", background: "#fdfcf7" }}>
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-amber-100/80 transition-colors border shadow-sm"
+            style={{ color: "#92400e", borderColor: "rgba(245, 158, 11, 0.25)", background: "#fffbeb" }}
+            title="Go Back"
+          >
+            <i className="fa-solid fa-arrow-left text-xs" />
+          </button>
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md" style={{ background: "#92400e" }}>
             🕉️
           </div>
@@ -719,6 +729,15 @@ export default function CreateReportPage() {
             title="Reload Page"
           >
             <i className="fa-solid fa-arrows-rotate"></i> Reload
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsAboutOpen(true)}
+            className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
+            style={{ color: "#b45309", background: "#fffbeb", borderColor: "#fde68a" }}
+            id="workspace-about-btn"
+          >
+            <i className="fa-solid fa-circle-info"></i> About
           </button>
           {/* Admin Button — only visible for admin role */}
           {isAdmin && (
@@ -743,7 +762,7 @@ export default function CreateReportPage() {
           </button>
           {reportState && (
             <Link
-              href="/"
+              href="/?new=true"
               className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
               style={{ color: "#475569", background: "#f8fafc", borderColor: "#cbd5e1" }}
               id="new-report-btn"
@@ -801,13 +820,24 @@ export default function CreateReportPage() {
                     style={{ borderColor: "#ebdcb9" }}
                   >
                     <Link
-                      href="/"
+                      href="/?new=true"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors"
                       style={{ color: "#475569" }}
                     >
                       <i className="fa-solid fa-plus w-4 text-center text-slate-400"></i> New Report
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAboutOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors w-full text-left"
+                      style={{ color: "#475569" }}
+                    >
+                      <i className="fa-solid fa-circle-info w-4 text-center text-slate-400"></i> About
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -1510,7 +1540,7 @@ export default function CreateReportPage() {
                         
                         // Helper to trigger the actual download
                         const triggerNativeDownload = () => {
-                          const downloadUrl = `${API}/api/download-pdf/report_${reportId}.pdf?name=${encodeURIComponent(filename)}`;
+                          const downloadUrl = `${API}/api/download-pdf/report_${reportId}.pdf?name=${encodeURIComponent(filename)}&token=${encodeURIComponent(token || "")}`;
                           const a = document.createElement("a");
                           a.href = downloadUrl;
                           a.target = "_blank";
@@ -1784,6 +1814,7 @@ export default function CreateReportPage() {
           </div>
         </div>
       )}
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   )
 }

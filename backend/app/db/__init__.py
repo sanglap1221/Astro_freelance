@@ -34,6 +34,7 @@ cloudinary.config(
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt directly."""
+    # pyrefly: ignore [missing-import]
     import bcrypt
     pwd_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt()
@@ -43,6 +44,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against its hash."""
+    # pyrefly: ignore [missing-import]
     import bcrypt
     try:
         return bcrypt.checkpw(

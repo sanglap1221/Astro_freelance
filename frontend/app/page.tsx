@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ReportForm } from "../components/ReportForm";
 import { useAuth } from "../components/AuthProvider";
+import AboutModal from "../components/AboutModal";
 import type { ReportInput } from "../types/report";
 
 const initialValue: ReportInput = {
@@ -22,7 +23,21 @@ export default function HomePage() {
   const router = useRouter();
   const { user, isAdmin, isAuthenticated, isLoading, logout } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [formValue, setFormValue] = useState<ReportInput>(initialValue);
+
+  // Open the form modal automatically if the URL has ?new=true
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("new") === "true") {
+        setIsFormOpen(true);
+        // Clean up the URL search params so reloading doesn't re-open it unexpectedly
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, []);
 
   const handleFormSubmit = () => {
     sessionStorage.setItem("pending_birth_details", JSON.stringify(formValue));
@@ -82,6 +97,19 @@ export default function HomePage() {
             <i className="fa-solid fa-arrows-rotate text-[0.625rem]" />
             Reload
           </button>
+          <button
+            onClick={() => setIsAboutOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
+            style={{
+              background: "rgba(245,158,11,0.15)",
+              border: "1px solid rgba(245,158,11,0.3)",
+              color: "#fbbf24",
+            }}
+            id="about-btn"
+          >
+            <i className="fa-solid fa-circle-info text-[0.625rem]" />
+            About
+          </button>
           {isAdmin && (
             <button
               onClick={() => router.push("/admin")}
@@ -101,8 +129,8 @@ export default function HomePage() {
             onClick={logout}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
             style={{
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.2)",
+              background: "rgba(239,68,68,0.15)",
+              border: "1px solid rgba(239,68,68,0.25)",
               color: "#f87171",
             }}
             id="logout-btn"
@@ -211,6 +239,41 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ── Developer Info (Bottom Left) ── */}
+      <div 
+        className="absolute bottom-4 left-4 z-20 text-[10px] sm:text-xs font-sans leading-normal tracking-wide py-2 px-3.5 rounded-xl border select-none transition-all duration-300 hover:scale-102 hover:border-amber-500/40"
+        style={{
+          background: "rgba(14,17,32,0.6)",
+          borderColor: "rgba(245,158,11,0.15)",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        <div className="text-slate-400 font-semibold mb-0.5">Developed By</div>
+        <div className="mb-0.5">
+          <span
+            onClick={() => window.open("https://sanglap-s-portfolio.vercel.app/", "_blank")}
+            className="font-bold text-amber-400 hover:underline cursor-pointer"
+          >
+            Sanglap Ghosh
+          </span>
+        </div>
+        <div 
+          onClick={() => window.open("https://sanglap-s-portfolio.vercel.app/", "_blank")}
+          className="text-slate-300 text-[9px] font-medium mb-1 cursor-pointer hover:text-amber-400 transition-colors"
+        >
+          Full Stack Developer
+        </div>
+        <div className="text-slate-400">
+          Mobile: <a href="tel:+919883483390" className="text-slate-200 hover:text-amber-400 font-medium">+91 9883483390</a>
+        </div>
+        <div className="text-slate-400">
+          Portfolio: <span onClick={() => window.open("https://sanglap-s-portfolio.vercel.app/", "_blank")} className="text-amber-400/90 hover:underline font-medium cursor-pointer">sanglap-s-portfolio.vercel.app</span>
+        </div>
+      </div>
+
+      {/* About Modal */}
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </main>
   );
 }

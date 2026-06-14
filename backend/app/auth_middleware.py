@@ -6,7 +6,7 @@ import os
 import logging
 from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from dotenv import load_dotenv
@@ -38,22 +38,28 @@ def decode_token(token: str) -> dict:
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    token: str | None = Query(None),
 ) -> dict:
     """
-    FastAPI dependency: extracts and validates the JWT from the Authorization header.
+    FastAPI dependency: extracts and validates the JWT from the Authorization header or token query parameter.
     Returns the decoded token payload (contains 'sub', 'role', 'exp').
     Raises 401 if token is missing, invalid, or expired.
     """
-    if credentials is None:
+    token_str = None
+    if credentials is not None:
+        token_str = credentials.credentials
+    elif token is not None:
+        token_str = token
+
+    if token_str is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Please Login",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
     try:
-        payload = decode_token(token)
+        payload = decode_token(token_str)
         username: str | None = payload.get("sub")
         if username is None:
             raise HTTPException(

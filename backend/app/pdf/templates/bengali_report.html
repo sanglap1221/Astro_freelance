@@ -295,25 +295,59 @@
       align-items: center;
     }
 
-    .pl-name {
-      display: inline-block;
-      width: 65px;
-      font-weight: bold;
-      color: var(--ink-black);
+    .shorthand-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .shorthand-table td {
+      padding: 2.5px 0;
+      vertical-align: middle;
+      border: none;
       white-space: nowrap;
     }
 
-    .pl-colon {
-      display: inline-block;
-      width: 15px;
+    .shorthand-table .pl-name {
+      width: 58px;
+      font-weight: bold;
+      color: var(--ink-black);
+      text-align: left;
+    }
+
+    .shorthand-table .pl-colon {
+      width: 10px;
       text-align: center;
       color: var(--ink-black);
     }
 
-    .pl-val {
-      display: inline-block;
+    .shorthand-table .pl-sign {
+      width: 16px;
+      text-align: center;
       font-weight: 600;
       color: #333;
+    }
+
+    .shorthand-table .pl-pipe {
+      width: 10px;
+      text-align: center;
+      color: #7f8c8d;
+    }
+
+    .shorthand-table .pl-dms {
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shorthand-table .pl-suffix {
+      text-align: right;
+      padding-right: 6px;
+      font-weight: bold;
+      color: var(--brand-red);
+      font-size: 10px;
     }
 
     .remedy-section {
@@ -468,23 +502,40 @@
         <!-- Left: planet shorthand list (Bengali format) -->
         <div class="col col-30">
           <div class="kundli-title">—ঃ গ্রহাবস্থান ঃ—</div>
-          {% for item in shorthand_planets %}
-          <div class="shorthand-line">
-            <span class="pl-name">{{ item.short }}</span>
-            <span class="pl-colon">:</span>
-            <span class="pl-val">
-              {{ item.compact_indexed }}
-              {% if item.is_retrograde %}(ব){% endif %}
-              {% if item.is_combust %}(অ){% endif %}
-            </span>
-          </div>
-          {% endfor %}
-
-          <div class="shorthand-line" style="margin-top: 10px; color: var(--brand-red);">
-            <span class="pl-name" style="color: var(--brand-red);">লগ্ন</span>
-            <span class="pl-colon" style="color: var(--brand-red);">:</span>
-            <span class="pl-val" style="color: var(--brand-red); font-weight: bold;">{{ lagna_compact_indexed }}</span>
-          </div>
+          <table class="shorthand-table">
+            {% for item in shorthand_planets %}
+            {% set parts = item.compact_indexed.split('|') %}
+            <tr>
+              <td class="pl-name">{{ item.short }}</td>
+              <td class="pl-colon">:</td>
+              {% if parts|length == 2 %}
+              <td class="pl-sign">{{ parts[0] | trim }}</td>
+              <td class="pl-pipe">|</td>
+              <td class="pl-dms">{{ parts[1] | trim }}</td>
+              {% else %}
+              <td class="pl-dms" colspan="3">{{ item.compact_indexed }}</td>
+              {% endif %}
+              <td class="pl-suffix">
+                {% if item.is_retrograde %}(ব){% endif %}
+                {% if item.is_combust %}(অ){% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            
+            {% set lagna_parts = lagna_compact_indexed.split('|') %}
+            <tr style="color: var(--brand-red); font-weight: bold;">
+              <td class="pl-name" style="color: var(--brand-red);">লগ্ন</td>
+              <td class="pl-colon" style="color: var(--brand-red);">:</td>
+              {% if lagna_parts|length == 2 %}
+              <td class="pl-sign" style="color: var(--brand-red);">{{ lagna_parts[0] | trim }}</td>
+              <td class="pl-pipe" style="color: var(--brand-red);">|</td>
+              <td class="pl-dms" style="color: var(--brand-red);">{{ lagna_parts[1] | trim }}</td>
+              {% else %}
+              <td class="pl-dms" colspan="3" style="color: var(--brand-red);">{{ lagna_compact_indexed }}</td>
+              {% endif %}
+              <td class="pl-suffix"></td>
+            </tr>
+          </table>
         </div>
 
         <!-- Centre: Rashi Chakra (North-Indian diamond) -->
@@ -653,6 +704,7 @@
                 <span class="ledger-math">
                   {{ to_bn_date_parts(dasha.end) }}
                 </span>
+                <span class="ledger-age"></span>
                 <span class="ledger-age">| {{ to_bn(age_at_end) }}</span>
               </div>
               {% endfor %}
@@ -719,6 +771,9 @@
           </div>
           {% endif %}
         </div>
+      </div>
+      <div style="text-align: center; width: 100%; font-size: 8px; color: #7f8c8d; margin-top: 6px; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.2;">
+        Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Development: <a href="https://sanglap-s-portfolio.vercel.app/" target="_blank" style="color: #7f8c8d; text-decoration: underline; font-weight: bold;">Sanglap Ghosh</a>
       </div>
     </div>
   </div>
@@ -840,6 +895,9 @@
         <div class="remedy-footer-note">** ধাতু ও শ্বেতচন্দন পাল্টানোর প্রয়োজন নেই **</div>
       </div>
 
+      <div style="text-align: center; width: 100%; font-size: 8px; color: #7f8c8d; margin-top: 6px; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.2;">
+        Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Development: <a href="https://sanglap-s-portfolio.vercel.app/" target="_blank" style="color: #7f8c8d; text-decoration: underline; font-weight: bold;">Sanglap Ghosh</a>
+      </div>
     </div>
   </div>
 
