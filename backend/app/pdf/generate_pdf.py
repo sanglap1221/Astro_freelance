@@ -71,6 +71,7 @@ class PdfReportResult:
 
 def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     # 1. Run astrological calculations
+    # Engine settings are HARDCODED — single astrologer, single calculation system
     chart = calculate_chart(
         dob=payload.dob,
         birth_time=payload.time,
@@ -78,10 +79,9 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         latitude=getattr(payload, 'latitude', None),
         longitude=getattr(payload, 'longitude', None),
         timezone=getattr(payload, 'timezone', None),
-        ayanamsa_mode=payload.ayanamsa_mode,
-        custom_ayanamsa_degrees=payload.custom_ayanamsa_degrees,
-        true_moon=payload.true_moon,
-        true_node=payload.true_node,
+        ayanamsa_mode="traditional",
+        true_moon=True,
+        true_node=True,
         planet_overrides=payload.planet_overrides,
         override_moon_longitude=payload.override_moon_longitude,
     )
@@ -111,14 +111,13 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "mobile": to_bengali_digits(payload.mobile) if payload.mobile else "",
     }
 
-    # 5. Formulate engine metadata
+    # 5. Formulate engine metadata (hardcoded — single astrologer, single system)
     engine = {
         "engine": "Swiss Ephemeris",
         "system": "Nirayana (Sidereal)",
         "ayanamsa": "Traditional Bengali N.C. Lahiri Workflow",
-        "custom_ayanamsa_degrees": payload.custom_ayanamsa_degrees,
-        "moon_mode": "True Moon" if payload.true_moon else "Mean Moon",
-        "true_node": payload.true_node,
+        "moon_mode": "True Moon",
+        "true_node": True,
         "planet_overrides": payload.planet_overrides,
         "override_moon": to_bengali_digits(f"{payload.override_moon_longitude:.4f}°")
         if payload.override_moon_longitude is not None

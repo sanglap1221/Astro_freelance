@@ -7,8 +7,7 @@ export type ReportInput = {
   mobile?: string;
   ayanamsa_mode?: string;
   custom_ayanamsa_degrees?: string;
-  true_moon?: boolean;
-  true_node?: boolean;
+  // Engine settings (true_moon, true_node) are hardcoded in backend
   planet_overrides?: Record<string, number>;
   override_moon_longitude?: string;
   override_ascendant_longitude?: string;

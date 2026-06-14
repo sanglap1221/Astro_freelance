@@ -150,6 +150,37 @@ function handlePdfDownload(url) {
   });
 }
 
+// ── Open a report in a NEW Electron window ──
+function openReportWindow(url, title) {
+  const reportWin = new BrowserWindow({
+    width: 950,
+    height: 750,
+    autoHideMenuBar: true,
+    title: title || 'Report View — জীবন জিজ্ঞাসা',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+
+  reportWin.setMenuBarVisibility(false);
+  reportWin.loadURL(url);
+
+  // Handle PDF download from report window
+  reportWin.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+    if (targetUrl.includes('/api/download-pdf/')) {
+      handlePdfDownload(targetUrl);
+      return { action: 'deny' };
+    }
+    if (targetUrl.includes('.pdf') || targetUrl.includes('blob:') || targetUrl.includes('/pdf') || targetUrl.includes('localhost')) {
+      return { action: 'allow' };
+    }
+    return { action: 'deny' };
+  });
+
+  return reportWin;
+}
+
 // ── Create the ONE main window ──
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -177,8 +208,14 @@ function createWindow() {
       handlePdfDownload(url);
       return { action: 'deny' };
     }
-    // 2. Open/View action - allows target="_blank" to open in a new popup window
-    if (url.includes('.pdf') || url.includes('blob:') || url.includes('/pdf') || url.includes('localhost')) {
+    // 2. Blob URLs (regenerated report previews from Admin Panel)
+    if (url.startsWith('blob:')) {
+      // Open in a new Electron window instead of default popup
+      openReportWindow(url, 'Report Preview — জীবন জিজ্ঞাসা');
+      return { action: 'deny' };
+    }
+    // 3. Open/View action - allows target="_blank" to open in a new popup window
+    if (url.includes('.pdf') || url.includes('/pdf') || url.includes('localhost')) {
       return { action: 'allow' };
     }
     return { action: 'deny' };
@@ -219,7 +256,12 @@ app.on('web-contents-created', (_, contents) => {
       handlePdfDownload(url);
       return { action: 'deny' };
     }
-    // 2. Open/View action - allows target="_blank" to open in a new popup window
+    // 2. Blob URLs (regenerated report previews from Admin Panel)
+    if (url.startsWith('blob:')) {
+      openReportWindow(url, 'Report Preview — জীবন জিজ্ঞাসা');
+      return { action: 'deny' };
+    }
+    // 3. Open/View action - allows target="_blank" to open in a new popup window
     if (url.includes('.pdf') || url.includes('blob:') || url.includes('/pdf') || url.includes('localhost')) {
       return { action: 'allow' };
     }

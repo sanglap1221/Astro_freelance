@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ReportForm } from "../components/ReportForm";
+import { useAuth } from "../components/AuthProvider";
 import type { ReportInput } from "../types/report";
 
 const initialValue: ReportInput = {
@@ -12,7 +13,6 @@ const initialValue: ReportInput = {
   time: "14:42",
   place: "Kolkata",
   mobile: "",
-  true_node: true,
   planet_overrides: {},
   override_moon_longitude: "",
   override_ascendant_longitude: "",
@@ -20,6 +20,7 @@ const initialValue: ReportInput = {
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, isAdmin, isAuthenticated, isLoading, logout } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formValue, setFormValue] = useState<ReportInput>(initialValue);
 
@@ -28,9 +29,90 @@ export default function HomePage() {
     router.push("/create-report");
   };
 
+  // Show nothing while auth is loading
+  if (isLoading) {
+    return (
+      <main className="w-screen h-screen flex items-center justify-center" style={{ background: "#0B0D17" }}>
+        <div className="text-amber-400 animate-pulse text-lg">
+          <i className="fa-solid fa-spinner fa-spin mr-2" />
+          Loading...
+        </div>
+      </main>
+    );
+  }
+
+  // Don't render if not authenticated (AuthProvider will redirect)
+  if (!isAuthenticated) return null;
+
   return (
     <main className="w-screen h-screen overflow-hidden relative flex flex-col items-center justify-center bg-gradient-to-br from-[#0B0D17] via-[#0E1120] to-[#16192B] text-slate-100 select-none">
       
+      {/* ── Top Bar (Auth Controls) ── */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-6 py-3">
+        {/* Left: User Info */}
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shadow-md"
+            style={{
+              background: "linear-gradient(135deg, rgba(245,158,11,0.3), rgba(202,138,4,0.15))",
+              border: "1px solid rgba(245,158,11,0.3)",
+              color: "#fbbf24",
+            }}
+          >
+            <i className="fa-solid fa-user" />
+          </div>
+          <span className="text-xs font-medium text-slate-400">
+            {user?.username}
+          </span>
+        </div>
+
+        {/* Right: Admin + Logout */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
+            style={{
+              background: "rgba(59,130,246,0.15)",
+              border: "1px solid rgba(59,130,246,0.3)",
+              color: "#60a5fa",
+            }}
+            id="reload-btn"
+            title="Reload Page"
+          >
+            <i className="fa-solid fa-arrows-rotate text-[0.625rem]" />
+            Reload
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => router.push("/admin")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
+              style={{
+                background: "rgba(245,158,11,0.15)",
+                border: "1px solid rgba(245,158,11,0.3)",
+                color: "#fbbf24",
+              }}
+              id="admin-panel-btn"
+            >
+              <i className="fa-solid fa-shield-halved text-[0.625rem]" />
+              Admin
+            </button>
+          )}
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
+            style={{
+              background: "rgba(239,68,68,0.1)",
+              border: "1px solid rgba(239,68,68,0.2)",
+              color: "#f87171",
+            }}
+            id="logout-btn"
+          >
+            <i className="fa-solid fa-right-from-bracket text-[0.625rem]" />
+            Logout
+          </button>
+        </div>
+      </div>
+
       {/* Dynamic Starfield & Planet Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         {/* Deep starfield background */}

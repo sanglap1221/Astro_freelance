@@ -1,12 +1,13 @@
 import uuid
 from typing import Any
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 
 from app.pdf.generate_pdf import (
     build_report_context,
 )
 from app.schemas import PdfRequest
 from app.db import save_astro_data
+from app.auth_middleware import get_current_user
 
 router = APIRouter(tags=["pdf"])
 
@@ -73,7 +74,11 @@ def compile_pdf_task(payload: dict[str, Any], report_id: str):
 
 
 @router.post("/api/calculate-report")
-def calculate_report(payload: PdfRequest, background_tasks: BackgroundTasks) -> dict[str, Any]:
+def calculate_report(
+    payload: PdfRequest,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
     try:
         context = build_report_context(payload)
         
@@ -87,12 +92,14 @@ def calculate_report(payload: PdfRequest, background_tasks: BackgroundTasks) -> 
         context["show_antardasha"] = True
         context["show_lucky_info"] = True
 
-        # Persist calculations (handling database connection failure gracefully)
+        # Persist lightweight customer record (no chart data stored)
+        created_by = current_user.get("sub", "system")
         save_astro_data(
             report_no=context.get("report_no", ""),
             customer_name=context.get("customer", {}).get("name", ""),
             input_details=payload.dict(),
-            calculated_chart=context
+            calculated_chart=context,
+            created_by=created_by,
         )
         
         # Immediately trigger PDF compilation in background task
@@ -105,7 +112,11 @@ def calculate_report(payload: PdfRequest, background_tasks: BackgroundTasks) -> 
 
 
 @router.post("/api/render-pdf")
-def render_pdf(payload: dict[str, Any], background_tasks: BackgroundTasks) -> dict[str, str]:
+def render_pdf(
+    payload: dict[str, Any],
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, str]:
     try:
         from jinja2 import Environment, FileSystemLoader
         from pathlib import Path
@@ -161,7 +172,11 @@ def get_pdf_status(report_id: str):
 
 
 @router.get("/api/download-pdf/{filename}")
-def download_pdf(filename: str, name: str = None):
+def download_pdf(
+    filename: str,
+    name: str = None,
+    current_user: dict = Depends(get_current_user),
+):
     import time
     import urllib.parse
     from fastapi.responses import FileResponse

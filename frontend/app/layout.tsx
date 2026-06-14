@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AuthProvider } from "../components/AuthProvider";
 
 import "./globals.css";
 
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className="min-h-screen" style={{ fontFamily: "'Inter', 'Hind Siliguri', sans-serif", background: "#f7f5f0" }}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

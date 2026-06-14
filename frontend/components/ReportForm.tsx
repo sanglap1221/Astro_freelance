@@ -259,63 +259,9 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
         </label>
       </div>
 
-      {/* Engine Settings */}
-      <div className="rounded-xl border border-[#e3d0ab] bg-[#fdfcf9] px-3 py-3 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-slate-700 text-xs">Engine Settings</span>
-          <label className="flex items-center gap-2 text-xs text-slate-600">
-            <input
-              type="checkbox"
-              checked={showAstrologer}
-              onChange={(event) => setShowAstrologer(event.target.checked)}
-              className="h-4 w-4 rounded border-[#e3d0ab] text-[#800020] focus:ring-0"
-            />
-            Astrologer review mode
-          </label>
-        </div>
+      {/* Engine Settings — removed. Hardcoded in backend:
+          TRUE_NODE = True, WORKFLOW = Traditional Bengali NC Lahiri */}
 
-        <div className="mt-2 grid gap-2">
-          <div className="rounded-lg border border-[#e3d0ab] bg-white px-3 py-2 text-xs text-slate-600">
-            Single workflow: Traditional Bengali N.C. Lahiri tables
-          </div>
-
-          <label className="flex items-center justify-between rounded-lg border border-[#e3d0ab] bg-white px-3 py-2 text-xs text-slate-700">
-            <div>
-              <span className="font-semibold">True Rahu / Mean Rahu</span>
-              <p className="text-[0.6875rem] text-slate-500">Enable true node calculations for Rahu.</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={value.true_node ?? true}
-              onChange={(event) => updateBooleanField(value, onChange, "true_node", event.target.checked)}
-              className="h-4 w-4 rounded border-[#e3d0ab] text-[#800020] focus:ring-0"
-            />
-          </label>
-
-          {showAstrologer && (
-            <>
-              <label className="grid gap-1 text-xs">
-                <span className="font-semibold text-slate-600">Override Moon Longitude (deg)</span>
-                <input
-                  className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-slate-800 focus:border-[#800020] focus:outline-none"
-                  placeholder="e.g. 86.874739"
-                  value={value.override_moon_longitude ?? ""}
-                  onChange={(event) => updateField(value, onChange, "override_moon_longitude", event.target.value)}
-                />
-              </label>
-              <label className="grid gap-1 text-xs">
-                <span className="font-semibold text-slate-600">Override Ascendant Longitude (deg)</span>
-                <input
-                  className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-slate-800 focus:border-[#800020] focus:outline-none"
-                  placeholder="e.g. 35.0"
-                  value={value.override_ascendant_longitude ?? ""}
-                  onChange={(event) => updateField(value, onChange, "override_ascendant_longitude", event.target.value)}
-                />
-              </label>
-            </>
-          )}
-        </div>
-      </div>
 
       {/* CTA Button */}
       <button

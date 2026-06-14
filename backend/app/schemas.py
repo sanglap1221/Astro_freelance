@@ -57,10 +57,8 @@ class PdfRequest(BaseModel):
     time: time
     place: str = Field(min_length=1)
     mobile: str | None = None
-    ayanamsa_mode: str = "traditional"
-    custom_ayanamsa_degrees: float | None = None
-    true_moon: bool = True
-    true_node: bool = True
+    # Engine settings hardcoded — NOT exposed to clients
+    # TRUE_NODE = True, WORKFLOW = Traditional Bengali NC Lahiri
     planet_overrides: dict[str, float] | None = None
     override_moon_longitude: float | None = None
     latitude: float | None = None

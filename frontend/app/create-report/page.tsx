@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { PdfViewer } from "../../components/PdfViewer";
 import { ReportForm } from "../../components/ReportForm";
+import { useAuth } from "../../components/AuthProvider";
 import { calculateReport, renderPdf, getPdfStatus, API } from "../../services/api";
 import type { ReportInput, ReportState, CustomerState, AstrologyState, DashaRow } from "../../types/report";
 
@@ -16,7 +18,6 @@ const initialValue: ReportInput = {
   time: "14:42",
   place: "Kolkata",
   mobile: "",
-  true_node: true,
   planet_overrides: {},
   override_moon_longitude: "",
   override_ascendant_longitude: "",
@@ -89,7 +90,6 @@ function buildRequestPayload(formValue: ReportInput, reportState: ReportState | 
 
   return {
     ...formValue,
-    true_node: formValue.true_node ?? reportState?.true_node ?? true,
     planet_overrides: planetOverrides,
     override_moon_longitude: formValue.override_moon_longitude?.trim() || undefined,
     override_ascendant_longitude: Number.isFinite(overrideAscendant) ? String(overrideAscendant) : undefined,
@@ -239,6 +239,8 @@ function calculatePlanetCoords(state: ReportState): Record<string, { x: number, 
 }
 
 export default function CreateReportPage() {
+  const router = useRouter();
+  const { user, isAdmin, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const [formValue, setFormValue] = useState<ReportInput>(initialValue);
   const [reportState, setReportState] = useState<ReportState | null>(null);
   const [activePlanet, setActivePlanet] = useState<string>("");
@@ -334,7 +336,6 @@ export default function CreateReportPage() {
 
       const stateWithCoords: ReportState = {
         ...state,
-        true_node: activeFormValue.true_node ?? true,
         planet_overrides: buildPlanetOverrides(state.shorthand_planets),
       };
 
@@ -709,6 +710,37 @@ export default function CreateReportPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
+            style={{ color: "#2563eb", background: "#eff6ff", borderColor: "#bfdbfe" }}
+            id="workspace-reload-btn"
+            title="Reload Page"
+          >
+            <i className="fa-solid fa-arrows-rotate"></i> Reload
+          </button>
+          {/* Admin Button — only visible for admin role */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
+              style={{ color: "#92400e", background: "#fffbeb", borderColor: "#f59e0b40" }}
+              id="workspace-admin-btn"
+            >
+              <i className="fa-solid fa-shield-halved"></i> Admin
+            </Link>
+          )}
+          {/* Logout Button */}
+          <button
+            type="button"
+            onClick={logout}
+            className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border shadow-sm"
+            style={{ color: "#ef4444", background: "#fef2f2", borderColor: "#fecaca" }}
+            id="workspace-logout-btn"
+          >
+            <i className="fa-solid fa-right-from-bracket"></i> Logout
+          </button>
           {reportState && (
             <Link
               href="/"
