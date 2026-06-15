@@ -22,3 +22,5 @@ backend/scripts/test_dynamic_location.py
 backend/tmp_check_moons.py
 backend\scripts\parse_panjika_tables.py
 backend\scripts
+frontend\node_modules
+node_modules
