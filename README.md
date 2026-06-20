@@ -11,6 +11,50 @@
 
 ---
 
+## Installation / Setup
+
+To clone this repository on your local machine (including MacBooks), use the following command in your terminal:
+
+```bash
+git clone https://github.com/sanglap1221/Astro_freelance.git
+cd Astro_freelance
+```
+
+### Running the Backend
+
+The backend uses Python and FastAPI. Open a new terminal and run:
+
+```bash
+cd backend
+
+# Create and activate a virtual environment (Mac/Linux)
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+python -m playwright install chromium
+
+# Start the backend server
+uvicorn app.main:app --reload
+```
+
+### Running the Frontend
+
+The frontend is a Next.js application. Open another terminal and run:
+
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start the frontend development server
+npm run dev
+```
+
+---
+
 # PART I — THE FOUNDATION
 
 ---
