@@ -5,6 +5,7 @@ export type ReportInput = {
   time: string;
   place: string;
   mobile?: string;
+  language?: string;
   ayanamsa_mode?: string;
   custom_ayanamsa_degrees?: string;
   // Engine settings (true_moon, true_node) are hardcoded in backend
@@ -49,6 +50,7 @@ export interface AstrologyState {
   current_pada_syllable: string;
   all_nakshatra_syllables: string[];
   dasha_balance: string;
+  selected_doshas?: string[];
 }
 
 export interface ShorthandPlanet {
@@ -136,6 +138,9 @@ export interface ReportState {
   show_mahadasha?: boolean;
   show_antardasha?: boolean;
   show_lucky_info?: boolean;
+  show_future_antardashas?: boolean;
   planet_nudges?: Record<string, { dx: number; dy: number }>;
   planet_coords?: Record<string, { x: number; y: number }>;
+  lang?: string;
+  remedies_list?: any[];
 }

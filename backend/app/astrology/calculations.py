@@ -229,73 +229,73 @@ VARNA_BN = {
 # Maps 0-based Lagna Index to its exact book valuations
 KAKA_LAGNA_RULES = {
     0: {
-        "shubh_bar": "রবি, সোম, মঙ্গল, বৃহস্পতিবার",
+        "shubh_bar": "রবি, সোম, মঙ্গল, বৃহস্পতি",
         "ashubh_bar": "বুধ, শনি",
         "shubh_rong": "সাদা, লাল, হলুদ, তামাটে",
         "shubh_sonkha": "১, ২, ৩, ৯"
     },
     1: {
-        "shubh_bar": "বুধ, শুক্র, শনিবার",
-        "ashubh_bar": "রবি, বৃহস্পতিবার",
+        "shubh_bar": "বুধ, শুক্র, শনি",
+        "ashubh_bar": "রবি, বৃহস্পতি",
         "shubh_rong": "সবুজ, নীলাভ সাদা, হলুদ",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     2: {
-        "shubh_bar": "বুধ, শুক্র, শনিবার",
-        "ashubh_bar": "সোম, মঙ্গলবার",
+        "shubh_bar": "বুধ, শুক্র, শনি",
+        "ashubh_bar": "সোম, মঙ্গল",
         "shubh_rong": "সবুজ, নীলাভ সাদা, হলুদ",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     3: {
-        "shubh_bar": "সোম, মঙ্গল, বৃহস্পতিবার",
-        "ashubh_bar": "শনিবার",
+        "shubh_bar": "সোম, মঙ্গল, বৃহস্পতি",
+        "ashubh_bar": "শনি",
         "shubh_rong": "সাদা, লাল, হলুদ",
         "shubh_sonkha": "২, ৩, ৯"
     },
     4: {
-        "shubh_bar": "রবি, মঙ্গল, বৃহস্পতিবার",
+        "shubh_bar": "রবি, মঙ্গল, বৃহস্পতি",
         "ashubh_bar": "শুক্র, শনি",
         "shubh_rong": "তামাটে, লাল, হলুদ",
         "shubh_sonkha": "১, ৩, ৯"
     },
     5: {
-        "shubh_bar": "বুধ, শুক্র, শনিবার",
-        "ashubh_bar": "সোম, মঙ্গলবার",
+        "shubh_bar": "বুধ, শুক্র, শনি",
+        "ashubh_bar": "সোম, মঙ্গল",
         "shubh_rong": "সবুজ, নীলাভ সাদা, নীল",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     6: {
-        "shubh_bar": "বুধ, শুক্র, শনিবার",
-        "ashubh_bar": "রবি, বৃহস্পতিবার",
+        "shubh_bar": "বুধ, শুক্র, শনি",
+        "ashubh_bar": "রবি, বৃহস্পতি",
         "shubh_rong": "নীলাভ সাদা, নীল, সবুজ",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     7: {
-        "shubh_bar": "রবি, সোম, মঙ্গল, বৃহস্পতিবার",
+        "shubh_bar": "রবি, সোম, মঙ্গল, বৃহস্পতি",
         "ashubh_bar": "বুধ, শনি",
         "shubh_rong": "লাল, সাদা, তামাটে, হলুদ",
         "shubh_sonkha": "১, ২, ৩, ৯"
     },
     8: {
-        "shubh_bar": "রবি, মঙ্গল, বৃহস্পতিবার",
+        "shubh_bar": "রবি, মঙ্গল, বৃহস্পতি",
         "ashubh_bar": "শুক্র, শনি",
         "shubh_rong": "হলুদ, লাল, তামাটে",
         "shubh_sonkha": "১, ৩, ৯"
     },
     9: {
-        "shubh_bar": "বুধ, শুক্র, শনিবার",
-        "ashubh_bar": "রবি, বৃহস্পতিবার",
+        "shubh_bar": "বুধ, শুক্র, শনি",
+        "ashubh_bar": "রবি, বৃহস্পতি",
         "shubh_rong": "নীল, নীলাভ সাদা, সবুজ",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     10: {
-        "shubh_bar": "বুধ, শুক্র, শনিবার",
-        "ashubh_bar": "সোম, মঙ্গলবার",
+        "shubh_bar": "বুধ, শুক্র, শনি",
+        "ashubh_bar": "সোম, মঙ্গল",
         "shubh_rong": "নীল, নীলাভ সাদা, সবুজ",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     11: {
-        "shubh_bar": "সোম, মঙ্গল, বৃহস্পতিবার",
+        "shubh_bar": "সোম, মঙ্গল, বৃহস্পতি",
         "ashubh_bar": "শুক্র, শনি",
         "shubh_rong": "হলুদ, লাল, সাদা",
         "shubh_sonkha": "২, ৩, ৯"

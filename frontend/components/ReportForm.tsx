@@ -193,55 +193,55 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
         </label>
       </div>
 
-      {/* Place and Mobile Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Place with Presets */}
-        <div className="relative grid gap-1 text-sm">
-          <span className={labelClasses}>Place of Birth / জন্মস্থান</span>
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
-              <i className="fa-solid fa-map-marker-alt"></i>
+      {/* Place Row */}
+      <div className="relative grid gap-1 text-sm">
+        <span className={labelClasses}>Place of Birth / জন্মস্থান</span>
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
+            <i className="fa-solid fa-map-marker-alt"></i>
+          </span>
+          <input
+            className={`${inputClasses} pl-8`}
+            value={value.place}
+            onChange={(event) => handlePlaceChange(event.target.value)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
+            onFocus={handlePlaceFocus}
+            placeholder="City"
+            required
+          />
+          {isSearching && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.6875rem] text-slate-400">
+              <i className="fa-solid fa-spinner fa-spin"></i>
             </span>
-            <input
-              className={`${inputClasses} pl-8`}
-              value={value.place}
-              onChange={(event) => handlePlaceChange(event.target.value)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
-              onFocus={handlePlaceFocus}
-              placeholder="City"
-              required
-            />
-            {isSearching && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.6875rem] text-slate-400">
-                <i className="fa-solid fa-spinner fa-spin"></i>
-              </span>
-            )}
-          </div>
-          {showDropdown && (
-            <ul className="absolute z-50 left-0 right-0 top-[4.25rem] mt-1 max-h-60 overflow-auto rounded-xl border border-[#e3d0ab] bg-white py-1 shadow-xl text-slate-700 text-xs">
-              {showingPresets && (
-                <li className="px-3 py-1.5 text-[0.625rem] font-bold text-amber-700 bg-amber-50/60 uppercase tracking-wider border-b border-[#e3d0ab]/50">
-                  📍 Quick Select
-                </li>
-              )}
-              {suggestions.map((sug, idx) => (
-                <li
-                  key={idx}
-                  onClick={() => handleSelectSuggestion(sug)}
-                  className="cursor-pointer px-3 py-2.5 hover:bg-amber-50 transition-colors flex items-center gap-2 border-b border-[#f3e9d2] last:border-0"
-                >
-                  {showingPresets && (
-                    <span className="text-amber-600 text-[0.6875rem]">
-                      <i className="fa-solid fa-location-dot"></i>
-                    </span>
-                  )}
-                  <span className="font-medium">{sug.display_name}</span>
-                </li>
-              ))}
-            </ul>
           )}
         </div>
+        {showDropdown && (
+          <ul className="absolute z-50 left-0 right-0 top-[4.25rem] mt-1 max-h-60 overflow-auto rounded-xl border border-[#e3d0ab] bg-white py-1 shadow-xl text-slate-700 text-xs">
+            {showingPresets && (
+              <li className="px-3 py-1.5 text-[0.625rem] font-bold text-amber-700 bg-amber-50/60 uppercase tracking-wider border-b border-[#e3d0ab]/50">
+                📍 Quick Select
+              </li>
+            )}
+            {suggestions.map((sug, idx) => (
+              <li
+                key={idx}
+                onClick={() => handleSelectSuggestion(sug)}
+                className="cursor-pointer px-3 py-2.5 hover:bg-amber-50 transition-colors flex items-center gap-2 border-b border-[#f3e9d2] last:border-0"
+              >
+                {showingPresets && (
+                  <span className="text-amber-600 text-[0.6875rem]">
+                    <i className="fa-solid fa-location-dot"></i>
+                  </span>
+                )}
+                <span className="font-medium">{sug.display_name}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
+      {/* Mobile and Language Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Mobile */}
         <label className="grid gap-1 text-sm">
           <span className={labelClasses}>Mobile / মোবাইল নম্বর</span>
@@ -255,6 +255,28 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
               onChange={(event) => updateField(value, onChange, "mobile", event.target.value)}
               placeholder="Mobile Number"
             />
+          </div>
+        </label>
+
+        {/* Language */}
+        <label className="grid gap-1 text-sm">
+          <span className={labelClasses}>Language / ভাষা</span>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
+              <i className="fa-solid fa-language"></i>
+            </span>
+            <select
+              className={`${inputClasses} pl-8 pr-8 appearance-none bg-white`}
+              value={value.language ?? "bn"}
+              onChange={(event) => updateField(value, onChange, "language", event.target.value)}
+            >
+              <option value="bn">Bengali / বাংলা</option>
+              <option value="en">English / English</option>
+              <option value="hi">Hindi / हिंदी</option>
+            </select>
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400 text-[0.625rem]">
+              <i className="fa-solid fa-chevron-down text-[0.625rem]"></i>
+            </span>
           </div>
         </label>
       </div>
