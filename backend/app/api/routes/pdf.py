@@ -190,7 +190,18 @@ def compile_pdf_task(payload: dict[str, Any], report_id: str):
         pdf_statuses[report_id] = {"status": "compiling", "progress": 75}
         
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-gpu",
+                    "--disable-dev-shm-usage",
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--no-first-run",
+                    "--no-zygote",
+                    "--single-process"
+                ]
+            )
             page = browser.new_page()
             page.set_content(html_content)
             page.wait_for_load_state("networkidle")

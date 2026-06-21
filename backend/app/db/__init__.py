@@ -57,12 +57,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 # ── Database Connection ──
 
+_mongo_client: Optional[MongoClient] = None
+
 def get_mongo_client() -> Optional[MongoClient]:
-    """Helper to initialize client with a short timeout to handle failures gracefully."""
+    """Helper to initialize client with a short timeout to handle failures gracefully, caching the client for reuse."""
+    global _mongo_client
+    if _mongo_client is not None:
+        return _mongo_client
+
     try:
         client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=2000)
-        # Force a quick server selection check to see if database is reachable
+        # Force a quick server selection check to see if database is reachable on first connect
         client.admin.command('ping')
+        _mongo_client = client
         return client
     except Exception as exc:
         logger.warning(f"Failed to connect to MongoDB at {MONGODB_URI}: {exc}")
@@ -96,6 +103,15 @@ def init_default_admin():
 
         db = client[MONGODB_DB_NAME]
 
+        # Create unique index on username
+        db.users.create_index("username", unique=True)
+
+        # Create indexes on reports for fast queries
+        db.reports.create_index([("created_at", pymongo.DESCENDING)])
+        db.reports.create_index("name")
+        db.reports.create_index("mobile")
+        db.reports.create_index("dob")
+
         # Rename username 'admin' to 'Sagar Ghosh' if it exists in DB to migrate smoothly
         admin_user = db.users.find_one({"username": "admin"})
         if admin_user:
@@ -117,9 +133,6 @@ def init_default_admin():
         }
         db.users.insert_one(admin_doc)
         logger.info("Default admin user created: Sagar Ghosh / 123456")
-
-        # Create unique index on username
-        db.users.create_index("username", unique=True)
 
     except Exception as exc:
         logger.error(f"Error initializing default admin: {exc}")

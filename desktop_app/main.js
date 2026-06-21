@@ -97,7 +97,7 @@ function startServers() {
   backendProcess.on('close', (code) => console.log(`Backend exited: ${code}`));
 
   // Frontend
-  frontendProcess = spawn(npmCmd, ['run', 'dev'], {
+  frontendProcess = spawn(npmCmd, ['run', 'start'], {
     cwd: frontendDir,
     windowsHide: true,
     shell: true

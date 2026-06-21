@@ -1082,7 +1082,18 @@ def render_pdf_from_context(context: dict[str, Any], filename: str = None) -> st
     # pyrefly: ignore [missing-import]
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--no-first-run",
+                "--no-zygote",
+                "--single-process"
+            ]
+        )
         page = browser.new_page()
         page.set_content(html_content)
         page.wait_for_load_state("networkidle")

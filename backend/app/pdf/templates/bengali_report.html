@@ -175,6 +175,10 @@
       letter-spacing: -0.5px;
     }
 
+    .dosha-size-8 { font-size: 8px; }
+    .dosha-size-10 { font-size: 10px; }
+    .dosha-size-12 { font-size: 12px; }
+
     .chart-lagna {
       font-size: 16px;
       fill: #d32f2f;
@@ -686,15 +690,15 @@
               style="width: 48%;">{{ namer_adokkhyor }}</span></div>
           {% if astrology.selected_doshas %}
           {% set dosha_count = astrology.selected_doshas|length %}
-          {% set font_size = '12px' %}
+          {% set dosha_class = 'dosha-size-12' %}
           {% if dosha_count >= 5 %}
-            {% set font_size = '8px' %}
+            {% set dosha_class = 'dosha-size-8' %}
           {% elif dosha_count >= 3 %}
-            {% set font_size = '10px' %}
+            {% set dosha_class = 'dosha-size-10' %}
           {% endif %}
           <div class="info-line" style="margin-top: 5px; display: flex; align-items: baseline; flex-wrap: wrap;">
             <label class="highlight-blue" style="color: var(--brand-red); white-space: nowrap;">{{ labels.dosha_dasha }}-</label>
-            <span class="data-value" style="flex: 1; font-size: {{ font_size }}; line-height: 1.2; white-space: normal; color: var(--brand-red); font-weight: bold;">
+            <span class="data-value {{ dosha_class }}" style="flex: 1; line-height: 1.2; white-space: normal; color: var(--brand-red); font-weight: bold;">
               {{ astrology.selected_doshas | join(', ') }}
             </span>
           </div>
