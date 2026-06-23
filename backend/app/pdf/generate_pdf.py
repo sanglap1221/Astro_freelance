@@ -79,7 +79,7 @@ TRANSLATIONS = {
         "and": "ও",
         "combust": "অ",
         "retrograde": "ব",
-        "lagna_label": "লগ্ন",
+        "lagna_label": "লগ্নস্ফুট",
         "lang_lagna_display": "লং",
         "mahadasha_title": "মহাদশা",
         "dosha_dasha": "দোষ",
