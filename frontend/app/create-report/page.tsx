@@ -104,7 +104,7 @@ const ZODIAC_SIGNS_MAP: Record<string, string[]> = {
   en: ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"],
 };
 
-const NAKSHATRAS_MAP: Record<string, string[]> = {
+const NAKSHATRAS_MAP: Record<string, string[]> = { //testing
   bn: [
      "অশ্বিনী", "ভরণী", "কৃত্তিকা", "রোহিণী", "মৃগশিরা", "আর্দ্রা",
             "পুনর্ব্বসু", "পুষ্যা", "অশ্লেষা", "মঘা", "পূর্ব্বফল্গুনী",
