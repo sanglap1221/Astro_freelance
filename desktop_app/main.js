@@ -97,7 +97,8 @@ function startServers() {
   backendProcess.on('close', (code) => console.log(`Backend exited: ${code}`));
 
   // Frontend
-  frontendProcess = spawn(npmCmd, ['run', 'start'], {
+  const frontendScript = app.isPackaged ? 'start' : 'dev';
+  frontendProcess = spawn(npmCmd, ['run', frontendScript], {
     cwd: frontendDir,
     windowsHide: true,
     shell: true
@@ -110,10 +111,14 @@ function startServers() {
 
 // ── Poll until localhost:3000 responds ──
 function waitForFrontend(win) {
+  console.log('waitForFrontend: checking http://localhost:3000 ...');
   http.get('http://localhost:3000', (res) => {
+    console.log(`waitForFrontend: got response status ${res.statusCode}`);
     res.resume();
+    console.log('waitForFrontend: loading URL http://localhost:3000');
     win.loadURL('http://localhost:3000');
-  }).on('error', () => {
+  }).on('error', (err) => {
+    console.log(`waitForFrontend: error connecting: ${err.message}. Retrying in 1s...`);
     setTimeout(() => waitForFrontend(win), 1000);
   });
 }
@@ -212,9 +217,23 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
 
   mainWindow.once('ready-to-show', () => {
+    console.log('Electron event: ready-to-show fired');
     mainWindow.show();
     mainWindow.center();
   });
+
+  // Fallback: show the window if ready-to-show does not fire within 6 seconds
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      console.log('ready-to-show fallback: showing window manually after timeout');
+      mainWindow.show();
+      mainWindow.center();
+    }
+  }, 6000);
+
+  // if (!app.isPackaged) {
+  //   mainWindow.webContents.openDevTools();
+  // }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (handleExternalLinks(url)) {

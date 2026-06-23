@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import type { ReportInput } from "../types/report";
+import { BengaliDatePicker, formatBengaliDobString } from "./BengaliDatePicker";
 
 type ReportFormProps = {
   value: ReportInput;
@@ -191,6 +192,35 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
             required
           />
         </label>
+      </div>
+
+      {/* Bengali Date Section */}
+      <div className="grid gap-2 text-sm bg-amber-50/20 p-3.5 rounded-xl border border-[#e3d0ab]/40">
+        <div className="flex items-center justify-between">
+          <span className={labelClasses + " !mb-0 font-bold"}>Bengali Date (Manual) / বাংলা তারিখ (ম্যানুয়াল)</span>
+          <label className="flex items-center gap-1.5 text-xs text-slate-500 font-bold cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={value.bengali_date_auto ?? true}
+              onChange={(e) => {
+                const auto = e.target.checked;
+                onChange({
+                  ...value,
+                  bengali_date_auto: auto,
+                  bengali_dob: auto ? "" : formatBengaliDobString(1, 0, 1430, value.language)
+                });
+              }}
+              className="rounded h-3.5 w-3.5 text-indigo-650 focus:ring-0 cursor-pointer"
+            />
+            <span>Calculate Automatically / স্বয়ংক্রিয় গণনা</span>
+          </label>
+        </div>
+        <BengaliDatePicker
+          value={value.bengali_dob ?? ""}
+          lang={value.language}
+          onChange={(val) => onChange({ ...value, bengali_dob: val })}
+          disabled={value.bengali_date_auto ?? true}
+        />
       </div>
 
       {/* Place Row */}

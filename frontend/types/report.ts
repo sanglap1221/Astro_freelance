@@ -6,6 +6,8 @@ export type ReportInput = {
   place: string;
   mobile?: string;
   language?: string;
+  bengali_dob?: string;
+  bengali_date_auto?: boolean;
   ayanamsa_mode?: string;
   custom_ayanamsa_degrees?: string;
   // Engine settings (true_moon, true_node) are hardcoded in backend
@@ -29,6 +31,7 @@ export interface CustomerState {
   place: string;
   weekday: string;
   mobile: string;
+  bengali_dob: string;
 }
 
 export interface AstrologyState {

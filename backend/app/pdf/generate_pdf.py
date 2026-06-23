@@ -13,6 +13,7 @@ from app.astrology.calculations import (
     calculate_chart,
     format_sign_compact_bn,
     format_sign_dms_bn,
+    resolve_location,
 )
 from app.astrology.bengali_date import (
     gregorian_to_bengali,
@@ -38,6 +39,8 @@ TRANSLATIONS = {
         "time": "জন্ম সময়",
         "place": "জন্মস্থান",
         "weekday": "জন্ম বার",
+        "english_bar": "ইংরেজি বার",
+        "bengali_bar": "বাংলা বার",
         "mobile": "মোবাইল",
         "report_no": "রিপোর্ট নং",
         "generated_at": "তারিখ",
@@ -124,6 +127,8 @@ TRANSLATIONS = {
         "time": "जन्म समय",
         "place": "जन्म स्थान",
         "weekday": "जन्म दिन",
+        "english_bar": "अंग्रेजी वार",
+        "bengali_bar": "बंगाली वार",
         "mobile": "मोबाइल",
         "report_no": "रिपोर्ट संख्या",
         "generated_at": "दिनांक",
@@ -210,6 +215,8 @@ TRANSLATIONS = {
         "time": "Time of Birth",
         "place": "Birth Place",
         "weekday": "Day of Birth",
+        "english_bar": "English Day",
+        "bengali_bar": "Bengali Day",
         "mobile": "Mobile",
         "report_no": "Report No",
         "generated_at": "Date",
@@ -532,19 +539,41 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     else:
         digit_map = {'0':'0', '1':'1', '2':'2', '3':'3', '4':'4', '5':'5', '6':'6', '7':'7', '8':'8', '9':'9'}
 
+    # Extract parameters and resolve location coordinates and timezone
+    if isinstance(payload, dict):
+        place = payload.get("place", "")
+        lat = payload.get("latitude")
+        lon = payload.get("longitude")
+        tz = payload.get("timezone")
+        dob = payload.get("dob")
+        birth_time = payload.get("time")
+        planet_overrides = payload.get("planet_overrides")
+        override_moon_longitude = payload.get("override_moon_longitude")
+    else:
+        place = payload.place
+        lat = getattr(payload, "latitude", None)
+        lon = getattr(payload, "longitude", None)
+        tz = getattr(payload, "timezone", None)
+        dob = payload.dob
+        birth_time = getattr(payload, "time", None)
+        planet_overrides = getattr(payload, "planet_overrides", None)
+        override_moon_longitude = getattr(payload, "override_moon_longitude", None)
+
+    loc = resolve_location(place, lat, lon, tz)
+
     # 1. Run astrological calculations
     chart = calculate_chart(
-        dob=payload.dob,
-        birth_time=payload.time,
-        place=payload.place,
-        latitude=getattr(payload, 'latitude', None),
-        longitude=getattr(payload, 'longitude', None),
-        timezone=getattr(payload, 'timezone', None),
+        dob=dob,
+        birth_time=birth_time,
+        place=place,
+        latitude=loc.latitude,
+        longitude=loc.longitude,
+        timezone=loc.timezone,
         ayanamsa_mode="traditional",
         true_moon=True,
         true_node=True,
-        planet_overrides=payload.planet_overrides,
-        override_moon_longitude=payload.override_moon_longitude,
+        planet_overrides=planet_overrides,
+        override_moon_longitude=override_moon_longitude,
     )
 
     # 2. Generate report_no
@@ -555,11 +584,29 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     generated_at = to_local_digits(current_date.strftime("%d-%m-%Y"), lang)
 
     # 4. Formulate customer
-    by, bm, bd = gregorian_to_bengali(payload.dob)
-    bengali_dob = format_bengali_date(by, bm, bd, lang)
+    by, bm, bd, effective_date = gregorian_to_bengali(
+        dob,
+        birth_time=birth_time,
+        latitude=loc.latitude,
+        longitude=loc.longitude,
+        timezone_name=loc.timezone
+    )
+    calculated_bengali_dob = format_bengali_date(by, bm, bd, lang)
 
-    weekday_en = payload.dob.strftime("%a")
-    weekday_local = labels["weekdays_full"].get(weekday_en, "-")
+    bengali_dob = None
+    if isinstance(payload, dict):
+        bengali_dob = payload.get("bengali_dob")
+    else:
+        bengali_dob = getattr(payload, "bengali_dob", None)
+
+    if not bengali_dob:
+        bengali_dob = calculated_bengali_dob
+
+    weekday_en_orig = payload.dob.strftime("%a")
+    english_weekday = labels["weekdays_full"].get(weekday_en_orig, "-")
+
+    weekday_en_eff = effective_date.strftime("%a")
+    bengali_weekday = labels["weekdays_full"].get(weekday_en_eff, "-")
 
     customer = {
         "name": payload.name,
@@ -568,7 +615,9 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "bengali_dob": bengali_dob,
         "time": to_local_digits(payload.time.strftime("%H:%M"), lang),
         "place": payload.place,
-        "weekday": weekday_local,
+        "weekday": bengali_weekday,
+        "english_weekday": english_weekday,
+        "bengali_weekday": bengali_weekday,
         "mobile": to_local_digits(payload.mobile, lang) if payload.mobile else "",
     }
 
@@ -984,21 +1033,13 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             })
 
     from app.astrology.lagna_table import get_daily_lagna_timeline, SIGN_TO_INDEX
-    from app.astrology.calculations import resolve_location
-    
-    loc = resolve_location(
-        payload.place,
-        getattr(payload, 'latitude', None),
-        getattr(payload, 'longitude', None),
-        getattr(payload, 'timezone', None)
-    )
     
     month_name_en = BENGALI_MONTHS_EN[bm]
     raw_timeline = get_daily_lagna_timeline(
         month_name_en, 
         bd, 
         use_sidereal=True,
-        dob=payload.dob,
+        dob=dob,
         lat=loc.latitude,
         lon=loc.longitude
     )

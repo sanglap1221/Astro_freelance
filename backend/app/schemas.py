@@ -58,6 +58,7 @@ class PdfRequest(BaseModel):
     place: str = Field(min_length=1)
     mobile: str | None = None
     language: str = "bn"
+    bengali_dob: str | None = None
     # Engine settings hardcoded — NOT exposed to clients
     # TRUE_NODE = True, WORKFLOW = Traditional Bengali NC Lahiri
     planet_overrides: dict[str, float] | None = None

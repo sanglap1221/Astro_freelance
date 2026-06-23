@@ -118,6 +118,16 @@ html, body {
   animation: spin-slow 8s linear infinite;
 }
 
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-reverse-spin {
+  animation: spin-reverse 10s linear infinite;
+}
+
+
 /* ─── Save Indicator Animation ─── */
 @keyframes save-pop {
   0% { transform: scale(0); opacity: 0; }
@@ -217,4 +227,43 @@ html, body {
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background: #ebdcb9;
   border-radius: 9999px;
+}
+
+/* ─── Premium Astrological Styles ─── */
+.font-mystic {
+  font-family: 'Cinzel', serif;
+}
+
+.font-bengali {
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+.cosmic-glass {
+  background: rgba(10, 8, 28, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 215, 0, 0.08);
+}
+
+.cosmic-glass-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cosmic-glass-hover:hover {
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.15);
+}
+
+.glow-text-gold {
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+.glow-button {
+  box-shadow: 0 0 15px rgba(185, 28, 28, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glow-button:hover {
+  box-shadow: 0 0 30px rgba(185, 28, 28, 0.85), inset 0 0 15px rgba(255, 215, 0, 0.3);
+  transform: translateY(-2px);
 }

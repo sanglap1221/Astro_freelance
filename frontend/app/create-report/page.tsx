@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { PdfViewer } from "../../components/PdfViewer";
 import { ReportForm } from "../../components/ReportForm";
+import { BengaliDatePicker } from "../../components/BengaliDatePicker";
 import { useAuth } from "../../components/AuthProvider";
 import AboutModal from "../../components/AboutModal";
 import { calculateReport, renderPdf, getPdfStatus, API } from "../../services/api";
@@ -20,6 +21,8 @@ const initialValue: ReportInput = {
   place: "Kolkata",
   mobile: "",
   language: "bn",
+  bengali_dob: "",
+  bengali_date_auto: true,
   planet_overrides: {},
   override_moon_longitude: "",
   override_ascendant_longitude: "",
@@ -421,6 +424,7 @@ function buildRequestPayload(formValue: ReportInput, reportState: ReportState | 
     override_moon_longitude: formValue.override_moon_longitude?.trim() || undefined,
     override_ascendant_longitude: Number.isFinite(overrideAscendant) ? String(overrideAscendant) : undefined,
     planet_nudges: reportState?.planet_nudges || {},
+    bengali_dob: formValue.bengali_date_auto ? undefined : (formValue.bengali_dob?.trim() || undefined),
   } as any;
 }
 function calculatePlanetCoords(state: ReportState): Record<string, { x: number, y: number }> {
@@ -653,6 +657,8 @@ export default function CreateReportPage() {
     }
   }, [formValue.language]);
 
+
+
   // Trigger PDF preview recalculation when the target PDF language changes, independently of editor state
   useEffect(() => {
     if (reportState && pdfLanguage !== reportState.lang) {
@@ -663,7 +669,7 @@ export default function CreateReportPage() {
   const fullPdfUrl = useMemo(() => (pdfUrl ? (pdfUrl.startsWith("blob:") ? pdfUrl : `${process.env.NEXT_PUBLIC_API_URL || "https://sanglap-astro-web.onrender.com"}${pdfUrl}`) : ""), [pdfUrl]);
 
   // Load the initial calculation from backend into central state
-  async function handleLoadDetails(overrideValue?: ReportInput) {
+  async function handleLoadDetails(overrideValue?: ReportInput, keepFormOpen?: boolean) {
     setLoading(true);
     setError("");
     if (!pdfUrl) {
@@ -678,8 +684,10 @@ export default function CreateReportPage() {
       const activeDasha = state.dasha_list.find((d) => d.is_active);
       setActivePlanet(activeDasha ? activeDasha.planet : state.dasha_list[0].planet);
 
-      // Collapse the form automatically upon loading
-      setShowBirthDetails(false);
+      // Collapse the form automatically upon loading (unless keepFormOpen is true)
+      if (!keepFormOpen) {
+        setShowBirthDetails(false);
+      }
 
       const stateWithCoords: ReportState = {
         ...state,
@@ -690,6 +698,10 @@ export default function CreateReportPage() {
       stateWithCoords.planet_coords = planet_coords;
 
       setReportState(stateWithCoords);
+      setFormValue((prev) => ({
+        ...prev,
+        bengali_dob: state.customer.bengali_dob,
+      }));
 
       // Immediately render default PDF
       const result = await renderPdf(stateWithCoords);
@@ -793,8 +805,11 @@ export default function CreateReportPage() {
     if (!reportState) return;
     setReportState({
       ...reportState,
-      customer: { ...reportState.customer, [field]: normalizeEditorInput(val, reportState.lang) },
+      customer: { ...reportState.customer, [field]: val },
     });
+    if (field === "bengali_dob") {
+      setFormValue((prev) => ({ ...prev, bengali_dob: val, bengali_date_auto: false }));
+    }
   };
 
   const updateSummaryField = (field: keyof AstrologyState, val: any) => {
@@ -1186,15 +1201,15 @@ export default function CreateReportPage() {
           )}
           {reportState && (
             <button
-              onClick={() => triggerPdfUpdate(reportState)}
-              disabled={rendering}
+              onClick={() => showBirthDetails ? handleLoadDetails(formValue) : triggerPdfUpdate(reportState)}
+              disabled={rendering || loading}
               id="btn-update-pdf"
               className="hidden md:flex items-center gap-1.5 text-[0.6875rem] sm:text-xs font-semibold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg shadow-sm transition-all disabled:opacity-60 text-white"
               style={{ background: "linear-gradient(135deg, #800020, #590219)" }}
             >
-              {rendering && <LoadingSpinner />}
-              <span className="hidden sm:inline">{rendering ? "Updating..." : "Update & Refresh Preview"}</span>
-              <span className="inline sm:hidden">{rendering ? "Updating..." : "Update"}</span>
+              {(rendering || loading) && <LoadingSpinner />}
+              <span className="hidden sm:inline">{loading ? "Calculating..." : rendering ? "Updating..." : showBirthDetails ? "Recalculate & Refresh" : "Update & Refresh Preview"}</span>
+              <span className="inline sm:hidden">{loading ? "Calculating..." : rendering ? "Updating..." : showBirthDetails ? "Recalculate" : "Update"}</span>
             </button>
           )}
 
@@ -1255,10 +1270,10 @@ export default function CreateReportPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        triggerPdfUpdate(reportState);
+                        showBirthDetails ? handleLoadDetails(formValue) : triggerPdfUpdate(reportState);
                         setIsMobileMenuOpen(false);
                       }}
-                      disabled={rendering}
+                      disabled={rendering || loading}
                       className="flex items-center gap-2.5 text-xs font-semibold px-3 py-2.5 rounded-lg hover:bg-red-50/50 active:bg-red-50 transition-colors w-full text-left border-t border-slate-100 mt-1 pt-2"
                       style={{ color: "#800020" }}
                     >
@@ -1339,6 +1354,23 @@ export default function CreateReportPage() {
 
           {reportState && (
             <div className="p-4 space-y-5">
+
+              {/* Bengali Date Override (Manual override) */}
+              {showBirthDetails && (
+                <div className="rounded-xl p-4 shadow-sm" style={{ background: "#fdfcf9", border: "1px solid #ebdcb9" }}>
+                  <h3 className="text-sm font-bold mb-3 pb-2 flex items-center gap-2" style={{ color: "#1a365d", borderBottom: "1px solid rgba(235, 220, 185, 0.6)" }}>
+                    <i className="fa-solid fa-calendar-days" style={{ color: "#92400e" }}></i> Bengali Date Override / বাংলা তারিখ পরিবর্তন
+                  </h3>
+                  <div className="flex flex-col gap-1.5 text-[0.6875rem]">
+                    <span className="font-semibold text-slate-500">Bengali Date Picker / বাংলা তারিখ পরিবর্তন করুন</span>
+                    <BengaliDatePicker
+                      value={reportState.customer.bengali_dob}
+                      lang={reportState.lang}
+                      onChange={(val: string) => updateCustomerField("bengali_dob", val)}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* ── SECTIONS B & C: Planet Positions & Kundli Summary (Side-by-Side) ── */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

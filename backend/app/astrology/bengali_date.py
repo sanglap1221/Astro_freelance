@@ -4,6 +4,10 @@ from zoneinfo import ZoneInfo
 # pyrefly: ignore [missing-import]
 import swisseph as swe
 
+import logging
+
+logger = logging.getLogger("astro_app.bengali_date")
+
 BENGALI_MONTHS_EN = [
     "Boishakh", "Jyaistha", "Ashadha", "Sravana", "Bhadra", "Ashwin",
     "Kartika", "Agrahayana", "Pausa", "Magha", "Phalguna", "Chaitra"
@@ -80,11 +84,69 @@ def jd_to_gregorian_date_kolkata(jd_ut: float) -> date:
     dt_kolkata = dt_utc.astimezone(ZoneInfo("Asia/Kolkata"))
     return dt_kolkata.date()
 
-def gregorian_to_bengali(greg_date: date) -> tuple[int, int, int]:
+def gregorian_to_bengali(
+    greg_date: date,
+    birth_time: time | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    timezone_name: str | None = None
+) -> tuple[int, int, int, date]:
     """
     Convert a Gregorian date to Bengali solar date (Bangabda).
-    Returns (year, month_index, day) where month_index is 0-11 (Boishakh to Chaitra).
+    If birth details are provided, calculates sunrise using Swiss Ephemeris.
+    If birth is before sunrise, uses the previous day's solar date.
+    Returns (year, month_index, day, effective_date) where month_index is 0-11 (Boishakh to Chaitra).
     """
+    logger.debug("Input: Date=%s, Time=%s, Lat=%s, Lon=%s, TZ=%s", greg_date, birth_time, latitude, longitude, timezone_name)
+    effective_date = greg_date
+    
+    if birth_time is not None and latitude is not None and longitude is not None and timezone_name is not None:
+        try:
+            tz = ZoneInfo(timezone_name)
+            # 1. Calculate birth Julian Day UT
+            dt_birth = datetime.combine(greg_date, birth_time, tzinfo=tz)
+            utc_birth = dt_birth.astimezone(timezone.utc)
+            jd_birth = swe.julday(
+                utc_birth.year, utc_birth.month, utc_birth.day,
+                utc_birth.hour + utc_birth.minute / 60.0 + utc_birth.second / 3600.0 + utc_birth.microsecond / 3600000000.0
+            )
+            
+            # 2. Calculate local midnight Julian Day UT
+            dt_midnight = datetime.combine(greg_date, datetime.min.time(), tzinfo=tz)
+            utc_midnight = dt_midnight.astimezone(timezone.utc)
+            jd_midnight = swe.julday(
+                utc_midnight.year, utc_midnight.month, utc_midnight.day,
+                utc_midnight.hour + utc_midnight.minute / 60.0 + utc_midnight.second / 3600.0
+            )
+            logger.debug("Calculated Birth JD=%s, Midnight JD=%s", jd_birth, jd_midnight)
+            
+            # 3. Calculate sunrise Julian Day UT on greg_date
+            geopos = [longitude, latitude, 0.0]
+            res, tret = swe.rise_trans(
+                jd_midnight,
+                swe.SUN,
+                swe.CALC_RISE,
+                geopos,
+                1010.0, # atpress
+                25.0, # attemp
+                swe.FLG_SWIEPH
+            )
+            logger.debug("rise_trans code=%s", res)
+            if res == 0:
+                jd_sunrise = tret[0]
+                logger.debug("Sunrise JD=%s, diff=%s", jd_sunrise, jd_birth - jd_sunrise)
+                if jd_birth < jd_sunrise:
+                    effective_date = greg_date - timedelta(days=1)
+            # if res != 0, we fall back quietly to greg_date
+            logger.debug("Effective Date=%s", effective_date)
+        except Exception as e:
+            # Fall back to greg_date in case of any issues with timezone/coordinates
+            logger.warning("Exception during Bengali date adjustment: %s", e, exc_info=True)
+            pass
+
+    # Rest of calculations use the effective date
+    greg_date = effective_date
+
     # 1. Convert Gregorian date to Julian Day at local noon (Kolkata)
     dt_noon = datetime.combine(greg_date, datetime.min.time(), tzinfo=ZoneInfo("Asia/Kolkata")) + timedelta(hours=12)
     utc_noon = dt_noon.astimezone(timezone.utc)
@@ -149,7 +211,8 @@ def gregorian_to_bengali(greg_date: date) -> tuple[int, int, int]:
         # If it is before Pohela Boishakh of year Y, the Bengali year is Y - 594
         bangabda_year = greg_date.year - 594
         
-    return bangabda_year, month_idx, bengali_day
+    return bangabda_year, month_idx, bengali_day, effective_date
+
 
 def format_bengali_date_bn(year: int, month_idx: int, day: int) -> str:
     """Format a Bengali date in Bengali language and numerals (e.g. ২০ জ্যৈষ্ঠ ১৪৩৩)."""

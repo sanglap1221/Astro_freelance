@@ -510,13 +510,14 @@
               user.father_name | default('-', true) }}</span></div>
           <div class="info-line"><label>{{ labels.dob }}:</label> <span class="data-value" style="width: 60%;">{{
               user.dob | default('-', true) }}</span></div>
+          <div class="info-line"><label>{{ labels.english_bar }}:</label> <span class="data-value" style="width: 60%;">{{
+              user.english_weekday | default('-', true) }}</span></div>
           {# বাংলা তারিখ — the report generation date in Bengali digits #}
           <div class="info-line"><label>{{ labels.bengali_dob }}:</label> <span class="data-value" style="width: 65%;">{{
               user.bengali_dob | default('-', true) }}</span></div>
+          <div class="info-line"><label>{{ labels.bengali_bar }}:</label> <span class="data-value" style="width: 65%;">{{
+              user.bengali_weekday | default('-', true) }}</span></div>
           <div class="info-line"><label>{{ labels.time }}:</label> <span class="data-value" style="width: 70%;">{{ user.time |
-              default('-', true) }}</span></div>
-          {# বার — weekday of birth, NOT place name #}
-          <div class="info-line"><label>{{ labels.weekday }}:</label> <span class="data-value" style="width: 85%;">{{ user.weekday |
               default('-', true) }}</span></div>
         </div>
 
