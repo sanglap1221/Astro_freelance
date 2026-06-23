@@ -83,7 +83,9 @@ function startServers() {
   const backendDir = path.join(rootDir, 'backend');
   const frontendDir = path.join(rootDir, 'frontend');
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const pythonExe = path.join(backendDir, 'venv', 'Scripts', 'python.exe');
+  const pythonExe = process.platform === 'win32'
+    ? path.join(backendDir, 'venv', 'Scripts', 'python.exe')
+    : path.join(backendDir, 'venv', 'bin', 'python');
 
   // Backend — no --reload, single clean process
   backendProcess = spawn(

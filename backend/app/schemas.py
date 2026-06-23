@@ -1,5 +1,6 @@
 from datetime import date, time
 
+# pyrefly: ignore [missing-import]
 from pydantic import BaseModel, Field
 
 
