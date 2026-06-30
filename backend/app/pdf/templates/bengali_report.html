@@ -42,7 +42,8 @@
       min-height: 297mm;
       margin: 10mm auto;
       background: var(--bg-color);
-      padding: 8mm;
+      /* Reduced top padding from 8mm to 4mm to shift page content higher */
+      padding: 4mm 8mm 8mm 8mm;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       overflow: visible;
     }
@@ -58,7 +59,8 @@
 
       .a4-page {
         margin: 0 !important;
-        padding: 8mm !important;
+        /* Reduced top padding from 8mm to 4mm to shift page content higher */
+        padding: 4mm 8mm 8mm 8mm !important;
         box-shadow: none !important;
         border: none !important;
         width: 210mm !important;
@@ -92,10 +94,11 @@
     }
 
     .header-title {
-      font-size: 34px;
+      /* Increased font-size to 42px and letter-spacing to 4px to make the title larger and wider as requested */
+      font-size: 42px;
       font-weight: 800;
       color: var(--brand-red);
-      letter-spacing: 2px;
+      letter-spacing: 4px;
       margin-bottom: 5px;
       text-shadow: 1px 1px 0px #000;
     }
@@ -118,12 +121,20 @@
       border-right: none;
     }
 
+    .col-27 {
+      width: 27%;
+    }
+
     .col-30 {
       width: 30%;
     }
 
     .col-40 {
       width: 40%;
+    }
+
+    .col-46 {
+      width: 46%;
     }
 
     .col-50 {
@@ -157,13 +168,13 @@
     .kundli-title {
       text-align: center;
       font-weight: bold;
-      font-size: 14px;
+      font-size: 15px; /* Increased font-size from 14px to 15px as requested */
       margin-bottom: 5px;
       color: var(--ink-black);
     }
 
     .chart-house-number {
-      font-size: 14px;
+      font-size: 11px; /* Decreased font-size to fit inside the cell borders cleanly */
       fill: #9333ea;
       font-weight: 800;
     }
@@ -302,7 +313,7 @@
     .shorthand-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 13px; /* Increased font-size from 12px to 13px as requested */
       margin-top: 5px;
     }
 
@@ -351,7 +362,7 @@
       padding-right: 6px;
       font-weight: bold;
       color: var(--brand-red);
-      font-size: 10px;
+      font-size: 11px; /* Increased font-size from 10px to 11px as requested */
     }
 
     .remedy-section {
@@ -363,7 +374,7 @@
 
     .remedy-main-title {
       text-align: center;
-      font-size: 15px;
+      font-size: 17.5px; /* Increased font-size from 15px to 17.5px as requested */
       font-weight: 800;
       color: var(--brand-red);
       margin-bottom: 2px;
@@ -372,7 +383,7 @@
 
     .remedy-sub-title {
       text-align: center;
-      font-size: 13px;
+      font-size: 15px; /* Increased font-size from 13px to 15px as requested */
       font-weight: 700;
       color: var(--brand-blue);
       margin-bottom: 6px;
@@ -381,7 +392,7 @@
     .remedy-grid-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 14px; /* Increased font-size from 12px to 14px as requested */
     }
 
     .remedy-grid-table th,
@@ -400,7 +411,7 @@
 
     .remedy-footer-note {
       text-align: center;
-      font-size: 11px;
+      font-size: 13px; /* Increased font-size from 11px to 13px as requested */
       font-weight: bold;
       color: #475569;
       margin-top: 5px;
@@ -494,12 +505,13 @@
       <!-- ── TOP INFO ROW ─────────────────────────────────────────── -->
       <div class="row">
         <div class="col col-30">
-          <div class="info-line"><span class="highlight-blue">জ্যোতিষী: এস. ঘোষ</span></div>
-          <div style="font-size: 10px; margin-bottom: 8px;">জ্যোতিষ সম্রাট, স্বর্ণপদক প্রাপ্ত<br>(এম.এ), এম.বি.পি.পি
+          <!-- Increased astrologer detail text sizes (name to 18px, details to 14px, mob to 16px, online to 15px) and added comment -->
+          <div class="info-line" style="font-size: 18px;"><span class="highlight-blue" style="font-size: 18px;">জ্যোতিষী: এস. ঘোষ</span></div>
+          <div style="font-size: 14px; margin-bottom: 8px; font-weight: bold; line-height: 1.3;">জ্যোতিষ সম্রাট, স্বর্ণপদক প্রাপ্ত<br>(এম.এ), এম.বি.পি.পি
           </div>
-          <div class="info-line">মোব : <span class="data-value">৯১৫৩০৮৭৮৭০</span></div>
-          <div class="info-line" style="margin-left: 32px;"><span class="data-value">৯৭৩২৮৩০৩৫৩</span></div>
-          <div style="color: var(--brand-red); font-weight: bold; font-size: 10px; margin-top: 5px;">ONLINE দেখা হয়।
+          <div class="info-line" style="font-size: 16px;">মোব : <span class="data-value" style="font-size: 16px;">৯১৫৩০৮৭৮৭০</span></div>
+          <div class="info-line" style="margin-left: 32px; font-size: 16px;"><span class="data-value" style="font-size: 16px;">৯৭৩২৮৩০৩৫৩</span></div>
+          <div style="color: var(--brand-red); font-weight: bold; font-size: 15px; margin-top: 5px;">ONLINE দেখা হয়।
           </div>
         </div>
 
@@ -522,9 +534,10 @@
         </div>
 
         <div class="col col-30">
-          <div style="color: var(--brand-red); font-weight: bold; margin-bottom: 5px;">বিঃ দ্রঃ - গ্রহ-রত্নের<br>যোগাযোগ
+          <!-- Increased text sizes for বিঃ দ্রঃ header (17px) and body details (13px) and added comment -->
+          <div style="color: var(--brand-red); font-weight: bold; margin-bottom: 5px; font-size: 17px; line-height: 1.3;">বিঃ দ্রঃ - গ্রহ-রত্নের<br>যোগাযোগ
             কেন্দ্র।</div>
-          <div style="font-size: 10px; color: var(--brand-blue);">
+          <div style="font-size: 13px; color: var(--brand-blue); line-height: 1.35;">
             বাড়িতে : প্রতিদিন - (শনি, মঙ্গল<br>
             ব্যতীত) সন্ধ্যা ৭:০০টা থেকে ৯:৩০টা<br>
             এবং রবিবার সকাল ১১থেকে ১:৩০ মি:।<br>
@@ -539,7 +552,7 @@
       <!-- ── PLANET LIST | KUNDLI | SUMMARY ─────────────────────── -->
       <div class="row">
         <!-- Left: planet shorthand list (Bengali format) -->
-        <div class="col col-30">
+        <div class="col col-27">
           <div class="kundli-title">—ঃ {{ labels.planetary_positions }} ঃ—</div>
           <table class="shorthand-table">
             {% for item in shorthand_planets %}
@@ -578,11 +591,12 @@
         </div>
 
         <!-- Centre: Rashi Chakra (North-Indian diamond) -->
-        <div class="col col-40"
+        <div class="col col-46"
           style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
           {% if show_kundli is not defined or show_kundli %}
           <div class="svg-container">
-            <svg width="270" height="270" viewBox="0 0 300 300">
+            <!-- Enlarge Rashi Chakra SVG box size from 295 to 325 and added comment -->
+            <svg width="325" height="325" viewBox="0 0 300 300">
 
               <line x1="100" y1="0" x2="100" y2="300" stroke="#c084fc" stroke-width="2" />
               <line x1="200" y1="0" x2="200" y2="300" stroke="#c084fc" stroke-width="2" />
@@ -599,18 +613,18 @@
                 চক্র</text>
 
               {% set chart_positions = [
-              (150, -4, 150, 42, 0),
-              (68, -4, 75, 38, 1),
-              (-7, 65, 42, 65, 2),
-              (-7, 150, 42, 135, 3),
-              (-7, 232, 42, 222, 4),
-              (75, 310, 75, 260, 5),
-              (150, 310, 150, 215, 6),
-              (242, 310, 225, 260, 7),
-              (305, 232, 262, 222, 8),
-              (305, 160, 262, 135, 9),
-              (305, 65, 262, 65, 10),
-              (242, -4, 225, 38, 11)
+              (150, 12, 150, 42, 0),
+              (88, 12, 75, 38, 1),
+              (12, 88, 42, 65, 2),
+              (12, 150, 42, 135, 3),
+              (12, 212, 42, 222, 4),
+              (88, 288, 75, 260, 5),
+              (150, 288, 150, 215, 6),
+              (212, 288, 225, 260, 7),
+              (288, 212, 262, 222, 8),
+              (288, 150, 262, 135, 9),
+              (288, 88, 262, 65, 10),
+              (212, 12, 225, 38, 11)
               ] %}
               {% for num_x, num_y, planets_x, planets_y, sign_idx in chart_positions %}
               {% set house = house_chart[sign_idx] %}
@@ -620,7 +634,24 @@
               '10':'১০', '11':'১১', '12':'১২'} %}
               {% set current_house_bn = bangla_digits[raw_house_number|string] %}
 
-              <text x="{{ num_x }}" y="{{ num_y }}" text-anchor="middle" class="chart-house-number"
+              {% set display_num_x = num_x %}
+              {% set display_num_y = num_y %}
+              {% if sign_idx == summary.lagna_sign_index %}
+                {% if sign_idx == 0 %}{% set display_num_y = 88 %}
+                {% elif sign_idx == 1 %}{% set display_num_x = 65 %}
+                {% elif sign_idx == 2 %}{% set display_num_y = 65 %}
+                {% elif sign_idx == 3 %}{% set display_num_x = 88 %}
+                {% elif sign_idx == 4 %}{% set display_num_y = 235 %}
+                {% elif sign_idx == 5 %}{% set display_num_x = 65 %}
+                {% elif sign_idx == 6 %}{% set display_num_y = 212 %}
+                {% elif sign_idx == 7 %}{% set display_num_x = 235 %}
+                {% elif sign_idx == 8 %}{% set display_num_y = 235 %}
+                {% elif sign_idx == 9 %}{% set display_num_x = 212 %}
+                {% elif sign_idx == 10 %}{% set display_num_y = 65 %}
+                {% elif sign_idx == 11 %}{% set display_num_x = 235 %}
+                {% endif %}
+              {% endif %}
+              <text x="{{ display_num_x }}" y="{{ display_num_y }}" text-anchor="middle" class="chart-house-number"
                 style="fill: #7c3aed; font-weight: 800;">{{ current_house_bn }}</text>
 
               {% if sign_idx == summary.lagna_sign_index %}
@@ -664,7 +695,7 @@
         </div>
 
         <!-- Right: summary column -->
-        <div class="col col-30" {% if lang == 'en' %}style="font-size: 11px;"{% endif %}>
+        <div class="col col-27" {% if lang == 'en' %}style="font-size: 11px;"{% endif %}>
           <div class="info-line"><label class="highlight-blue">{{ labels.rashi }}-</label> <span class="data-value"
               style="width: 60%;">{{ astrology.rashi | default('-', true) }}</span></div>
           <div class="info-line"><label class="highlight-blue">{{ labels.lagna }}-</label> <span class="data-value"
@@ -690,16 +721,10 @@
           <div class="info-line"><label class="highlight-blue">{{ labels.naam_akshara }}-</label> <span class="data-value"
               style="width: 48%;">{{ namer_adokkhyor }}</span></div>
           {% if astrology.selected_doshas %}
-          {% set dosha_count = astrology.selected_doshas|length %}
-          {% set dosha_class = 'dosha-size-12' %}
-          {% if dosha_count >= 5 %}
-            {% set dosha_class = 'dosha-size-8' %}
-          {% elif dosha_count >= 3 %}
-            {% set dosha_class = 'dosha-size-10' %}
-          {% endif %}
           <div class="info-line" style="margin-top: 5px; display: flex; align-items: baseline; flex-wrap: wrap;">
             <label class="highlight-blue" style="color: var(--brand-red); white-space: nowrap;">{{ labels.dosha_dasha }}-</label>
-            <span class="data-value {{ dosha_class }}" style="flex: 1; line-height: 1.2; white-space: normal; color: var(--brand-red); font-weight: bold;">
+            <!-- Rendered selected doshas list using the default font size (no dynamic size decrease) as requested -->
+            <span class="data-value" style="flex: 1; line-height: 1.2; white-space: normal; color: var(--brand-red); font-weight: bold;">
               {{ astrology.selected_doshas | join(', ') }}
             </span>
           </div>
@@ -942,7 +967,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span>{{ item.gemstone }}</span>
                   {% if item.gemstone_rating %}
-                  <span style="color: #2563eb; font-size: 11px; white-space: nowrap; margin-left: 8px;">
+                  <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 8px;">
                     {% for _ in range(item.gemstone_rating) %}★{% endfor %}
                   </span>
                   {% endif %}
@@ -952,7 +977,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span>{{ item.remedy_root }}</span>
                   {% if item.root_rating %}
-                  <span style="color: #2563eb; font-size: 11px; white-space: nowrap; margin-left: 8px;">
+                  <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 8px;">
                     {% for _ in range(item.root_rating) %}★{% endfor %}
                   </span>
                   {% endif %}
