@@ -556,7 +556,7 @@ export default function HomePage() {
       const injected = document.getElementById("cosmic-bg-override");
       if (injected) injected.remove();
     };
-  }, []);
+  }, [isLoading, isAuthenticated]);
 
   const triggerCelestialEvent = () => {
     showToast("ॐ Shivam Astrological Energy Harmonized");

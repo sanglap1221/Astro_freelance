@@ -2059,7 +2059,7 @@ export default function CreateReportPage() {
                   <a
                     className="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1"
                     style={{ border: "1px solid #cbd5e1" }}
-                    href={fullPdfUrl}
+                    href={compiledPdfUrl ? (compiledPdfUrl.includes("?") ? `${compiledPdfUrl}&system_browser=true` : `${compiledPdfUrl}?system_browser=true`) : fullPdfUrl}
                     target="_blank"
                     rel="noreferrer"
                     id="btn-open-pdf"
@@ -2071,13 +2071,20 @@ export default function CreateReportPage() {
                     style={{ background: "#4f46e5" }}
                     onClick={(e) => {
                       e.preventDefault();
-                      const iframe = document.querySelector("iframe");
-                      if (iframe && iframe.contentWindow) {
-                        const originalTitle = document.title;
-                        document.title = "Print Astrological Report";
-                        iframe.contentWindow.focus();
-                        iframe.contentWindow.print();
-                        setTimeout(() => { document.title = originalTitle; }, 1000);
+                      if (compiledPdfUrl) {
+                        const targetUrl = compiledPdfUrl.includes("?")
+                          ? `${compiledPdfUrl}&system_browser=true`
+                          : `${compiledPdfUrl}?system_browser=true`;
+                        window.open(targetUrl, "_blank");
+                      } else {
+                        const iframe = document.querySelector("iframe");
+                        if (iframe && iframe.contentWindow) {
+                          const originalTitle = document.title;
+                          document.title = "Print Astrological Report";
+                          iframe.contentWindow.focus();
+                          iframe.contentWindow.print();
+                          setTimeout(() => { document.title = originalTitle; }, 1000);
+                        }
                       }
                     }}
                     id="btn-print-report"

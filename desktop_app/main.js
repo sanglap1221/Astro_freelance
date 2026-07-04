@@ -128,7 +128,7 @@ function waitForFrontend(win) {
 // ── Helper to intercept external links and open in system browser ──
 function handleExternalLinks(url) {
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    if (!url.includes('localhost') && !url.includes('127.0.0.1')) {
+    if (url.includes('system_browser=true') || (!url.includes('localhost') && !url.includes('127.0.0.1'))) {
       shell.openExternal(url).catch(err => console.error('Failed to open external link:', err));
       return true;
     }
@@ -158,6 +158,7 @@ function handlePdfDownload(url) {
         if (state === 'completed') {
           console.log('PDF saved:', filePath);
           shell.showItemInFolder(filePath);
+          shell.openPath(filePath);
         } else {
           console.error('Download failed:', state);
         }
