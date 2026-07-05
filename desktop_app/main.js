@@ -169,6 +169,42 @@ function handlePdfDownload(url) {
   });
 }
 
+// ── Handle print request via silent window and system print dialog ──
+function handleReportPrint(url) {
+  let suggestedName = 'Astrological_Report';
+  try {
+    const urlObj = new URL(url);
+    const nameParam = urlObj.searchParams.get('name');
+    if (nameParam) suggestedName = nameParam;
+  } catch (e) {}
+
+  const printWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+
+  printWindow.loadURL(url);
+
+  printWindow.webContents.once('did-finish-load', () => {
+    // Wait briefly for CSS/fonts to render completely
+    setTimeout(() => {
+      printWindow.webContents.print({
+        silent: false,
+        printBackground: true,
+        useSystemDialog: true
+      }, (success, failureReason) => {
+        if (!success) {
+          console.error(`Print failed for ${suggestedName}: ${failureReason}`);
+        }
+        printWindow.close();
+      });
+    }, 800);
+  });
+}
+
 // ── Open a report in a NEW Electron window ──
 function openReportWindow(url, title) {
   const reportWin = new BrowserWindow({
@@ -185,9 +221,13 @@ function openReportWindow(url, title) {
   reportWin.setMenuBarVisibility(false);
   reportWin.loadURL(url);
 
-  // Handle PDF download from report window
+  // Handle PDF download/print from report window
   reportWin.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
     if (handleExternalLinks(targetUrl)) {
+      return { action: 'deny' };
+    }
+    if (targetUrl.includes('/api/print-report/')) {
+      handleReportPrint(targetUrl);
       return { action: 'deny' };
     }
     if (targetUrl.includes('/api/download-pdf/')) {
@@ -242,6 +282,11 @@ function createWindow() {
     if (handleExternalLinks(url)) {
       return { action: 'deny' };
     }
+    // Intercept print action
+    if (url.includes('/api/print-report/')) {
+      handleReportPrint(url);
+      return { action: 'deny' };
+    }
     // 1. Download action
     if (url.includes('/api/download-pdf/')) {
       handlePdfDownload(url);
@@ -291,6 +336,11 @@ app.whenReady().then(async () => {
 app.on('web-contents-created', (_, contents) => {
   contents.setWindowOpenHandler(({ url }) => {
     if (handleExternalLinks(url)) {
+      return { action: 'deny' };
+    }
+    // Intercept print action
+    if (url.includes('/api/print-report/')) {
+      handleReportPrint(url);
       return { action: 'deny' };
     }
     // 1. Download action

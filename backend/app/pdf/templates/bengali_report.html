@@ -42,8 +42,8 @@
       min-height: 297mm;
       margin: 10mm auto;
       background: var(--bg-color);
-      /* Reduced top padding to shift page content higher */
-      padding: 1.5mm 8mm 6mm 8mm;
+      /* Increased top padding to prevent printing cut-offs */
+      padding: 5mm 8mm 5mm 8mm;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       overflow: visible;
     }
@@ -58,9 +58,9 @@
       }
 
       .a4-page {
-        margin: 0 !important;
-        /* Reduced top padding to shift page content higher */
-        padding: 1.5mm 8mm 6mm 8mm !important;
+        margin: 0 auto !important;
+        /* Increased top padding to prevent printing cut-offs */
+        padding: 5mm 8mm 5mm 8mm !important;
         box-shadow: none !important;
         border: none !important;
         width: 210mm !important;
@@ -70,7 +70,13 @@
         box-sizing: border-box !important;
         overflow: hidden !important;
         page-break-inside: avoid !important;
-        zoom: 95%;
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+
+      .form-wrapper {
+        zoom: 93% !important;
+        margin: 0 auto !important;
       }
     }
 
@@ -901,7 +907,6 @@
   </div>
 
   <!-- ================== PAGE 2 ================== -->
-  <div style="page-break-before: always;"></div>
 
   <div class="a4-page">
     <div class="form-wrapper"

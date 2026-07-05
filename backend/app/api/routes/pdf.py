@@ -147,8 +147,32 @@ def enrich_payload_with_translations(payload: dict[str, Any]):
 
 router = APIRouter(tags=["pdf"])
 
-# Global memory-based tracking of compilation statuses
+# Global memory-based tracking of compilation statuses and payloads
 pdf_statuses: dict[str, dict[str, Any]] = {}
+pdf_payloads: dict[str, dict[str, Any]] = {}
+
+def remove_file_task(file_path: Any, report_id: str):
+    import time
+    import logging
+    from pathlib import Path
+    logger = logging.getLogger("astro_app.pdf_cleanup")
+    
+    # Try multiple times on Windows due to file lock timings
+    path = Path(file_path)
+    for i in range(5):
+        try:
+            if path.exists():
+                path.unlink()
+                logger.info(f"Successfully cleaned up compiled PDF: {path}")
+                break
+        except Exception as exc:
+            logger.warning(f"Retrying file deletion for {path} (attempt {i+1}): {exc}")
+            time.sleep(1.0)
+            
+    # Clean up memory states
+    if report_id:
+        pdf_statuses.pop(report_id, None)
+        pdf_payloads.pop(report_id, None)
 
 def compile_pdf_task(payload: dict[str, Any], report_id: str):
     from jinja2 import Environment, FileSystemLoader
@@ -250,9 +274,9 @@ def calculate_report(
             created_by=created_by,
         )
         
-        # Immediately trigger PDF compilation in background task
-        pdf_statuses[report_id] = {"status": "pending", "progress": 10}
-        background_tasks.add_task(compile_pdf_task, context, report_id)
+        # Store context in memory to compile on-demand when download is tapped
+        pdf_payloads[report_id] = context
+        pdf_statuses[report_id] = {"status": "pending", "progress": 0}
 
         return context
     except ValueError as exc:
@@ -286,25 +310,35 @@ def render_pdf(
         
         filename = f"report_{report_id}.pdf"
         
-        # Trigger re-compilation task in background
-        pdf_statuses[report_id] = {"status": "pending", "progress": 10}
-        background_tasks.add_task(compile_pdf_task, payload, report_id)
+        # Store payload in memory to compile on-demand when download is tapped
+        pdf_payloads[report_id] = payload
+        pdf_statuses[report_id] = {"status": "pending", "progress": 0}
         
         return {
             "html": html_content,
-            "pdf_url": f"/generated/{filename}"
+            "pdf_url": f"/api/download-pdf/{filename}"
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.get("/api/pdf-status/{report_id}")
-def get_pdf_status(report_id: str):
+def get_pdf_status(
+    report_id: str,
+    background_tasks: BackgroundTasks,
+):
     from pathlib import Path
     import sys
     
-    # 1. Check in-memory status dictionary first
+    # 1. If not yet ready/compiling, check if we have the payload to start it on-demand
     if report_id in pdf_statuses:
+        status_info = pdf_statuses[report_id]
+        if status_info["status"] == "pending" and status_info["progress"] == 0:
+            payload = pdf_payloads.get(report_id)
+            if payload:
+                # Trigger the compile task in background
+                pdf_statuses[report_id] = {"status": "pending", "progress": 10}
+                background_tasks.add_task(compile_pdf_task, payload, report_id)
         return pdf_statuses[report_id]
         
     # 2. Check if the PDF file exists on disk
@@ -316,13 +350,47 @@ def get_pdf_status(report_id: str):
     if file_path.exists():
         return {"status": "ready", "progress": 100}
         
-    # 3. Default fallback
+    # 3. If payload exists in memory but status cleared, compile on-demand
+    if report_id in pdf_payloads:
+        pdf_statuses[report_id] = {"status": "pending", "progress": 10}
+        background_tasks.add_task(compile_pdf_task, pdf_payloads[report_id], report_id)
+        return pdf_statuses[report_id]
+        
+    # 4. Default fallback
     return {"status": "pending", "progress": 0}
+
+
+@router.get("/api/print-report/{report_id}")
+def print_report(
+    report_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    from jinja2 import Environment, FileSystemLoader
+    from pathlib import Path
+    import sys
+    from fastapi.responses import HTMLResponse
+    
+    payload = pdf_payloads.get(report_id)
+    if not payload:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        templates_dir = Path(sys._MEIPASS) / "app" / "pdf" / "templates"
+    else:
+        templates_dir = Path(__file__).parent.parent.parent / "pdf" / "templates"
+        
+    env = Environment(loader=FileSystemLoader(str(templates_dir)))
+    template = env.get_template("bengali_report.html")
+    enrich_payload_with_translations(payload)
+    html_content = template.render(**payload)
+    
+    return HTMLResponse(content=html_content)
 
 
 @router.get("/api/download-pdf/{filename}")
 def download_pdf(
     filename: str,
+    background_tasks: BackgroundTasks,
     name: str = None,
     current_user: dict = Depends(get_current_user),
 ):
@@ -343,8 +411,15 @@ def download_pdf(
     if filename.startswith("report_") and filename.endswith(".pdf"):
         report_id = filename[7:-4]
         
-    # Wait up to 5 seconds for the background task to compile the file
-    for _ in range(10):
+    # Trigger compilation on-demand if the file isn't ready and we have the payload
+    if not file_path.exists() and report_id and report_id in pdf_payloads:
+        status_info = pdf_statuses.get(report_id, {"status": "pending", "progress": 0})
+        if status_info["status"] in ("pending", "failed"):
+            pdf_statuses[report_id] = {"status": "pending", "progress": 10}
+            background_tasks.add_task(compile_pdf_task, pdf_payloads[report_id], report_id)
+            
+    # Wait up to 15 seconds for the background task to compile the file
+    for _ in range(30):
         if file_path.exists():
             if report_id and report_id in pdf_statuses:
                 if pdf_statuses[report_id]["status"] == "ready":
@@ -368,6 +443,9 @@ def download_pdf(
     headers = {
         "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_name}"
     }
+    
+    # Clean up the file from disk and dictionaries after sending
+    background_tasks.add_task(remove_file_task, file_path, report_id)
     
     return FileResponse(
         path=str(file_path),

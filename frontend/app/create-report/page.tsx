@@ -2071,21 +2071,16 @@ export default function CreateReportPage() {
                     style={{ background: "#4f46e5" }}
                     onClick={(e) => {
                       e.preventDefault();
-                      if (compiledPdfUrl) {
-                        const targetUrl = compiledPdfUrl.includes("?")
-                          ? `${compiledPdfUrl}&system_browser=true`
-                          : `${compiledPdfUrl}?system_browser=true`;
-                        window.open(targetUrl, "_blank");
-                      } else {
-                        const iframe = document.querySelector("iframe");
-                        if (iframe && iframe.contentWindow) {
-                          const originalTitle = document.title;
-                          document.title = "Print Astrological Report";
-                          iframe.contentWindow.focus();
-                          iframe.contentWindow.print();
-                          setTimeout(() => { document.title = originalTitle; }, 1000);
-                        }
-                      }
+                      const reportId = reportState?.report_id;
+                      if (!reportId) return;
+                      const dobFormatted = formValue.dob
+                        ? formValue.dob.split('-').reverse().join('.')
+                        : "";
+                      const filename = dobFormatted
+                        ? `${formValue.name} (${dobFormatted})`
+                        : `${formValue.name}`;
+                      const printUrl = `${API}/api/print-report/${reportId}?name=${encodeURIComponent(filename)}&token=${encodeURIComponent(token || "")}`;
+                      window.open(printUrl, "_blank");
                     }}
                     id="btn-print-report"
                   >
