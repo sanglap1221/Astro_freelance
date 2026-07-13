@@ -1963,7 +1963,7 @@ export default function CreateReportPage() {
                     <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-white border border-slate-100 p-2.5 rounded shadow-sm items-center hover:border-amber-200 transition-colors">
                       {/* Gemstones Column */}
                       <div className="flex items-start justify-between gap-2 border-b sm:border-b-0 sm:border-r border-slate-100 pb-2 sm:pb-0 sm:pr-4">
-                        <span className="text-[0.6875rem] text-slate-700 font-medium leading-snug">
+                        <span className="text-[0.75rem] text-[#6d28d9] font-bold leading-snug">
                           <span className="font-bold">{remedy.id}।</span> {remedy.gemstone}
                         </span>
                         <div className="flex items-center gap-0.5 cursor-pointer shrink-0 mt-0.5">
@@ -1983,8 +1983,20 @@ export default function CreateReportPage() {
                       </div>
                       {/* Roots & Metals Column */}
                       <div className="flex items-start justify-between gap-2 sm:pl-1">
-                        <span className="text-[0.6875rem] text-slate-700 font-medium leading-snug">
-                          {remedy.remedy_root}
+                        <span className="text-[0.75rem] font-bold leading-snug">
+                          {(() => {
+                            if (remedy.remedy_root && remedy.remedy_root.includes("+")) {
+                              const [root, metal] = remedy.remedy_root.split("+");
+                              return (
+                                <>
+                                  <span style={{ color: "#16a34a" }}>{root.trim()}</span>
+                                  <span style={{ color: "#64748b" }}> + </span>
+                                  <span style={{ color: "#2563eb" }}>{metal.trim()}</span>
+                                </>
+                              );
+                            }
+                            return <span style={{ color: "#16a34a" }}>{remedy.remedy_root}</span>;
+                          })()}
                         </span>
                         <div className="flex items-center gap-0.5 cursor-pointer shrink-0 mt-0.5">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -2004,7 +2016,7 @@ export default function CreateReportPage() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 text-center text-[0.6875rem] font-bold text-slate-500 italic">
+                <div className="mt-3 text-center text-[0.8125rem] font-extrabold text-[#800020] italic">
                   ** ধাতু ও শ্বেতচন্দন পাল্টানোর প্রয়োজন নেই **
                 </div>
               </div>

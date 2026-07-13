@@ -771,6 +771,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     for d in chart.mahadasha_list:
         is_active = d.start_date <= current_date < d.end_date
         age_at_start = calculate_age_at_start(payload.dob, d.start_date)
+        age_at_end = calculate_age_at_start(payload.dob, d.end_date)
         
         dur_y, dur_m, dur_d = _calendar_ymd_diff(d.start_date, d.end_date)
         
@@ -784,6 +785,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             "dur_m": to_local_digits(str(dur_m), lang),
             "dur_d": to_local_digits(str(dur_d), lang),
             "age_bn": age_at_start,
+            "age_end_bn": age_at_end,
             "is_active": is_active,
         })
 

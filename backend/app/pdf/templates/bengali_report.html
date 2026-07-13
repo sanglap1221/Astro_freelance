@@ -431,13 +431,30 @@
       color: var(--ink-black);
     }
 
+    .remedy-violet-text {
+      color: #6d28d9;
+      font-size: 15.5px;
+      font-weight: 700;
+    }
+
+    .remedy-root-text {
+      color: #16a34a;
+      font-size: 15.5px;
+      font-weight: 700;
+    }
+
+    .remedy-metal-text {
+      color: #2563eb;
+      font-size: 15.5px;
+      font-weight: 700;
+    }
+
     .remedy-footer-note {
       text-align: center;
-      font-size: 13px;
-      /* Increased font-size from 11px to 13px as requested */
+      font-size: 16px;
       font-weight: bold;
-      color: #475569;
-      margin-top: 5px;
+      color: var(--brand-red);
+      margin-top: 8px;
       font-style: italic;
     }
   </style>
@@ -825,7 +842,7 @@
                 <span class="ledger-label"></span>
                 <span class="ledger-math">
                   {{ to_bn_date_parts(dasha.end) }}
-                  <span class="ledger-age" style="width: auto; margin-left: 15px;">| {{ to_bn(age_at_end) }}</span>
+                  <span class="ledger-age" style="width: auto; margin-left: 15px; white-space: nowrap;">| {{ dasha.age_end_bn }}</span>
                 </span>
                 <span class="ledger-age"></span>
               </div>
@@ -884,7 +901,7 @@
                 <span class="ledger-label"></span>
                 <span class="ledger-math">
                   {{ to_bn_date_parts(row.end) }}
-                  <span class="ledger-age" style="width: auto; margin-left: 15px;">| {{ to_bn(age_at_end) }}</span>
+                  <span class="ledger-age" style="width: auto; margin-left: 15px; white-space: nowrap;">| {{ row.age_end_bn }}</span>
                 </span>
                 <span class="ledger-age"></span>
               </div>
@@ -1005,8 +1022,8 @@
           <tbody>
             {% for item in remedies_list %}
             <tr>
-              <td style="text-align: center; font-weight: bold;">{{ item.id }}।</td>
-              <td>
+              <td class="remedy-violet-text" style="text-align: center;">{{ item.id }}।</td>
+              <td class="remedy-violet-text">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span>{{ item.gemstone }}</span>
                   {% if item.gemstone_rating %}
@@ -1018,7 +1035,16 @@
               </td>
               <td>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span>{{ item.remedy_root }}</span>
+                  {% if '+' in item.remedy_root %}
+                    {% set root_parts = item.remedy_root.split('+') %}
+                    <span>
+                      <span class="remedy-root-text">{{ root_parts[0]|trim }}</span>
+                      <span style="color: #64748b; font-weight: bold; font-size: 15.5px;"> + </span>
+                      <span class="remedy-metal-text">{{ root_parts[1]|trim }}</span>
+                    </span>
+                  {% else %}
+                    <span class="remedy-root-text">{{ item.remedy_root }}</span>
+                  {% endif %}
                   {% if item.root_rating %}
                   <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 8px;">
                     {% for _ in range(item.root_rating) %}★{% endfor %}
