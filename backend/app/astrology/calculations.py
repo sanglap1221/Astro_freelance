@@ -237,7 +237,7 @@ KAKA_LAGNA_RULES = {
     1: {
         "shubh_bar": "বুধ, শুক্র, শনি",
         "ashubh_bar": "রবি, বৃহস্পতি",
-        "shubh_rong": "সবুজ, নীলাভ সাদা, হলুদ",
+        "shubh_rong": "সবুজ, নীলাভ সাদা, নীল",
         "shubh_sonkha": "৫, ৬, ৮"
     },
     2: {
