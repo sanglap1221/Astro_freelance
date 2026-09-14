@@ -681,6 +681,14 @@ def _calendar_ymd_diff(start: date, end: date) -> tuple[int, int, int]:
     return years, months, days
 
 
+def _subtract_years(d: date, years: int) -> date:
+    """Subtract integer years from a date safely handling leap years."""
+    try:
+        return d.replace(year=d.year - years)
+    except ValueError:
+        return d.replace(year=d.year - years, day=28)
+
+
 def calculate_tropical_ascendant_formula(lst_hours: float, lat_deg: float) -> float:
     """Oblique ascension formula for tropical ascendant."""
     import math
@@ -1006,7 +1014,9 @@ def _calc_dasha(moon_longitude: float, birth_date: date) -> tuple[tuple, list[Da
             dasha_days = full_years * 365.25
 
         # Build antardashas for this mahadasha
-        antardashas = _calc_antardasha(planet, current_start, dasha_days, i == 0, balance_days, full_years)
+        antardashas = _calc_antardasha(
+            planet, current_start, dasha_days, i == 0, balance_days, full_years, md_end=dasha_end
+        )
 
         dasha_list.append(DashaPeriod(
             planet=planet,
@@ -1029,32 +1039,34 @@ def _calc_antardasha(
     is_first: bool,
     balance_days: float,
     md_full_years: int,
+    md_end: date | None = None,
 ) -> list[AntarDasha]:
     """
-    Calculate all 9 antardashas within one mahadasha.
+    Calculate antardashas within one mahadasha.
 
-    Formula: AD_days = (MD_years × AD_years / 120) × 365.25
-    For first (balance) dasha, scale proportionally.
+    For full mahadashas (is_first=False), calculates all 9 antardashas using calendar arithmetic.
+    For the first incomplete mahadasha (is_first=True), determines the full theoretical
+    mahadasha timeline, builds all 9 full antardashas, discards completed ones before birth,
+    and starts the active antardasha at the birth date.
     """
-    # Find starting position in sequence for this MD planet
     md_seq_idx = DASHA_SEQUENCE.index(md_planet)
 
-    antardashas = []
-    current_start = md_start
+    if md_end is None:
+        md_end = add_calendar_ymd(md_start, md_full_years, 0, 0)
 
-    for i in range(9):
-        ad_idx = (md_seq_idx + i) % 9
-        ad_planet = DASHA_SEQUENCE[ad_idx]
-        ad_years = DASHA_YEARS[ad_planet]
+    if is_first:
+        # 1. Determine full Mahadasha timeline starting point
+        full_start = _subtract_years(md_end, md_full_years)
+        birth_date = md_start
 
-        if is_first:
-            # Scale down proportionally to balance (for the first broken dasha)
-            full_ad_days = (md_full_years * ad_years / 120.0) * 365.25
-            ad_days = full_ad_days * (balance_days / (md_full_years * 365.25))
-            ad_end = current_start + timedelta(days=ad_days)
-            y, m, d = _calendar_ymd_diff(current_start, ad_end)
-        else:
-            # Use exact calendar arithmetic (for all other full dashas)
+        # 2. Build complete 9-AD timeline across full Mahadasha
+        full_ads = []
+        cur = full_start
+        for i in range(9):
+            ad_idx = (md_seq_idx + i) % 9
+            ad_planet = DASHA_SEQUENCE[ad_idx]
+            ad_years = DASHA_YEARS[ad_planet]
+
             frac_years = md_full_years * ad_years / 120.0
             y = int(frac_years)
             frac_months = (frac_years - y) * 12.0
@@ -1067,20 +1079,96 @@ def _calc_antardasha(
             if m >= 12:
                 m -= 12
                 y += 1
-            ad_end = add_calendar_ymd(current_start, y, m, d)
 
-        antardashas.append(AntarDasha(
-            planet=ad_planet,
-            start_date=current_start,
-            end_date=ad_end,
-            duration_years=y,
-            duration_months=m,
-            duration_days=d,
-        ))
+            if i == 8:
+                ad_end = md_end
+            else:
+                ad_end = add_calendar_ymd(cur, y, m, d)
 
-        current_start = ad_end
+            full_ads.append((ad_planet, cur, ad_end, y, m, d))
+            cur = ad_end
 
-    return antardashas
+        # 3. Locate birth date and return only the active and remaining antardashas
+        result = []
+        for ad_planet, start_d, end_d, y, m, d in full_ads:
+            if end_d <= birth_date:
+                # Completed before birth -> discard
+                continue
+            elif start_d <= birth_date < end_d:
+                # Active at birth -> start from birth_date
+                rem_y, rem_m, rem_d = _calendar_ymd_diff(birth_date, end_d)
+                result.append(AntarDasha(
+                    planet=ad_planet,
+                    start_date=birth_date,
+                    end_date=end_d,
+                    duration_years=rem_y,
+                    duration_months=rem_m,
+                    duration_days=rem_d,
+                ))
+            else:
+                # Subsequent antardasha
+                result.append(AntarDasha(
+                    planet=ad_planet,
+                    start_date=start_d,
+                    end_date=end_d,
+                    duration_years=y,
+                    duration_months=m,
+                    duration_days=d,
+                ))
+
+        if not result and full_ads:
+            # Safety fallback for boundary edge conditions
+            ad_planet, start_d, end_d, y, m, d = full_ads[-1]
+            rem_y, rem_m, rem_d = _calendar_ymd_diff(birth_date, end_d)
+            result.append(AntarDasha(
+                planet=ad_planet,
+                start_date=birth_date,
+                end_date=end_d,
+                duration_years=rem_y,
+                duration_months=rem_m,
+                duration_days=rem_d,
+            ))
+
+        return result
+    else:
+        antardashas = []
+        cur = md_start
+
+        for i in range(9):
+            ad_idx = (md_seq_idx + i) % 9
+            ad_planet = DASHA_SEQUENCE[ad_idx]
+            ad_years = DASHA_YEARS[ad_planet]
+
+            frac_years = md_full_years * ad_years / 120.0
+            y = int(frac_years)
+            frac_months = (frac_years - y) * 12.0
+            m = int(frac_months)
+            frac_days = (frac_months - m) * 30.0
+            d = int(round(frac_days))
+            if d >= 30:
+                d -= 30
+                m += 1
+            if m >= 12:
+                m -= 12
+                y += 1
+
+            if i == 8:
+                ad_end = md_end
+            else:
+                ad_end = add_calendar_ymd(cur, y, m, d)
+
+            antardashas.append(AntarDasha(
+                planet=ad_planet,
+                start_date=cur,
+                end_date=ad_end,
+                duration_years=y,
+                duration_months=m,
+                duration_days=d,
+            ))
+
+            cur = ad_end
+
+        return antardashas
 
 
 # ===========================================================================
