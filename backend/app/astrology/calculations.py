@@ -135,6 +135,58 @@ DASHA_SEQUENCE = [
 ]
 
 # ---------------------------------------------------------------------------
+# EXACT ANTARDASHA DURATIONS (From Traditional Book)
+# Format: { Mahadasha: { Antardasha: (Years, Months, Days) } }
+# ---------------------------------------------------------------------------
+PREDEFINED_ANTARDASHA_DURATIONS = {
+    "Sun": {
+        "Sun": (0, 3, 18), "Moon": (0, 6, 0), "Mars": (0, 4, 6), 
+        "Rahu": (0, 10, 24), "Jupiter": (0, 9, 18), "Saturn": (0, 11, 12), 
+        "Mercury": (0, 10, 6), "Ketu": (0, 4, 6), "Venus": (1, 0, 0)
+    },
+    "Moon": {
+        "Moon": (0, 10, 0), "Mars": (0, 7, 0), "Rahu": (1, 6, 0), 
+        "Jupiter": (1, 4, 0), "Saturn": (1, 7, 0), "Mercury": (1, 5, 0), 
+        "Ketu": (0, 7, 0), "Venus": (1, 8, 0), "Sun": (0, 6, 0)
+    },
+    "Mars": {
+        "Mars": (0, 4, 27), "Rahu": (1, 0, 18), "Jupiter": (0, 11, 6), 
+        "Saturn": (1, 1, 9), "Mercury": (0, 11, 27), "Ketu": (0, 4, 27), 
+        "Venus": (1, 2, 0), "Sun": (0, 4, 6), "Moon": (0, 7, 0)
+    },
+    "Rahu": {
+        "Rahu": (2, 8, 12), "Jupiter": (2, 4, 24), "Saturn": (2, 10, 6), 
+        "Mercury": (2, 6, 18), "Ketu": (1, 0, 18), "Venus": (3, 0, 0), 
+        "Sun": (0, 10, 24), "Moon": (1, 6, 0), "Mars": (1, 0, 18)
+    },
+    "Jupiter": {
+        "Jupiter": (2, 1, 18), "Saturn": (2, 6, 12), "Mercury": (2, 3, 6), 
+        "Ketu": (0, 11, 6), "Venus": (2, 8, 0), "Sun": (0, 9, 18), 
+        "Moon": (1, 4, 0), "Mars": (0, 11, 6), "Rahu": (2, 4, 24)
+    },
+    "Saturn": {
+        "Saturn": (3, 0, 3), "Mercury": (2, 8, 9), "Ketu": (1, 1, 9), 
+        "Venus": (3, 2, 0), "Sun": (0, 11, 12), "Moon": (1, 7, 0), 
+        "Mars": (1, 1, 9), "Rahu": (2, 10, 6), "Jupiter": (2, 6, 12)
+    },
+    "Mercury": {
+        "Mercury": (2, 4, 27), "Ketu": (0, 11, 27), "Venus": (2, 10, 0), 
+        "Sun": (0, 10, 6), "Moon": (1, 5, 0), "Mars": (0, 11, 27), 
+        "Rahu": (2, 6, 18), "Jupiter": (2, 3, 6), "Saturn": (2, 8, 9)
+    },
+    "Ketu": {
+        "Ketu": (0, 4, 27), "Venus": (1, 2, 0), "Sun": (0, 4, 6), 
+        "Moon": (0, 7, 0), "Mars": (0, 4, 27), "Rahu": (1, 0, 18), 
+        "Jupiter": (0, 11, 6), "Saturn": (1, 1, 9), "Mercury": (0, 11, 27)
+    },
+    "Venus": {
+        "Venus": (3, 4, 0), "Sun": (1, 0, 0), "Moon": (1, 8, 0), 
+        "Mars": (1, 2, 0), "Rahu": (3, 0, 0), "Jupiter": (2, 8, 0), 
+        "Saturn": (3, 2, 0), "Mercury": (2, 10, 0), "Ketu": (1, 2, 0)
+    }
+}
+
+# ---------------------------------------------------------------------------
 # TRADITIONAL KOSHTI BOOK RULES (36 CONDITIONS)
 # Maps (rashi_index, nakshatra_index) -> {"gan": "...", "varna": "..."}
 #
@@ -1082,8 +1134,8 @@ def _calc_antardasha(
             exact_ad_days = md_full_years * ad_years / 120.0 * 365.25
             _cumulative_exact_days += exact_ad_days
 
-            # Duration display (Y/M/D shown to user)
-            y, m, d = _days_to_ymd(exact_ad_days)
+            # Duration display (Fetch predefined values from the book)
+            y, m, d = PREDEFINED_ANTARDASHA_DURATIONS[md_planet][ad_planet]
 
             # Actual end date via cumulative exact days
             if i == 8:
@@ -1149,8 +1201,8 @@ def _calc_antardasha(
             exact_ad_days = md_full_years * ad_years / 120.0 * 365.25
             _cumulative_exact_days += exact_ad_days
 
-            # Duration display (Y/M/D shown to user)
-            y, m, d = _days_to_ymd(exact_ad_days)
+            # Duration display (Fetch predefined values from the book)
+            y, m, d = PREDEFINED_ANTARDASHA_DURATIONS[md_planet][ad_planet]
 
             # Actual end date via cumulative exact days
             if i == 8:
