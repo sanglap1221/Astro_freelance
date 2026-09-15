@@ -656,10 +656,12 @@ def _add_days_to_date(d: date, days: float) -> date:
 
 def _days_to_ymd(total_days: float) -> tuple[int, int, int]:
     """Convert fractional days to (years, months, days) approximate."""
+    if total_days < 0:
+        total_days = 0.0
     years = int(total_days / 365.25)
     rem = total_days - years * 365.25
     months = int(rem / 30.4375)
-    days = int(rem - months * 30.4375)
+    days = int(round(rem - months * 30.4375))
     return years, months, days
 
 
@@ -944,31 +946,40 @@ def _calc_nakshatra(moon_longitude: float, rashi_index: int) -> NakshatraResult:
 
 def add_calendar_ymd(start: date, y: int, m: int, d: int) -> date:
     import calendar
-    day = start.day + d
+    year  = start.year  + y
     month = start.month + m
-    year = start.year + y
-    
-    while day > 30:
-        day -= 30
-        month += 1
-        
+    day   = start.day   + d
+
+    # Normalize month
     while month > 12:
         month -= 12
         year += 1
-        
+    while month < 1:
+        month += 12
+        year -= 1
+
+    # Normalize day using REAL month length (fixes the day>30 bug)
     while True:
-        try:
-            return date(year, month, day)
-        except ValueError:
-            max_days = calendar.monthrange(year, month)[1]
-            if day > max_days:
-                day -= max_days
-                month += 1
-                if month > 12:
-                    month = 1
-                    year += 1
-            else:
-                day = max_days
+        max_day = calendar.monthrange(year, month)[1]
+        if day > max_day:
+            day -= max_day
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
+        elif day < 1:
+            month -= 1
+            if month < 1:
+                month = 12
+                year -= 1
+            day += calendar.monthrange(year, month)[1]
+        else:
+            break
+
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return date(year, month, calendar.monthrange(year, month)[1])
 
 
 def _calc_dasha(moon_longitude: float, birth_date: date) -> tuple[tuple, list[DashaPeriod]]:
@@ -1059,31 +1070,26 @@ def _calc_antardasha(
         full_start = _subtract_years(md_end, md_full_years)
         birth_date = md_start
 
-        # 2. Build complete 9-AD timeline across full Mahadasha
+        # 2. Build complete 9-AD timeline using cumulative exact days
         full_ads = []
         cur = full_start
+        _cumulative_exact_days = 0.0
         for i in range(9):
             ad_idx = (md_seq_idx + i) % 9
             ad_planet = DASHA_SEQUENCE[ad_idx]
             ad_years = DASHA_YEARS[ad_planet]
 
-            frac_years = md_full_years * ad_years / 120.0
-            y = int(frac_years)
-            frac_months = (frac_years - y) * 12.0
-            m = int(frac_months)
-            frac_days = (frac_months - m) * 30.0
-            d = int(round(frac_days))
-            if d >= 30:
-                d -= 30
-                m += 1
-            if m >= 12:
-                m -= 12
-                y += 1
+            exact_ad_days = md_full_years * ad_years / 120.0 * 365.25
+            _cumulative_exact_days += exact_ad_days
 
+            # Duration display (Y/M/D shown to user)
+            y, m, d = _days_to_ymd(exact_ad_days)
+
+            # Actual end date via cumulative exact days
             if i == 8:
                 ad_end = md_end
             else:
-                ad_end = add_calendar_ymd(cur, y, m, d)
+                ad_end = full_start + timedelta(days=round(_cumulative_exact_days))
 
             full_ads.append((ad_planet, cur, ad_end, y, m, d))
             cur = ad_end
@@ -1133,29 +1139,24 @@ def _calc_antardasha(
     else:
         antardashas = []
         cur = md_start
+        _cumulative_exact_days = 0.0
 
         for i in range(9):
             ad_idx = (md_seq_idx + i) % 9
             ad_planet = DASHA_SEQUENCE[ad_idx]
             ad_years = DASHA_YEARS[ad_planet]
 
-            frac_years = md_full_years * ad_years / 120.0
-            y = int(frac_years)
-            frac_months = (frac_years - y) * 12.0
-            m = int(frac_months)
-            frac_days = (frac_months - m) * 30.0
-            d = int(round(frac_days))
-            if d >= 30:
-                d -= 30
-                m += 1
-            if m >= 12:
-                m -= 12
-                y += 1
+            exact_ad_days = md_full_years * ad_years / 120.0 * 365.25
+            _cumulative_exact_days += exact_ad_days
 
+            # Duration display (Y/M/D shown to user)
+            y, m, d = _days_to_ymd(exact_ad_days)
+
+            # Actual end date via cumulative exact days
             if i == 8:
                 ad_end = md_end
             else:
-                ad_end = add_calendar_ymd(cur, y, m, d)
+                ad_end = md_start + timedelta(days=round(_cumulative_exact_days))
 
             antardashas.append(AntarDasha(
                 planet=ad_planet,
