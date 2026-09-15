@@ -1122,26 +1122,19 @@ def _calc_antardasha(
         full_start = _subtract_years(md_end, md_full_years)
         birth_date = md_start
 
-        # 2. Build complete 9-AD timeline using cumulative exact days
+        # 2. Build complete 9-AD timeline using predefined YMD accumulation
         full_ads = []
         cur = full_start
-        _cumulative_exact_days = 0.0
         for i in range(9):
             ad_idx = (md_seq_idx + i) % 9
             ad_planet = DASHA_SEQUENCE[ad_idx]
-            ad_years = DASHA_YEARS[ad_planet]
-
-            exact_ad_days = md_full_years * ad_years / 120.0 * 365.25
-            _cumulative_exact_days += exact_ad_days
-
-            # Duration display (Fetch predefined values from the book)
             y, m, d = PREDEFINED_ANTARDASHA_DURATIONS[md_planet][ad_planet]
 
-            # Actual end date via cumulative exact days
+            # Actual end date via calendar arithmetic (final AD closes exactly on md_end)
             if i == 8:
                 ad_end = md_end
             else:
-                ad_end = full_start + timedelta(days=round(_cumulative_exact_days))
+                ad_end = add_calendar_ymd(cur, y, m, d)
 
             full_ads.append((ad_planet, cur, ad_end, y, m, d))
             cur = ad_end
@@ -1191,24 +1184,17 @@ def _calc_antardasha(
     else:
         antardashas = []
         cur = md_start
-        _cumulative_exact_days = 0.0
 
         for i in range(9):
             ad_idx = (md_seq_idx + i) % 9
             ad_planet = DASHA_SEQUENCE[ad_idx]
-            ad_years = DASHA_YEARS[ad_planet]
-
-            exact_ad_days = md_full_years * ad_years / 120.0 * 365.25
-            _cumulative_exact_days += exact_ad_days
-
-            # Duration display (Fetch predefined values from the book)
             y, m, d = PREDEFINED_ANTARDASHA_DURATIONS[md_planet][ad_planet]
 
-            # Actual end date via cumulative exact days
+            # Actual end date via calendar arithmetic (final AD closes exactly on md_end)
             if i == 8:
                 ad_end = md_end
             else:
-                ad_end = md_start + timedelta(days=round(_cumulative_exact_days))
+                ad_end = add_calendar_ymd(cur, y, m, d)
 
             antardashas.append(AntarDasha(
                 planet=ad_planet,
