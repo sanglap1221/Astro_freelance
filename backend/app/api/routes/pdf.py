@@ -9,7 +9,7 @@ from app.pdf.generate_pdf import (
     to_local_digits,
     REMEDIES_TRANSLATIONS,
 )
-from app.astrology.calculations import _calendar_ymd_diff
+from app.astrology.calculations import _calendar_ymd_diff, PREDEFINED_ANTARDASHA_DURATIONS
 from app.schemas import PdfRequest
 from app.db import save_astro_data
 from app.auth_middleware import get_current_user
@@ -121,24 +121,36 @@ def enrich_payload_with_translations(payload: dict[str, Any]):
             if end_date:
                 r["end"] = format_local_date(end_date, lang)
                 
-            if start_date and end_date:
+            has_existing_dur = all(
+                r.get(field) is not None and str(r.get(field)).strip() != ""
+                for field in ("dur_y", "dur_m", "dur_d")
+            )
+
+            if has_existing_dur:
+                for field in ("dur_y", "dur_m", "dur_d"):
+                    val = r.get(field)
+                    val_clean = ""
+                    for char in str(val):
+                        if '০' <= char <= '৯':
+                            val_clean += str(ord(char) - ord('০'))
+                        elif '०' <= char <= '९':
+                            val_clean += str(ord(char) - ord('०'))
+                        elif char.isdigit():
+                            val_clean += char
+                    r[field] = to_local_digits(val_clean, lang)
+            elif (
+                major_lord in PREDEFINED_ANTARDASHA_DURATIONS
+                and lord in PREDEFINED_ANTARDASHA_DURATIONS.get(major_lord, {})
+            ):
+                py, pm, pd = PREDEFINED_ANTARDASHA_DURATIONS[major_lord][lord]
+                r["dur_y"] = to_local_digits(str(py), lang)
+                r["dur_m"] = to_local_digits(str(pm), lang)
+                r["dur_d"] = to_local_digits(str(pd), lang)
+            elif start_date and end_date:
                 dur_y, dur_m, dur_d = _calendar_ymd_diff(start_date, end_date)
                 r["dur_y"] = to_local_digits(str(dur_y), lang)
                 r["dur_m"] = to_local_digits(str(dur_m), lang)
                 r["dur_d"] = to_local_digits(str(dur_d), lang)
-            else:
-                for field in ("dur_y", "dur_m", "dur_d"):
-                    val = r.get(field)
-                    if val is not None:
-                        val_clean = ""
-                        for char in str(val):
-                            if '০' <= char <= '৯':
-                                val_clean += str(ord(char) - ord('০'))
-                            elif '०' <= char <= '९':
-                                val_clean += str(ord(char) - ord('०'))
-                            elif char.isdigit():
-                                val_clean += char
-                        r[field] = to_local_digits(val_clean, lang)
             
             translated_rows.append(r)
         
