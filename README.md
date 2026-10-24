@@ -13,45 +13,103 @@
 
 ## Installation / Setup
 
-To clone this repository on your local machine (including MacBooks), use the following command in your terminal:
+### Prerequisites
+
+| Dependency | Version | Notes |
+|---|---|---|
+| Python | 3.11+ | Backend (FastAPI + Swiss Ephemeris) |
+| Node.js | 20+ | Frontend (Next.js) & Desktop (Electron) |
+| MongoDB | 7.0+ | Local instance on `localhost:27017` |
+| nvm | any | Recommended for managing Node.js versions |
+
+### Clone
 
 ```bash
 git clone https://github.com/sanglap1221/Astro_freelance.git
 cd Astro_freelance
 ```
 
-### Running the Backend
+### 1. Backend (Python / FastAPI)
 
-The backend uses Python and FastAPI. Open a new terminal and run:
+Open a terminal and run:
 
 ```bash
 cd backend
 
-# Create and activate a virtual environment (Mac/Linux)
+# Create and activate a virtual environment
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate      # Windows: .\venv\Scripts\activate
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Install Playwright's Chromium browser (used for PDF/chart rendering)
 python -m playwright install chromium
 
 # Start the backend server
 uvicorn app.main:app --reload
 ```
 
-### Running the Frontend
+> **pyswisseph note:** `pyswisseph` builds from source on Python 3.13+. If the build fails, install the
+> required C toolchain first:
+> ```bash
+> sudo apt install build-essential python3-dev
+> # macOS: xcode-select --install
+> ```
+>
+> **MongoDB:** If MongoDB is not yet running, start it locally:
+> - **macOS (Homebrew):** `brew tap mongodb/brew && brew install mongodb-community && mongod --config /opt/homebrew/etc/mongod.conf`
+> - **Linux (apt):** Follow the official [MongoDB installation guide](https://www.mongodb.com/docs/manual/administration/install-community/).
+> - **Linux (no-root):** Download the binary tarball from
+>   [mongodb.com](https://www.mongodb.com/try/download/community), extract it, and run:
+>   ```bash
+>   ./bin/mongod --dbpath /home/sanglapg/.local/mongodb-data --port 27017
+>   ```
+> **Default admin (auto-created on first startup):**
+> - Username: `Sagar Ghosh`
+> - Password: `123456`
 
-The frontend is a Next.js application. Open another terminal and run:
+### 2. Frontend (Next.js)
+
+Open a new terminal and run:
 
 ```bash
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start the frontend development server
 npm run dev
 ```
+
+### 3. Desktop App (Electron)
+
+Open a new terminal and run:
+
+```bash
+cd desktop_app
+npm install
+npm start
+```
+
+> **Linux sandbox notes:**
+> - **Node.js:** Use nvm to ensure Node.js is on PATH:
+>   ```bash
+>   export NVM_DIR="$HOME/.nvm"
+>   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+>   ```
+> - **`ELECTRON_RUN_AS_NODE` env var:** VSCode / Copilot extensions can export
+>   `ELECTRON_RUN_AS_NODE=1`, which forces Electron to run as plain Node.js (causing
+>   `require('electron')` to return `undefined` for `app`). The `npm start` script
+>   unsets this automatically. If launching manually, run:
+>   ```bash
+>   unset ELECTRON_RUN_AS_NODE
+>   electron . --no-sandbox
+>   ```
+> - **Chromium sandbox:** `--no-sandbox` disables the SUID sandbox for development.
+>   For a production-style setup (SUID sandbox enabled), set the correct ownership
+>   and permissions on the `chrome-sandbox` helper after each `npm install`:
+>   ```bash
+>   sudo chown root:root ./node_modules/electron/dist/chrome-sandbox
+>   sudo chmod 4755 ./node_modules/electron/dist/chrome-sandbox
+>   ```
 
 ---
 

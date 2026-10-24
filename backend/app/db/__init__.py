@@ -5,21 +5,31 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
+from pathlib import Path
+from dotenv import load_dotenv, find_dotenv
 
 import pymongo
 from pymongo import MongoClient
 import cloudinary
 import cloudinary.uploader
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (checking current working dir, backend/.env, and root .env)
+_loaded = load_dotenv(find_dotenv(usecwd=True))
+if not _loaded:
+    _backend_env = Path(__file__).resolve().parents[2] / ".env"
+    _root_env = Path(__file__).resolve().parents[3] / ".env"
+    if _backend_env.is_file():
+        load_dotenv(dotenv_path=_backend_env)
+    elif _root_env.is_file():
+        load_dotenv(dotenv_path=_root_env)
 
 logger = logging.getLogger("astro_app.db")
 
 # Configurations
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "astro_freelance")
+_raw_mongo_uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017").strip()
+# Sanitize accidental whitespace or trailing notes
+MONGODB_URI = _raw_mongo_uri.split()[0] if " " in _raw_mongo_uri else _raw_mongo_uri
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "astro_freelance").strip()
 MAX_MONGODB_SIZE_BYTES = int(os.getenv("MAX_MONGODB_SIZE_BYTES", str(450 * 1024 * 1024)))
 
 # Configure Cloudinary
@@ -66,7 +76,7 @@ def get_mongo_client() -> Optional[MongoClient]:
         return _mongo_client
 
     try:
-        client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=2000)
+        client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
         # Force a quick server selection check to see if database is reachable on first connect
         client.admin.command('ping')
         _mongo_client = client

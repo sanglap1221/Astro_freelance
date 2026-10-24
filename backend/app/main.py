@@ -2,6 +2,17 @@ import sys
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+from dotenv import load_dotenv, find_dotenv
+
+# Ensure .env is loaded on app import
+_loaded = load_dotenv(find_dotenv(usecwd=True))
+if not _loaded:
+    _backend_env = Path(__file__).resolve().parents[1] / ".env"
+    _root_env = Path(__file__).resolve().parents[2] / ".env"
+    if _backend_env.is_file():
+        load_dotenv(dotenv_path=_backend_env)
+    elif _root_env.is_file():
+        load_dotenv(dotenv_path=_root_env)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
