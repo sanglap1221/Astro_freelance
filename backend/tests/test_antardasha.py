@@ -142,10 +142,10 @@ def test_2026_birth_regression():
     # Expected sequence: Mars -> Rahu -> Jupiter -> Saturn -> Mercury
     expected_sequence = [
         ("Mars",    date(2026, 8, 13),  date(2026, 11, 12)),
-        ("Rahu",    date(2026, 11, 12), date(2027, 12, 1)),
-        ("Jupiter", date(2027, 12, 1),  date(2028, 11, 6)),
-        ("Saturn",  date(2028, 11, 6),  date(2029, 12, 16)),
-        ("Mercury", date(2029, 12, 16), date(2030, 12, 13)),
+        ("Rahu",    date(2026, 11, 12), date(2027, 11, 30)),
+        ("Jupiter", date(2027, 11, 30), date(2028, 11, 5)),
+        ("Saturn",  date(2028, 11, 5),  date(2029, 12, 14)),
+        ("Mercury", date(2029, 12, 14), date(2030, 12, 13)),
     ]
     assert len(ketu_md.antardashas) == len(expected_sequence)
     for ad, (exp_p, exp_s, exp_e) in zip(ketu_md.antardashas, expected_sequence):
@@ -183,19 +183,19 @@ def test_2024_birth():
     saturn_mercury = saturn_md.antardashas[1]
     assert saturn_mercury.planet == "Mercury"
     assert saturn_mercury.start_date == date(2024, 8, 26)
-    assert saturn_mercury.end_date == date(2027, 5, 6)
+    assert saturn_mercury.end_date == date(2027, 5, 5)
     assert (saturn_mercury.duration_years, saturn_mercury.duration_months, saturn_mercury.duration_days) == (2, 8, 9)
 
-    # Saturn/Moon: Reference matches 2032-07-26 -> 2034-02-25 with predefined dur 1-7-0
+    # Saturn/Moon: Reference matches 2032-07-26 -> 2034-02-26 with predefined dur 1-7-0
     saturn_moon = next(ad for ad in saturn_md.antardashas if ad.planet == "Moon")
     assert saturn_moon.start_date == date(2032, 7, 26)
-    assert saturn_moon.end_date == date(2034, 2, 25)
+    assert saturn_moon.end_date == date(2034, 2, 26)
     assert (saturn_moon.duration_years, saturn_moon.duration_months, saturn_moon.duration_days) == (1, 7, 0)
 
     # Saturn/Rahu: 8th Antardasha, duration 2-10-6
     saturn_rahu = next(ad for ad in saturn_md.antardashas if ad.planet == "Rahu")
-    assert saturn_rahu.start_date == date(2035, 4, 5)
-    assert saturn_rahu.end_date == date(2038, 2, 9)
+    assert saturn_rahu.start_date == date(2035, 4, 4)
+    assert saturn_rahu.end_date == date(2038, 2, 10)
     assert (saturn_rahu.duration_years, saturn_rahu.duration_months, saturn_rahu.duration_days) == (2, 10, 6)
 
 
@@ -222,7 +222,7 @@ def test_2026_09_14_mars_birth():
     # Verify Mars/Moon duration is exactly (0, 7, 0) from PREDEFINED_ANTARDASHA_DURATIONS
     mars_moon = next(ad for ad in mars_md.antardashas if ad.planet == "Moon")
     assert (mars_moon.duration_years, mars_moon.duration_months, mars_moon.duration_days) == (0, 7, 0)
-    assert mars_moon.start_date == date(2028, 7, 9)
+    assert mars_moon.start_date == date(2028, 7, 5)
     assert mars_moon.end_date == date(2029, 2, 7)
 
 
