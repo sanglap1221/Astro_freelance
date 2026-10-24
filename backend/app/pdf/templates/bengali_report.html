@@ -626,7 +626,7 @@
               <td class="pl-dms" colspan="3">{{ item.compact_indexed }}</td>
               {% endif %}
               <td class="pl-suffix">
-                {% if item.is_retrograde %}(ব){% endif %}
+                {% if item.is_retrograde and item.full not in ['Sun', 'Moon', 'Rahu', 'Ketu'] %}(ব){% endif %}
                 {% if item.is_combust %}(অ){% endif %}
               </td>
             </tr>
