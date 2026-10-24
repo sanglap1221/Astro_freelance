@@ -162,11 +162,41 @@ def test_2026_birth_regression():
 # Standard birth years
 # =====================================================================
 def test_2024_birth():
-    """Test 2024 birth date."""
+    """Test 2024 birth date: Saturn MD, Saturn/Mercury, Saturn/Moon, Saturn/Rahu."""
     dob = date(2024, 8, 13)
     tob = time(14, 42)
     res = calculate_chart(dob, tob, "Kolkata")
     _verify_chart_invariants(res, "2024 birth")
+
+    saturn_md = res.mahadasha_list[0]
+    assert saturn_md.planet == "Saturn"
+    assert saturn_md.start_date == date(2024, 8, 13)
+    assert saturn_md.end_date == date(2040, 8, 23)
+
+    # Active AD at birth: Saturn/Saturn ending on 2024-08-26
+    saturn_saturn = saturn_md.antardashas[0]
+    assert saturn_saturn.planet == "Saturn"
+    assert saturn_saturn.start_date == date(2024, 8, 13)
+    assert saturn_saturn.end_date == date(2024, 8, 26)
+
+    # First full subsequent AD: Saturn/Mercury
+    saturn_mercury = saturn_md.antardashas[1]
+    assert saturn_mercury.planet == "Mercury"
+    assert saturn_mercury.start_date == date(2024, 8, 26)
+    assert saturn_mercury.end_date == date(2027, 5, 6)
+    assert (saturn_mercury.duration_years, saturn_mercury.duration_months, saturn_mercury.duration_days) == (2, 8, 9)
+
+    # Saturn/Moon: Reference matches 2032-07-26 -> 2034-02-25 with predefined dur 1-7-0
+    saturn_moon = next(ad for ad in saturn_md.antardashas if ad.planet == "Moon")
+    assert saturn_moon.start_date == date(2032, 7, 26)
+    assert saturn_moon.end_date == date(2034, 2, 25)
+    assert (saturn_moon.duration_years, saturn_moon.duration_months, saturn_moon.duration_days) == (1, 7, 0)
+
+    # Saturn/Rahu: 8th Antardasha, duration 2-10-6
+    saturn_rahu = next(ad for ad in saturn_md.antardashas if ad.planet == "Rahu")
+    assert saturn_rahu.start_date == date(2035, 4, 5)
+    assert saturn_rahu.end_date == date(2038, 2, 9)
+    assert (saturn_rahu.duration_years, saturn_rahu.duration_months, saturn_rahu.duration_days) == (2, 10, 6)
 
 
 def test_2025_birth():
@@ -175,6 +205,25 @@ def test_2025_birth():
     tob = time(14, 42)
     res = calculate_chart(dob, tob, "Kolkata")
     _verify_chart_invariants(res, "2025 birth")
+
+
+def test_2026_09_14_mars_birth():
+    """Test 14-09-2026 05:21 birth: Mars MD, Mars/Moon duration must be (0, 7, 0), NOT (0, 7, 2)."""
+    dob = date(2026, 9, 14)
+    tob = time(5, 21)
+    res = calculate_chart(dob, tob, "Kolkata")
+    _verify_chart_invariants(res, "2026-09-14 Mars birth")
+
+    mars_md = res.mahadasha_list[0]
+    assert mars_md.planet == "Mars"
+    assert mars_md.start_date == date(2026, 9, 14)
+    assert mars_md.end_date == date(2029, 2, 7)
+
+    # Verify Mars/Moon duration is exactly (0, 7, 0) from PREDEFINED_ANTARDASHA_DURATIONS
+    mars_moon = next(ad for ad in mars_md.antardashas if ad.planet == "Moon")
+    assert (mars_moon.duration_years, mars_moon.duration_months, mars_moon.duration_days) == (0, 7, 0)
+    assert mars_moon.start_date == date(2028, 7, 9)
+    assert mars_moon.end_date == date(2029, 2, 7)
 
 
 # =====================================================================

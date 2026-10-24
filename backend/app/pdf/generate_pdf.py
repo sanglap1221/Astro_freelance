@@ -696,7 +696,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
             "display": compact_indexed,
             "compact": compact_indexed,
             "compact_indexed": compact_indexed,
-            "is_retrograde": p.is_retrograde,
+            "is_retrograde": (p.is_retrograde and p.name not in ("Sun", "Moon", "Rahu", "Ketu")),
             "is_combust": p.is_combust,
         })
 

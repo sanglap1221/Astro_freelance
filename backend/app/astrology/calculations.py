@@ -1487,7 +1487,8 @@ def calculate_chart(
 
             lon = project_longitude(lon_interpolated)
             speed = pos_today[3]
-            is_retro = True if pname in ("Rahu", "Ketu") else (speed < 0.0)
+            # Sun, Moon, Rahu, and Ketu are never marked as retrograde in horoscopes
+            is_retro = False if pname in ("Sun", "Moon", "Rahu", "Ketu") else (speed < 0.0)
             if pname == "Moon":
                 moon_correction_trace = {"enabled": False, "source": "swiss_ephemeris_true"}
 
@@ -1548,7 +1549,7 @@ def calculate_chart(
         degree_in_sign=round(ketu_lon % 30.0, 4),
         minutes_in_sign=min_k,
         seconds_in_sign=sec_k,
-        is_retrograde=True,  # Ketu is always retrograde
+        is_retrograde=False,  # Rahu/Ketu are never marked retrograde in horoscopes
         is_combust=False,    # Ketu is never combust
         house=0,
     ))

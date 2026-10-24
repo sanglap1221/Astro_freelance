@@ -1399,7 +1399,7 @@ export default function CreateReportPage() {
                           onChange={(e) => updateShorthandPlanet(pl.full, "compact_indexed", e.target.value)}
                         />
                         <div className="flex gap-0.5 pl-1 shrink-0 w-fit">
-                          {pl.is_retrograde && <span title="Retrograde" className="select-none text-amber-600 font-bold text-[0.625rem]">(R)</span>}
+                          {pl.is_retrograde && !["Sun", "Moon", "Rahu", "Ketu"].includes(pl.full) && <span title="Retrograde" className="select-none text-amber-600 font-bold text-[0.625rem]">(R)</span>}
                           {pl.is_combust && <span title="Combust" className="select-none text-red-500 font-bold text-[0.625rem]">(C)</span>}
                         </div>
                       </div>
