@@ -2084,15 +2084,23 @@ export default function CreateReportPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       const reportId = reportState?.report_id;
-                      if (!reportId) return;
                       const dobFormatted = formValue.dob
                         ? formValue.dob.split('-').reverse().join('.')
                         : "";
                       const filename = dobFormatted
                         ? `${formValue.name} (${dobFormatted})`
                         : `${formValue.name}`;
-                      const printUrl = `${API}/api/print-report/${reportId}?name=${encodeURIComponent(filename)}&token=${encodeURIComponent(token || "")}`;
-                      window.open(printUrl, "_blank");
+
+                      if (reportId) {
+                        const printUrl = `${API}/api/print-report/${reportId}?name=${encodeURIComponent(filename)}&token=${encodeURIComponent(token || "")}`;
+                        window.open(printUrl, "_blank");
+                      } else {
+                        const iframe = document.querySelector("iframe");
+                        if (iframe && iframe.contentWindow) {
+                          iframe.contentWindow.focus();
+                          iframe.contentWindow.print();
+                        }
+                      }
                     }}
                     id="btn-print-report"
                   >

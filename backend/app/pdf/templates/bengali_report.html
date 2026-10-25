@@ -14,7 +14,7 @@
     }
 
     :root {
-      --brand-red: #ff007f;
+      --brand-red: #d80c72;
       --brand-blue: #1565c0;
       --ink-black: #111;
       --border-color: #2c3e50;
@@ -25,6 +25,8 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
 
     body {
@@ -39,28 +41,33 @@
 
     .a4-page {
       width: 210mm;
+      height: 297mm;
       min-height: 297mm;
       margin: 10mm auto;
       background: var(--bg-color);
-      /* Increased top padding to prevent printing cut-offs */
-      padding: 5mm 12mm 5mm 12mm;
+      padding: 4mm 4mm;
+      box-sizing: border-box;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       overflow: visible;
     }
 
     @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
       body {
         background: #fff;
         margin: 0 !important;
         padding: 0 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
       .a4-page {
         margin: 0 auto !important;
-        /* Increased top padding to prevent printing cut-offs */
-        padding: 5mm 12mm 5mm 12mm !important;
+        padding: 4mm 4mm !important;
         box-shadow: none !important;
         border: none !important;
         width: 210mm !important;
@@ -75,14 +82,24 @@
       }
 
       .form-wrapper {
-        zoom: 93% !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
         margin: 0 auto !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
       }
     }
 
     .form-wrapper {
       border: 1.5px solid var(--border-color);
       width: 100%;
+      height: 100%;
+      max-height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
     }
 
     .header-section {
@@ -104,7 +121,7 @@
       /* Increased font-size to 42px and letter-spacing to 4px to make the title larger and wider as requested */
       font-size: 42px;
       font-weight: 900;
-      color: #ff007f; /* Pure vivid magenta */
+      color: #d80c72; /* Pure vivid magenta */
       letter-spacing: 4px;
       margin-bottom: 2px;
       text-shadow: 1px 1px 0px #000;
@@ -236,10 +253,10 @@
       width: 100%;
       background-color: #fdfbf7;
       background-image: linear-gradient(#e6dec9 1px, transparent 1px);
-      background-size: 100% 20px;
+      background-size: 100% 19.5px;
       /* Matches line alignment precisely */
       border-radius: 4px;
-      padding: 6px 10px;
+      padding: 3px 8px;
       font-family: 'Noto Sans Bengali', 'Noto Sans Devanagari', 'Inter', monospace;
       box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.02);
     }
@@ -250,15 +267,15 @@
       color: var(--brand-blue);
       border-bottom: 1.5px solid var(--border-color);
       padding: 1px 6px;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       display: inline-block;
       background: #fcfcfc;
     }
 
     .ledger-row {
       display: flex;
-      height: 20px;
-      line-height: 20px;
+      height: 19.5px;
+      line-height: 19.5px;
       font-size: 13px;
       font-weight: 700;
       color: #2c3e50;
@@ -343,29 +360,42 @@
     }
 
     .shorthand-table .pl-name {
-      width: 58px;
+      width: 44px;
       font-weight: bold;
       color: var(--ink-black);
       text-align: left;
     }
 
     .shorthand-table .pl-colon {
-      width: 10px;
+      width: 6px;
       text-align: center;
       color: var(--ink-black);
+      padding: 0 1px;
     }
 
     .shorthand-table .pl-sign {
-      width: 16px;
+      width: 14px;
       text-align: center;
       font-weight: 600;
       color: #333;
+      padding: 0 1px;
     }
 
     .shorthand-table .pl-pipe {
-      width: 10px;
+      width: 6px;
       text-align: center;
       color: #7f8c8d;
+      padding: 0 1px;
+    }
+
+    .shorthand-table .pl-deg,
+    .shorthand-table .pl-min,
+    .shorthand-table .pl-sec {
+      width: 24px;
+      text-align: center;
+      font-weight: 600;
+      color: #333;
+      font-variant-numeric: tabular-nums;
     }
 
     .shorthand-table .pl-dms {
@@ -377,7 +407,7 @@
 
     .shorthand-table .pl-suffix {
       text-align: right;
-      padding-right: 6px;
+      padding-right: 4px;
       font-weight: bold;
       color: var(--brand-red);
       font-size: 11px;
@@ -458,25 +488,21 @@
       font-style: italic;
     }
 
-    /* ── Page 2: Scoped Margin & Full Printable Area ── */
-    .a4-page.page-2 {
-      padding: 4mm 7mm 4mm 7mm;
+    /* ── Page 2: Remedy Title & Full Area ── */
+    .page-2 .remedy-main-title {
+      font-size: 21.5px !important;
+      margin-bottom: 3px !important;
     }
 
-    @media print {
-      .a4-page.page-2 {
-        padding: 4mm 7mm !important;
-        width: 210mm !important;
-        height: 297mm !important;
-        max-height: 297mm !important;
-        box-sizing: border-box !important;
-      }
+    .page-2 .remedy-sub-title {
+      font-size: 15px !important;
+      margin-bottom: 5px !important;
     }
 
     .page-2 .form-wrapper {
       padding: 6px 8px !important;
-      height: 289mm !important;
-      max-height: 289mm !important;
+      height: 100% !important;
+      max-height: 100% !important;
       box-sizing: border-box !important;
     }
 
@@ -499,14 +525,19 @@
 
     .page-2 .remedy-grid-table th,
     .page-2 .remedy-grid-table td {
-      padding: 2.5px 6px !important;
-      font-size: 12.5px !important;
+      padding: 3.5px 6px !important;
+      font-size: 14px !important;
     }
 
     .page-2 .remedy-violet-text,
     .page-2 .remedy-root-text,
     .page-2 .remedy-metal-text {
-      font-size: 13px !important;
+      font-size: 14.5px !important;
+    }
+
+    .page-2 .remedy-footer-note {
+      font-size: 15px !important;
+      margin-top: 6px !important;
     }
   </style>
 </head>
@@ -605,14 +636,14 @@
           <!-- Increased astrologer detail text sizes (name to 18px, details to 14px, mob to 16px, online to 15px) and added comment -->
           <div class="info-line" style="font-size: 18px;"><span class="highlight-blue"
               style="font-size: 18px;">জ্যোতিষী: এস. ঘোষ</span></div>
-          <div style="font-size: 14px; margin-bottom: 8px; font-weight: bold; line-height: 1.3;">জ্যোতিষ সম্রাট,
+          <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold; line-height: 1.25;">জ্যোতিষ সম্রাট,
             স্বর্ণপদক প্রাপ্ত<br>(এম.এ), এম.বি.পি.পি
           </div>
           <div class="info-line" style="font-size: 16px;">মোব : <span class="data-value"
               style="font-size: 16px;">৯১৫৩০৮৭৮৭০</span></div>
           <div class="info-line" style="margin-left: 32px; font-size: 16px;"><span class="data-value"
               style="font-size: 16px;">৯৭৩২৮৩০৩৫৩</span></div>
-          <div style="color: var(--brand-red); font-weight: bold; font-size: 15px; margin-top: 5px;">ONLINE দেখা হয়।
+          <div style="color: var(--brand-red); font-weight: bold; font-size: 15px; margin-top: 3px;">ONLINE দেখা হয়।
           </div>
         </div>
 
@@ -643,7 +674,7 @@
         <div class="col col-30">
           <!-- Increased text sizes for বিঃ দ্রঃ header (17px) and body details (13px) and added comment -->
           <div
-            style="color: var(--brand-red); font-weight: bold; margin-bottom: 5px; font-size: 17px; line-height: 1.3;">
+            style="color: var(--brand-red); font-weight: bold; margin-bottom: 3px; font-size: 17px; line-height: 1.25;">
             বিঃ দ্রঃ - গ্রহ-রত্নের<br>যোগাযোগ
             কেন্দ্র।</div>
           <div style="font-size: 13px; color: var(--brand-blue); line-height: 1.35;">
@@ -670,11 +701,20 @@
               <td class="pl-name">{{ item.short }}</td>
               <td class="pl-colon">:</td>
               {% if parts|length == 2 %}
+              {% set dms = parts[1].split() %}
               <td class="pl-sign">{{ parts[0] | trim }}</td>
               <td class="pl-pipe">|</td>
-              <td class="pl-dms">{{ parts[1] | trim }}</td>
+              {% if dms|length == 3 %}
+              <td class="pl-deg">{{ dms[0] }}</td>
+              <td class="pl-pipe">|</td>
+              <td class="pl-min">{{ dms[1] }}</td>
+              <td class="pl-pipe">|</td>
+              <td class="pl-sec">{{ dms[2] }}</td>
               {% else %}
-              <td class="pl-dms" colspan="3">{{ item.compact_indexed }}</td>
+              <td class="pl-dms" colspan="5">{{ parts[1] | trim }}</td>
+              {% endif %}
+              {% else %}
+              <td class="pl-dms" colspan="7">{{ item.compact_indexed }}</td>
               {% endif %}
               <td class="pl-suffix">
                 {% if item.is_retrograde and item.full not in ['Sun', 'Moon', 'Rahu', 'Ketu'] %}(ব){% endif %}
@@ -688,11 +728,20 @@
               <td class="pl-name" style="color: var(--brand-red);">{{ labels.lagna_label }}</td>
               <td class="pl-colon" style="color: var(--brand-red);">:</td>
               {% if lagna_parts|length == 2 %}
+              {% set l_dms = lagna_parts[1].split() %}
               <td class="pl-sign" style="color: var(--brand-red);">{{ lagna_parts[0] | trim }}</td>
               <td class="pl-pipe" style="color: var(--brand-red);">|</td>
-              <td class="pl-dms" style="color: var(--brand-red);">{{ lagna_parts[1] | trim }}</td>
+              {% if l_dms|length == 3 %}
+              <td class="pl-deg" style="color: var(--brand-red);">{{ l_dms[0] }}</td>
+              <td class="pl-pipe" style="color: var(--brand-red);">|</td>
+              <td class="pl-min" style="color: var(--brand-red);">{{ l_dms[1] }}</td>
+              <td class="pl-pipe" style="color: var(--brand-red);">|</td>
+              <td class="pl-sec" style="color: var(--brand-red);">{{ l_dms[2] }}</td>
               {% else %}
-              <td class="pl-dms" colspan="3" style="color: var(--brand-red);">{{ lagna_compact_indexed }}</td>
+              <td class="pl-dms" colspan="5" style="color: var(--brand-red);">{{ lagna_parts[1] | trim }}</td>
+              {% endif %}
+              {% else %}
+              <td class="pl-dms" colspan="7" style="color: var(--brand-red);">{{ lagna_compact_indexed }}</td>
               {% endif %}
               <td class="pl-suffix"></td>
             </tr>
@@ -844,13 +893,13 @@
       </div>
 
       <!-- ── DASHA | ANTARDASHA (ASTRO KAKA'S LEDGER CALCULATION STYLE) ──────────────── -->
-      <div class="row">
+      <div class="row" style="flex: 1 1 auto; min-height: 0;">
         <!-- Mahadasha Ledger Column -->
-        <div class="col col-50" style="padding: 4px 8px;">
+        <div class="col col-50" style="padding: 4px 8px; display: flex; flex-direction: column;">
           {% if show_mahadasha is not defined or show_mahadasha %}
           <div class="ledger-title-box">{{ labels.vimshottari_dasha }}</div>
-          <div class="ledger-container">
-            <div class="ledger-sheet">
+          <div class="ledger-container" style="flex: 1 1 auto;">
+            <div class="ledger-sheet" style="height: 100%;">
               {% set first_dasha = dasha_list[0] if dasha_list else none %}
               {% if first_dasha %}
               {# Extract and store the exact starting birth year #}
@@ -905,11 +954,11 @@
         </div>
 
         <!-- Antardasha Ledger Column -->
-        <div class="col col-50" style="padding: 4px 8px;">
+        <div class="col col-50" style="padding: 4px 8px; display: flex; flex-direction: column;">
           {% if show_antardasha is not defined or show_antardasha %}
           <div class="ledger-title-box">{{ labels.vimshottari_antardasha }}</div>
-          <div class="ledger-container">
-            <div class="ledger-sheet">
+          <div class="ledger-container" style="flex: 1 1 auto;">
+            <div class="ledger-sheet" style="height: 100%;">
               {% if antardasha_display_rows|length > 0 %}
               {% set first_antar = antardasha_display_rows[0] %}
 
@@ -964,8 +1013,8 @@
         </div>
       </div>
       <div
-        style="text-align: center; width: 100%; font-size: 8px; color: #7f8c8d; margin-top: 6px; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.2;">
-        Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Development: <a
+        style="text-align: center; width: 100%; font-size: 8px; color: #7f8c8d; margin-top: auto; padding: 4px 0; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.1;">
+        Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Developer: <a
           href="https://sanglap-s-portfolio.vercel.app/" target="_blank"
           style="color: #7f8c8d; text-decoration: underline; font-weight: bold;">Sanglap Ghosh</a>
       </div>
@@ -976,13 +1025,13 @@
 
   <div class="a4-page page-2">
     <div class="form-wrapper"
-      style="padding: 6px 8px; height: 289mm; max-height: 289mm; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
+      style="padding: 6px 6px; height: 100%; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
 
       <!-- 1. FUTURE ANTARDASHAS (4 COLUMNS LEDGER FORMAT) -->
       {% if show_future_antardashas is not defined or show_future_antardashas %}
       <div class="remedy-section"
         style="border-top: none; padding-bottom: 0px; flex: 1 1 auto; min-height: 0; overflow: hidden;">
-        <div class="remedy-main-title" style="margin-bottom: 8px; font-size: 15px;">{{ labels.future_antardashas }}</div>
+        <div class="remedy-main-title" style="margin-bottom: 8px; font-size: 15px !important;">{{ labels.future_antardashas }}</div>
 
         <div class="ledger-container" style="overflow: hidden; height: calc(100% - 25px);">
           <div class="ledger-sheet"
@@ -1058,46 +1107,46 @@
 
       <!-- 2. REMEDIES SECTION (pinned to bottom) -->
       <div class="remedy-section"
-        style="flex-shrink: 0; margin-top: 6px; padding: 4px 6px; border-top: 1.5px dashed var(--border-color);">
-        <div class="remedy-main-title" style="font-size: 15px; margin-bottom: 2px;">{{ labels.remedies_title }}</div>
-        <div class="remedy-sub-title" style="font-size: 13px; margin-bottom: 4px;">{{ labels.remedies_subtitle }}</div>
+        style="flex-shrink: 0; margin-top: 6px; padding: 5px 6px; border-top: 1.5px dashed var(--border-color);">
+        <div class="remedy-main-title" style="margin-bottom: 3px;">{{ labels.remedies_title }}</div>
+        <div class="remedy-sub-title" style="font-size: 15px; margin-bottom: 5px;">{{ labels.remedies_subtitle }}</div>
 
-        <table class="remedy-grid-table" style="font-size: 12.5px;">
+        <table class="remedy-grid-table" style="font-size: 14px;">
           <thead>
             <tr>
-              <th style="width: 6%; text-align: center; padding: 2px;">{{ labels.remedies_no }}</th>
-              <th style="width: 50%; padding: 2.5px 6px;">{{ labels.remedies_gem }}</th>
-              <th style="width: 44%; padding: 2.5px 6px;">{{ labels.remedies_root }}</th>
+              <th style="width: 6%; text-align: center; padding: 3.5px 2px; font-size: 14px;">{{ labels.remedies_no }}</th>
+              <th style="width: 50%; padding: 3.5px 6px; font-size: 14px;">{{ labels.remedies_gem }}</th>
+              <th style="width: 44%; padding: 3.5px 6px; font-size: 14px;">{{ labels.remedies_root }}</th>
             </tr>
           </thead>
           <tbody>
             {% for item in remedies_list %}
             <tr>
-              <td class="remedy-violet-text" style="text-align: center; padding: 2.5px; font-size: 12.5px;">{{ item.id }}।</td>
-              <td class="remedy-violet-text" style="padding: 2.5px 6px; font-size: 12.5px;">
+              <td class="remedy-violet-text" style="text-align: center; padding: 3.5px 2px; font-size: 14.5px;">{{ item.id }}।</td>
+              <td class="remedy-violet-text" style="padding: 3.5px 6px; font-size: 14.5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span>{{ item.gemstone }}</span>
                   {% if item.gemstone_rating %}
-                  <span style="color: #2563eb; font-size: 11.5px; white-space: nowrap; margin-left: 6px;">
+                  <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 6px;">
                     {% for _ in range(item.gemstone_rating) %}★{% endfor %}
                   </span>
                   {% endif %}
                 </div>
               </td>
-              <td style="padding: 2.5px 6px; font-size: 12.5px;">
+              <td style="padding: 3.5px 6px; font-size: 14.5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   {% if '+' in item.remedy_root %}
                     {% set root_parts = item.remedy_root.split('+') %}
                     <span>
-                      <span class="remedy-root-text" style="font-size: 12.5px;">{{ root_parts[0]|trim }}</span>
-                      <span style="color: #64748b; font-weight: bold; font-size: 13px;"> + </span>
-                      <span class="remedy-metal-text" style="font-size: 12.5px;">{{ root_parts[1]|trim }}</span>
+                      <span class="remedy-root-text" style="font-size: 14.5px;">{{ root_parts[0]|trim }}</span>
+                      <span style="color: #64748b; font-weight: bold; font-size: 14px;"> + </span>
+                      <span class="remedy-metal-text" style="font-size: 14.5px;">{{ root_parts[1]|trim }}</span>
                     </span>
                   {% else %}
-                    <span class="remedy-root-text" style="font-size: 12.5px;">{{ item.remedy_root }}</span>
+                    <span class="remedy-root-text" style="font-size: 14.5px;">{{ item.remedy_root }}</span>
                   {% endif %}
                   {% if item.root_rating %}
-                  <span style="color: #2563eb; font-size: 11.5px; white-space: nowrap; margin-left: 6px;">
+                  <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 6px;">
                     {% for _ in range(item.root_rating) %}★{% endfor %}
                   </span>
                   {% endif %}
@@ -1107,12 +1156,12 @@
             {% endfor %}
           </tbody>
         </table>
-        <div class="remedy-footer-note" style="font-size: 13px; margin-top: 4px;">{{ labels.remedy_note }}</div>
+        <div class="remedy-footer-note" style="font-size: 15px; margin-top: 6px;">{{ labels.remedy_note }}</div>
       </div>
 
       <div
         style="text-align: center; width: 100%; font-size: 7.5px; color: #7f8c8d; margin-top: 3px; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.1;">
-        Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Development: <a
+        Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Developer: <a
           href="https://sanglap-s-portfolio.vercel.app/" target="_blank"
           style="color: #7f8c8d; text-decoration: underline; font-weight: bold;">Sanglap Ghosh</a>
       </div>

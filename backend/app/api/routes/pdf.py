@@ -396,6 +396,20 @@ def print_report(
     enrich_payload_with_translations(payload)
     html_content = template.render(**payload)
     
+    auto_print_script = """
+    <script>
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            window.print();
+        }, 500);
+    });
+    </script>
+    """
+    if "</body>" in html_content:
+        html_content = html_content.replace("</body>", f"{auto_print_script}</body>")
+    else:
+        html_content += auto_print_script
+        
     return HTMLResponse(content=html_content)
 
 

@@ -180,6 +180,9 @@ function handleReportPrint(url) {
 
   const printWindow = new BrowserWindow({
     show: false,
+    width: 950,
+    height: 750,
+    title: `Print — ${suggestedName}`,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -188,16 +191,59 @@ function handleReportPrint(url) {
 
   printWindow.loadURL(url);
 
-  printWindow.webContents.once('did-finish-load', () => {
-    // Wait briefly for CSS/fonts to render completely
+  printWindow.webContents.once('did-finish-load', async () => {
+    // 1. Check if printers are available
+    let printers = [];
+    try {
+      printers = await printWindow.webContents.getPrintersAsync();
+    } catch (e) {
+      console.warn('Could not enumerate printers:', e);
+    }
+
+    if (!printers || printers.length === 0) {
+      console.warn(`No printers found on system for ${suggestedName}.`);
+      printWindow.close();
+
+      const choice = await dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'প্রিন্টার পাওয়া যায়নি (No Printer Found)',
+        message: 'আপনার সিস্টেমে কোনো প্রিন্টার যুক্ত পাওয়া যায়নি।\n\nআপনি কি রিপোর্টটি PDF ফাইল হিসেবে সংরক্ষণ করতে চান?',
+        buttons: ['PDF সংরক্ষণ করুন (Save as PDF)', 'বাতিল (Cancel)'],
+        defaultId: 0,
+        cancelId: 1
+      });
+
+      if (choice.response === 0) {
+        // Fallback to PDF download
+        const downloadUrl = url.replace('/api/print-report/', '/api/download-pdf/report_') + '.pdf';
+        handlePdfDownload(downloadUrl);
+      }
+      return;
+    }
+
+    // 2. Printers available -> trigger print dialog
     setTimeout(() => {
       printWindow.webContents.print({
         silent: false,
         printBackground: true,
         useSystemDialog: true
-      }, (success, failureReason) => {
+      }, async (success, failureReason) => {
         if (!success) {
           console.error(`Print failed for ${suggestedName}: ${failureReason}`);
+          if (failureReason === 'Failed to enumerate printers') {
+            const choice = await dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'প্রিন্ট সম্পন্ন করা যায়নি',
+              message: 'সিস্টেমে কোনো কার্যকর প্রিন্টার পাওয়া যায়নি।\n\nরিপোর্টটি কি PDF আকারে সেভ করতে চান?',
+              buttons: ['PDF সেভ করুন (Save as PDF)', 'বাতিল'],
+              defaultId: 0,
+              cancelId: 1
+            });
+            if (choice.response === 0) {
+              const downloadUrl = url.replace('/api/print-report/', '/api/download-pdf/report_') + '.pdf';
+              handlePdfDownload(downloadUrl);
+            }
+          }
         }
         printWindow.close();
       });
