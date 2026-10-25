@@ -67,8 +67,10 @@ def find_sun_transit(target_lon: float, jd_approx: float) -> float:
             
     return (jd_start + jd_end) / 2.0
 
-def jd_to_gregorian_date_kolkata(jd_ut: float) -> date:
-    """Convert Julian Day UT to Gregorian date in Asia/Kolkata timezone."""
+def jd_to_gregorian_date(jd_ut: float, tz: ZoneInfo | None = None) -> date:
+    """Convert Julian Day UT to Gregorian date in specified timezone (defaults to Asia/Kolkata)."""
+    if tz is None:
+        tz = ZoneInfo("Asia/Kolkata")
     # Convert JD to calendar date in UTC
     year, month, day, hour_fraction = swe.revjul(jd_ut)
     hours = int(hour_fraction)
@@ -80,9 +82,13 @@ def jd_to_gregorian_date_kolkata(jd_ut: float) -> date:
     
     # Create datetime in UTC
     dt_utc = datetime(year, month, day, hours, minutes, seconds, microseconds, tzinfo=timezone.utc)
-    # Convert to Kolkata timezone
-    dt_kolkata = dt_utc.astimezone(ZoneInfo("Asia/Kolkata"))
-    return dt_kolkata.date()
+    # Convert to specified timezone
+    dt_local = dt_utc.astimezone(tz)
+    return dt_local.date()
+
+def jd_to_gregorian_date_kolkata(jd_ut: float) -> date:
+    """Convert Julian Day UT to Gregorian date in Asia/Kolkata timezone."""
+    return jd_to_gregorian_date(jd_ut, ZoneInfo("Asia/Kolkata"))
 
 def gregorian_to_bengali(
     greg_date: date,
@@ -147,8 +153,13 @@ def gregorian_to_bengali(
     # Rest of calculations use the effective date
     greg_date = effective_date
 
-    # 1. Convert Gregorian date to Julian Day at local noon (Kolkata)
-    dt_noon = datetime.combine(greg_date, datetime.min.time(), tzinfo=ZoneInfo("Asia/Kolkata")) + timedelta(hours=12)
+    try:
+        local_tz = ZoneInfo(timezone_name) if timezone_name else ZoneInfo("Asia/Kolkata")
+    except Exception:
+        local_tz = ZoneInfo("Asia/Kolkata")
+
+    # 1. Convert Gregorian date to Julian Day at local noon in local_tz
+    dt_noon = datetime.combine(greg_date, datetime.min.time(), tzinfo=local_tz) + timedelta(hours=12)
     utc_noon = dt_noon.astimezone(timezone.utc)
     jd_noon = swe.julday(
         utc_noon.year, utc_noon.month, utc_noon.day,
@@ -166,8 +177,8 @@ def gregorian_to_bengali(
     
     # 4. Determine month start Gregorian dates using the traditional midnight rule
     # A month starts on D_transit + 1
-    d_transit_current = jd_to_gregorian_date_kolkata(jd_transit_current)
-    d_transit_next = jd_to_gregorian_date_kolkata(jd_transit_next)
+    d_transit_current = jd_to_gregorian_date(jd_transit_current, local_tz)
+    d_transit_next = jd_to_gregorian_date(jd_transit_next, local_tz)
     
     start_date_current_month = d_transit_current + timedelta(days=1)
     start_date_next_month = d_transit_next + timedelta(days=1)
@@ -181,7 +192,7 @@ def gregorian_to_bengali(
         month_idx = (current_sign - 1) % 12
         # Calculate transit into previous month start
         jd_transit_prev = find_sun_transit(month_idx * 30.0, jd_transit_current - 30.0)
-        d_transit_prev = jd_to_gregorian_date_kolkata(jd_transit_prev)
+        d_transit_prev = jd_to_gregorian_date(jd_transit_prev, local_tz)
         first_day_of_month = d_transit_prev + timedelta(days=1)
     else:
         # Falls in next month
@@ -194,7 +205,7 @@ def gregorian_to_bengali(
     # 6. Calculate Bangabda year
     # Find the start date of Baishakh (Month index 0) for this Gregorian year
     # Baishakh starts in mid-April. Let's estimate it around April 14th.
-    noon_april_14 = datetime(greg_date.year, 4, 14, 12, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+    noon_april_14 = datetime(greg_date.year, 4, 14, 12, 0, tzinfo=local_tz)
     utc_noon_april_14 = noon_april_14.astimezone(timezone.utc)
     jd_noon_april_14 = swe.julday(
         utc_noon_april_14.year, utc_noon_april_14.month, utc_noon_april_14.day,
@@ -202,7 +213,7 @@ def gregorian_to_bengali(
     )
     # Find transit into longitude 0
     jd_transit_zero = find_sun_transit(0.0, jd_noon_april_14)
-    d_transit_zero = jd_to_gregorian_date_kolkata(jd_transit_zero)
+    d_transit_zero = jd_to_gregorian_date(jd_transit_zero, local_tz)
     baishakh_start_date = d_transit_zero + timedelta(days=1)
     
     if greg_date >= baishakh_start_date:

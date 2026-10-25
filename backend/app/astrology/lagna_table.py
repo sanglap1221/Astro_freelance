@@ -137,41 +137,84 @@ def lookup_table_lagna(month_name: str, day_num: int, birth_time: time, use_side
     return active_sign_idx
 
 
-def calculate_dynamic_lagna_starts(dob: date, lat: float, lon: float, is_sidereal: bool) -> dict[str, str]:
+def subtract_one_minute(t_str: str) -> str:
+    """Subtract one minute from HH:MM string, wrapping across midnight."""
+    h, m = map(int, t_str.split(":"))
+    total_m = (h * 60 + m - 1) % (24 * 60)
+    return f"{total_m // 60:02d}:{total_m % 60:02d}"
+
+
+def calculate_dynamic_lagna_starts(
+    dob: date, 
+    lat: float, 
+    lon: float, 
+    is_sidereal: bool = True,
+    timezone_name: str = "Asia/Kolkata"
+) -> dict[str, str]:
+    """
+    Calculate the starting time (HH:MM) of each Lagna sign during the day.
+    Uses unified calculate_book_lagna() for sidereal mode to strictly match calculate_chart(),
+    and performs numerical search (bisection) to accurately locate sign boundaries.
+    """
     # pyrefly: ignore [missing-import]
     import swisseph as swe
     from zoneinfo import ZoneInfo
     from datetime import datetime, timedelta
-    from app.astrology.calculations import ZODIAC_SIGNS
+    from app.astrology.calculations import ZODIAC_SIGNS, calculate_book_lagna, _sign_index
     
-    tz = ZoneInfo("Asia/Kolkata")
+    try:
+        tz = ZoneInfo(timezone_name)
+    except Exception:
+        tz = ZoneInfo("Asia/Kolkata")
+        
     start_dt = datetime.combine(dob, datetime.min.time(), tzinfo=tz)
     
-    lagna_starts = {}
-    current_sign = None
-    
-    for m in range(24 * 60):
-        dt = start_dt + timedelta(minutes=m)
+    def _calc_asc(dt: datetime) -> float:
         utc_dt = dt.astimezone(ZoneInfo("UTC"))
         jd = swe.julday(
             utc_dt.year, utc_dt.month, utc_dt.day,
-            utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0
+            utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0 + utc_dt.microsecond / 3600000000.0
         )
-        cusps, ascmc = swe.houses(jd, lat, lon, b'P')
-        tropical_asc = ascmc[0]
         if is_sidereal:
-            swe.set_sid_mode(swe.SIDM_LAHIRI)
-            ayanamsa = swe.get_ayanamsa_ut(jd)
-            lagna_lon = (tropical_asc - ayanamsa) % 360.0
+            return calculate_book_lagna(jd, lat, lon)
         else:
-            lagna_lon = tropical_asc % 360.0
-            
-        sign_idx = int(lagna_lon // 30)
-        
-        if sign_idx != current_sign:
-            current_sign = sign_idx
-            sign_name = ZODIAC_SIGNS[sign_idx]
-            lagna_starts[sign_name] = dt.strftime("%H:%M")
+            cusps, ascmc = swe.houses(jd, lat, lon, b'P')
+            return ascmc[0] % 360.0
+
+    # 1. Evaluate sign at each whole minute of the day (0 to 1439)
+    minute_signs = []
+    for m in range(24 * 60):
+        dt = start_dt + timedelta(minutes=m)
+        asc_lon = _calc_asc(dt)
+        minute_signs.append(_sign_index(asc_lon))
+
+    # 2. Identify sign transitions and refine exact boundary
+    lagna_starts = {}
+    for m in range(24 * 60):
+        prev_m = (m - 1) % (24 * 60)
+        curr_s = minute_signs[m]
+        prev_s = minute_signs[prev_m]
+        if curr_s != prev_s:
+            # Transition occurred between (m-1) and m.
+            # Perform numerical search (bisection) on [t_prev, t_curr] for sub-second boundary
+            dt_prev = start_dt + timedelta(minutes=prev_m if m > 0 else -1)
+            target_cusp = float(curr_s * 30.0)
+            low_sec = 0.0
+            high_sec = 60.0
+            for _ in range(20):
+                mid_sec = (low_sec + high_sec) / 2.0
+                dt_mid = dt_prev + timedelta(seconds=mid_sec)
+                mid_asc = _calc_asc(dt_mid)
+                diff = (mid_asc - target_cusp + 180.0) % 360.0 - 180.0
+                if diff < 0:
+                    low_sec = mid_sec
+                else:
+                    high_sec = mid_sec
+
+            # Minute m is the first integer minute returning curr_s in calculate_chart()
+            dt_curr = start_dt + timedelta(minutes=m)
+            sign_name = ZODIAC_SIGNS[curr_s]
+            lagna_starts[sign_name] = dt_curr.strftime("%H:%M")
             
     return lagna_starts
 
@@ -182,22 +225,29 @@ def get_daily_lagna_timeline(
     use_sidereal: bool = True,
     dob: date = None,
     lat: float = 22.5726,
-    lon: float = 88.3639
+    lon: float = 88.3639,
+    timezone_name: str = "Asia/Kolkata"
 ) -> list[dict]:
     """
-    Parses existing visuddha table transits for the day, sorts them 
-    chronologically, and calculates their end times without touching the chart math.
-    Falls back to dynamic astronomical calculations if static data is missing.
+    Returns the daily Lagna timeline with consistent, non-overlapping intervals.
+    Uses unified calculate_book_lagna sidereal calculation matching calculate_chart().
+    Each sign's interval [start, end] is constructed so that any minute in that range
+    consistently returns that sign when evaluated by calculate_chart().
     """
     from app.astrology.bengali_date import BENGALI_MONTHS_EN
     
-    table = load_lagna_table()
-    month_data = table.get(month_name, {})
-    day_data = month_data.get(str(day_num), {})
-    starts_dict = day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
+    starts_dict = {}
     
-    if not starts_dict and dob is not None:
-        starts_dict = calculate_dynamic_lagna_starts(dob, lat, lon, use_sidereal)
+    # When dob is provided, compute dynamically using the exact unified calculation
+    # to guarantee 100% chart and timeline alignment for that date.
+    if dob is not None:
+        starts_dict = calculate_dynamic_lagna_starts(dob, lat, lon, use_sidereal, timezone_name)
+    else:
+        # Fall back to static table if no dob provided
+        table = load_lagna_table()
+        month_data = table.get(month_name, {})
+        day_data = month_data.get(str(day_num), {})
+        starts_dict = day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
         
     if not starts_dict:
         return []
@@ -211,35 +261,38 @@ def get_daily_lagna_timeline(
         
     timeline.sort(key=lambda x: x["start"])
     
-    # Compute duration intervals seamlessly
+    # Compute duration intervals seamlessly:
+    # A sign that runs until the next sign starts at T ends at T - 1 minute.
+    # This guarantees that entering any minute within [start, end] returns this sign.
     for i in range(len(timeline)):
         if i < len(timeline) - 1:
-            timeline[i]["end"] = timeline[i+1]["start"]
+            timeline[i]["end"] = subtract_one_minute(timeline[i+1]["start"])
         else:
-            # Wrap gracefully around month boundaries using the exact BENGALI_MONTHS_EN list
-            next_day_num = day_num + 1
-            next_day_data = month_data.get(str(next_day_num))
-            
-            if not next_day_data:
-                try:
-                    cur_idx = BENGALI_MONTHS_EN.index(month_name)
-                    next_month = BENGALI_MONTHS_EN[(cur_idx + 1) % 12]
-                    next_day_data = table.get(next_month, {}).get("1", {})
-                except Exception:
-                    pass
-            
+            # Wrap around to the start of the next day
             next_starts = {}
-            if next_day_data:
-                next_starts = next_day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
-            elif dob is not None:
+            if dob is not None:
                 from datetime import timedelta
-                next_starts = calculate_dynamic_lagna_starts(dob + timedelta(days=1), lat, lon, use_sidereal)
-                
+                next_starts = calculate_dynamic_lagna_starts(dob + timedelta(days=1), lat, lon, use_sidereal, timezone_name)
+            else:
+                table = load_lagna_table()
+                month_data = table.get(month_name, {})
+                next_day_num = day_num + 1
+                next_day_data = month_data.get(str(next_day_num))
+                if not next_day_data:
+                    try:
+                        cur_idx = BENGALI_MONTHS_EN.index(month_name)
+                        next_month = BENGALI_MONTHS_EN[(cur_idx + 1) % 12]
+                        next_day_data = table.get(next_month, {}).get("1", {})
+                    except Exception:
+                        pass
+                if next_day_data:
+                    next_starts = next_day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
+            
             if next_starts:
                 next_sorted = sorted(next_starts.items(), key=lambda x: x[1])
-                timeline[i]["end"] = next_sorted[0][1]
+                timeline[i]["end"] = subtract_one_minute(next_sorted[0][1])
             else:
-                timeline[i]["end"] = timeline[0]["start"]
+                timeline[i]["end"] = subtract_one_minute(timeline[0]["start"])
                 
     return timeline
 

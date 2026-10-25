@@ -843,6 +843,7 @@ def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
     upper_value = _lookup_time_table_value(upper_table, lst_hours * 60.0)
 
     val = interpolate_angle(lower_value, upper_value, lat_fraction)
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
     ayanamsa = swe.get_ayanamsa_ut(jd)
     return (val - ayanamsa) % 360.0
 

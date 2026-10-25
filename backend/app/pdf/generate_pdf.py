@@ -1043,7 +1043,8 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         use_sidereal=True,
         dob=dob,
         lat=loc.latitude,
-        lon=loc.longitude
+        lon=loc.longitude,
+        timezone_name=loc.timezone
     )
     
     lagna_time_range = ""

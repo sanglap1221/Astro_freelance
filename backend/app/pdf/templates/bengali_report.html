@@ -14,7 +14,7 @@
     }
 
     :root {
-      --brand-red: #e80c85f5;
+      --brand-red: #ff007f;
       --brand-blue: #1565c0;
       --ink-black: #111;
       --border-color: #2c3e50;
@@ -103,8 +103,8 @@
     .header-title {
       /* Increased font-size to 42px and letter-spacing to 4px to make the title larger and wider as requested */
       font-size: 42px;
-      font-weight: 800;
-      color: var(--brand-red);
+      font-weight: 900;
+      color: #ff007f; /* Pure vivid magenta */
       letter-spacing: 4px;
       margin-bottom: 2px;
       text-shadow: 1px 1px 0px #000;
@@ -456,6 +456,57 @@
       color: var(--brand-red);
       margin-top: 8px;
       font-style: italic;
+    }
+
+    /* ── Page 2: Scoped Margin & Full Printable Area ── */
+    .a4-page.page-2 {
+      padding: 4mm 7mm 4mm 7mm;
+    }
+
+    @media print {
+      .a4-page.page-2 {
+        padding: 4mm 7mm !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        max-height: 297mm !important;
+        box-sizing: border-box !important;
+      }
+    }
+
+    .page-2 .form-wrapper {
+      padding: 6px 8px !important;
+      height: 289mm !important;
+      max-height: 289mm !important;
+      box-sizing: border-box !important;
+    }
+
+    .page-2 .ledger-sheet {
+      column-count: 4;
+      column-gap: 10px !important;
+      column-rule: 1px dashed #d1d5db !important;
+      padding: 4px 6px !important;
+    }
+
+    .page-2 .ledger-row {
+      height: 17px !important;
+      line-height: 17px !important;
+      font-size: 11px !important;
+    }
+
+    .page-2 .ledger-divider {
+      margin: 1px 0 !important;
+    }
+
+    .page-2 .remedy-grid-table th,
+    .page-2 .remedy-grid-table td {
+      padding: 2.5px 6px !important;
+      font-size: 12.5px !important;
+    }
+
+    .page-2 .remedy-violet-text,
+    .page-2 .remedy-root-text,
+    .page-2 .remedy-metal-text {
+      font-size: 13px !important;
     }
   </style>
 </head>
@@ -923,19 +974,19 @@
 
   <!-- ================== PAGE 2 ================== -->
 
-  <div class="a4-page">
+  <div class="a4-page page-2">
     <div class="form-wrapper"
-      style="padding: 10px; height: 281mm; max-height: 281mm; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
+      style="padding: 6px 8px; height: 289mm; max-height: 289mm; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
 
       <!-- 1. FUTURE ANTARDASHAS (4 COLUMNS LEDGER FORMAT) -->
       {% if show_future_antardashas is not defined or show_future_antardashas %}
       <div class="remedy-section"
         style="border-top: none; padding-bottom: 0px; flex: 1 1 auto; min-height: 0; overflow: hidden;">
-        <div class="remedy-main-title" style="margin-bottom: 15px;">{{ labels.future_antardashas }}</div>
+        <div class="remedy-main-title" style="margin-bottom: 8px; font-size: 15px;">{{ labels.future_antardashas }}</div>
 
-        <div class="ledger-container" style="overflow: hidden; height: calc(100% - 30px);">
+        <div class="ledger-container" style="overflow: hidden; height: calc(100% - 25px);">
           <div class="ledger-sheet"
-            style="column-count: 4; column-gap: 15px; column-rule: 1px dashed #ccc; padding: 10px 10px; overflow: hidden; height: 100%;">
+            style="column-count: 4; column-gap: 10px; column-rule: 1px dashed #d1d5db; padding: 4px 6px; overflow: hidden; height: 100%;">
             {% set birth_clean = customer.dob | string %}
             {% set birth_parts = birth_clean.split('-') if '-' in birth_clean else birth_clean.split('/') %}
             {% set birth_year = birth_parts[2]|int if birth_parts|length == 3 else 2006 %}
@@ -945,10 +996,10 @@
             {# Create a Mahadasha Header when starting a new major period #}
             {% if row.mahadasha_bn != current_md.name %}
             {% set current_md.name = row.mahadasha_bn %}
-            <div style="break-inside: avoid; margin-bottom: 5px;">
-              <div class="ledger-row" style="color: var(--brand-red); font-weight: 900; font-size: 13px;">
+            <div style="break-inside: avoid; margin-bottom: 3px;">
+              <div class="ledger-row" style="color: var(--brand-red); font-weight: 900; font-size: 11.5px; height: 18px !important; line-height: 18px !important;">
                 <span class="ledger-label"
-                  style="width: auto; color: var(--brand-red); border-bottom: 1.5px solid var(--brand-red);">
+                  style="width: auto; color: var(--brand-red); border-bottom: 1.2px solid var(--brand-red);">
                   {%- if lang == 'bn' -%}
                   {%- if row.mahadasha_bn == 'রবি' -%}রবির
                   {%- elif row.mahadasha_bn == 'চন্দ্র' -%}চন্দ্রের
@@ -965,9 +1016,9 @@
                   {{ row.mahadasha_bn }}
                   {%- endif %} {{ labels.mahadasha_title }}</span>
               </div>
-              <div class="ledger-row" style="color: #27ae60;">
-                <span class="ledger-label" style="width: 45px;"></span>
-                <span class="ledger-math" style="font-size: 12px;">
+              <div class="ledger-row" style="color: #27ae60; height: 15px !important; line-height: 15px !important;">
+                <span class="ledger-label" style="width: 40px;"></span>
+                <span class="ledger-math" style="font-size: 10.5px;">
                   {{ to_bn_date_parts(row.start) }}
                 </span>
               </div>
@@ -975,26 +1026,26 @@
             {% endif %}
 
             {# The exact ledger format lines used on page 1 #}
-            <div style="break-inside: avoid; margin-bottom: 8px;">
-              <div class="ledger-row">
-                <span class="ledger-label" style="width: 45px; font-size: 11px;"><span style="font-weight:700;">{{
+            <div style="break-inside: avoid; margin-bottom: 4px;">
+              <div class="ledger-row" style="height: 16px !important; line-height: 16px !important;">
+                <span class="ledger-label" style="width: 42px; font-size: 10.5px;"><span style="font-weight:700;">{{
                     row.major_bn }}/{{ row.lord_bn }}</span> -</span>
-                <span class="ledger-math" style="font-size: 11px;">
-                  <span class="math-part year" style="width: 25px;">{{ row.dur_y }}</span> —
-                  <span class="math-part month" style="width: 15px;">{{ row.dur_m }}</span> —
-                  <span class="math-part day" style="width: 15px;">{{ row.dur_d }}</span>
+                <span class="ledger-math" style="font-size: 10.5px;">
+                  <span class="math-part year" style="width: 22px;">{{ row.dur_y }}</span> —
+                  <span class="math-part month" style="width: 14px;">{{ row.dur_m }}</span> —
+                  <span class="math-part day" style="width: 14px;">{{ row.dur_d }}</span>
                 </span>
               </div>
-              <div class="ledger-divider" style="width: 100%;"></div>
+              <div class="ledger-divider" style="width: 100%; margin: 1px 0;"></div>
 
               {% set end_clean = row.end | string %}
               {% set end_parts = end_clean.split('-') if '-' in end_clean else end_clean.split('/') %}
               {% set end_year = end_parts[2]|int if end_parts|length == 3 else birth_year %}
               {% set age_at_end = end_year - birth_year %}
 
-              <div class="ledger-row" style="font-weight: bold; color: #111;">
-                <span class="ledger-label" style="width: 45px;"></span>
-                <span class="ledger-math" style="font-size: 12px; flex-grow: 1;">
+              <div class="ledger-row" style="font-weight: bold; color: #111; height: 16px !important; line-height: 16px !important;">
+                <span class="ledger-label" style="width: 42px;"></span>
+                <span class="ledger-math" style="font-size: 11px; flex-grow: 1;">
                   {{ to_bn_date_parts(row.end) }}
                 </span>
               </div>
@@ -1007,46 +1058,46 @@
 
       <!-- 2. REMEDIES SECTION (pinned to bottom) -->
       <div class="remedy-section"
-        style="flex-shrink: 0; margin-top: 10px; border-top: 1.5px dashed var(--border-color);">
-        <div class="remedy-main-title">{{ labels.remedies_title }}</div>
-        <div class="remedy-sub-title">{{ labels.remedies_subtitle }}</div>
+        style="flex-shrink: 0; margin-top: 6px; padding: 4px 6px; border-top: 1.5px dashed var(--border-color);">
+        <div class="remedy-main-title" style="font-size: 15px; margin-bottom: 2px;">{{ labels.remedies_title }}</div>
+        <div class="remedy-sub-title" style="font-size: 13px; margin-bottom: 4px;">{{ labels.remedies_subtitle }}</div>
 
-        <table class="remedy-grid-table">
+        <table class="remedy-grid-table" style="font-size: 12.5px;">
           <thead>
             <tr>
-              <th style="width: 7%; text-align: center;">{{ labels.remedies_no }}</th>
-              <th style="width: 53%;">{{ labels.remedies_gem }}</th>
-              <th style="width: 40%;">{{ labels.remedies_root }}</th>
+              <th style="width: 6%; text-align: center; padding: 2px;">{{ labels.remedies_no }}</th>
+              <th style="width: 50%; padding: 2.5px 6px;">{{ labels.remedies_gem }}</th>
+              <th style="width: 44%; padding: 2.5px 6px;">{{ labels.remedies_root }}</th>
             </tr>
           </thead>
           <tbody>
             {% for item in remedies_list %}
             <tr>
-              <td class="remedy-violet-text" style="text-align: center;">{{ item.id }}।</td>
-              <td class="remedy-violet-text">
+              <td class="remedy-violet-text" style="text-align: center; padding: 2.5px; font-size: 12.5px;">{{ item.id }}।</td>
+              <td class="remedy-violet-text" style="padding: 2.5px 6px; font-size: 12.5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span>{{ item.gemstone }}</span>
                   {% if item.gemstone_rating %}
-                  <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 8px;">
+                  <span style="color: #2563eb; font-size: 11.5px; white-space: nowrap; margin-left: 6px;">
                     {% for _ in range(item.gemstone_rating) %}★{% endfor %}
                   </span>
                   {% endif %}
                 </div>
               </td>
-              <td>
+              <td style="padding: 2.5px 6px; font-size: 12.5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   {% if '+' in item.remedy_root %}
                     {% set root_parts = item.remedy_root.split('+') %}
                     <span>
-                      <span class="remedy-root-text">{{ root_parts[0]|trim }}</span>
-                      <span style="color: #64748b; font-weight: bold; font-size: 15.5px;"> + </span>
-                      <span class="remedy-metal-text">{{ root_parts[1]|trim }}</span>
+                      <span class="remedy-root-text" style="font-size: 12.5px;">{{ root_parts[0]|trim }}</span>
+                      <span style="color: #64748b; font-weight: bold; font-size: 13px;"> + </span>
+                      <span class="remedy-metal-text" style="font-size: 12.5px;">{{ root_parts[1]|trim }}</span>
                     </span>
                   {% else %}
-                    <span class="remedy-root-text">{{ item.remedy_root }}</span>
+                    <span class="remedy-root-text" style="font-size: 12.5px;">{{ item.remedy_root }}</span>
                   {% endif %}
                   {% if item.root_rating %}
-                  <span style="color: #2563eb; font-size: 12.5px; white-space: nowrap; margin-left: 8px;">
+                  <span style="color: #2563eb; font-size: 11.5px; white-space: nowrap; margin-left: 6px;">
                     {% for _ in range(item.root_rating) %}★{% endfor %}
                   </span>
                   {% endif %}
@@ -1056,11 +1107,11 @@
             {% endfor %}
           </tbody>
         </table>
-        <div class="remedy-footer-note">{{ labels.remedy_note }}</div>
+        <div class="remedy-footer-note" style="font-size: 13px; margin-top: 4px;">{{ labels.remedy_note }}</div>
       </div>
 
       <div
-        style="text-align: center; width: 100%; font-size: 8px; color: #7f8c8d; margin-top: 6px; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.2;">
+        style="text-align: center; width: 100%; font-size: 7.5px; color: #7f8c8d; margin-top: 3px; font-family: 'Noto Sans Bengali', sans-serif; line-height: 1.1;">
         Generated using Jibon Jiggasa Desktop Suite &nbsp;|&nbsp; Software Development: <a
           href="https://sanglap-s-portfolio.vercel.app/" target="_blank"
           style="color: #7f8c8d; text-decoration: underline; font-weight: bold;">Sanglap Ghosh</a>
