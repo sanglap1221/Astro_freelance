@@ -164,24 +164,46 @@ def _timeline_sort_key(t_str: str) -> float:
     return hh * 60 + mm
 
 
-def calculate_dynamic_lagna_starts(
-    dob: date, 
-    lat: float, 
-    lon: float, 
+def calculate_dynamic_lagna_events(
+    dob: date,
+    lat: float,
+    lon: float,
     is_sidereal: bool = True,
     timezone_name: Optional[str] = None
-) -> dict[str, str]:
+) -> list[dict]:
     """
-    Calculate the starting time (HH:MM) of each Lagna sign during the day.
+    Calculate the ordered sequence of sign transition events spanning the local calendar day.
     Uses unified calculate_book_lagna() for sidereal mode to strictly match calculate_chart(),
     iterating through actual UTC instants spanning the local calendar day,
     and performs numerical search (bisection) to accurately locate sign boundaries.
+
+    Returns an ordered list of transition events (sorted by UTC instant):
+    [
+        {
+            "utc_datetime": datetime,
+            "start": str,           # e.g. "01:14" or "01:14 (+0100)"
+            "sign_index": int,      # 0 to 11
+            "name_en": str,         # e.g. "Simha"
+            "minute_index": int,    # minutes from local midnight
+            "utc_offset_str": Optional[str],
+            "fold": int,
+        },
+        ...
+    ]
     """
     # pyrefly: ignore [missing-import]
     import swisseph as swe
     from zoneinfo import ZoneInfo
     from datetime import datetime, timedelta
-    from app.astrology.calculations import ZODIAC_SIGNS, calculate_book_lagna, _sign_index, get_timezone_from_coords
+    from app.astrology.calculations import (
+        ZODIAC_SIGNS,
+        calculate_book_lagna,
+        _sign_index,
+        get_timezone_from_coords,
+        validate_coordinates,
+    )
+
+    flat, flon = validate_coordinates(lat, lon)
     
     tz = None
     if timezone_name and str(timezone_name).strip():
@@ -192,12 +214,12 @@ def calculate_dynamic_lagna_starts(
             raise ValueError(f"Invalid IANA timezone '{candidate_tz}': {exc}") from exc
             
     if tz is None:
-        resolved_tz_str = get_timezone_from_coords(lat, lon)
+        resolved_tz_str = get_timezone_from_coords(flat, flon)
         if resolved_tz_str:
             tz = ZoneInfo(resolved_tz_str)
         else:
             raise ValueError(
-                f"Unable to determine timezone for coordinates ({lat}, {lon}). "
+                f"Unable to determine timezone for coordinates ({flat}, {flon}). "
                 "Please provide a valid IANA timezone."
             )
         
@@ -206,7 +228,6 @@ def calculate_dynamic_lagna_starts(
     utc_start = local_start.astimezone(ZoneInfo("UTC"))
     utc_end = local_end.astimezone(ZoneInfo("UTC"))
     total_minutes = int(round((utc_end - utc_start).total_seconds() / 60.0))
-    is_autumn_25h = (total_minutes > 1440)
     
     def _calc_asc(u_dt: datetime) -> float:
         jd = swe.julday(
@@ -214,9 +235,9 @@ def calculate_dynamic_lagna_starts(
             u_dt.hour + u_dt.minute / 60.0 + u_dt.second / 3600.0 + u_dt.microsecond / 3600000000.0
         )
         if is_sidereal:
-            return calculate_book_lagna(jd, lat, lon)
+            return calculate_book_lagna(jd, flat, flon)
         else:
-            cusps, ascmc = swe.houses(jd, lat, lon, b'P')
+            cusps, ascmc = swe.houses(jd, flat, flon, b'P')
             return ascmc[0] % 360.0
 
     # 1. Evaluate sign at each whole minute of the day across UTC instants
@@ -226,15 +247,18 @@ def calculate_dynamic_lagna_starts(
         asc_lon = _calc_asc(u_dt)
         minute_signs.append(_sign_index(asc_lon))
 
+    # Real preceding sign at (utc_start - 1 minute) to detect midnight transition accurately
+    u_prev_instant = utc_start - timedelta(minutes=1)
+    prev_s = _sign_index(_calc_asc(u_prev_instant))
+
     # 2. Identify sign transitions and refine exact boundary
-    lagna_starts = {}
+    events: list[dict] = []
     for m in range(total_minutes):
-        prev_m = (m - 1) % total_minutes
         curr_s = minute_signs[m]
-        prev_s = minute_signs[prev_m]
         if curr_s != prev_s:
             # Transition occurred between (m-1) and m in UTC
-            u_prev = utc_start + timedelta(minutes=prev_m if m > 0 else -1)
+            u_prev = utc_start + timedelta(minutes=m - 1)
+            u_curr = utc_start + timedelta(minutes=m)
             target_cusp = float(curr_s * 30.0)
             low_sec = 0.0
             high_sec = 60.0
@@ -249,19 +273,46 @@ def calculate_dynamic_lagna_starts(
                     high_sec = mid_sec
 
             # Minute m is the first integer minute returning curr_s in calculate_chart()
-            u_curr = utc_start + timedelta(minutes=m)
             local_curr = u_curr.astimezone(tz)
             base_time = local_curr.strftime("%H:%M")
             alt = local_curr.replace(fold=1 - local_curr.fold)
             is_ambiguous = (local_curr.astimezone(ZoneInfo("UTC")) != alt.astimezone(ZoneInfo("UTC")))
-            if is_ambiguous:
-                time_label = f"{base_time} ({local_curr.strftime('%z')})"
-            else:
-                time_label = base_time
+            utc_offset_str = local_curr.strftime("%z") if is_ambiguous else None
+            time_label = f"{base_time} ({local_curr.strftime('%z')})" if is_ambiguous else base_time
 
             sign_name = ZODIAC_SIGNS[curr_s]
-            lagna_starts[sign_name] = time_label
+            events.append({
+                "utc_datetime": u_curr,
+                "start": time_label,
+                "sign_index": curr_s,
+                "name_en": sign_name,
+                "minute_index": m,
+                "utc_offset_str": utc_offset_str,
+                "fold": local_curr.fold,
+            })
+        prev_s = curr_s
             
+    events.sort(key=lambda ev: ev["utc_datetime"])
+    return events
+
+
+def calculate_dynamic_lagna_starts(
+    dob: date,
+    lat: float,
+    lon: float,
+    is_sidereal: bool = True,
+    timezone_name: Optional[str] = None
+) -> dict[str, str]:
+    """
+    Calculate the starting time (HH:MM) of each Lagna sign during the day.
+    Provided for dictionary-based backwards compatibility.
+    """
+    events = calculate_dynamic_lagna_events(
+        dob, lat, lon, is_sidereal, timezone_name
+    )
+    lagna_starts = {}
+    for ev in events:
+        lagna_starts[ev["name_en"]] = ev["start"]
     return lagna_starts
 
 
@@ -282,9 +333,8 @@ def get_daily_lagna_timeline(
     consistently returns that sign when evaluated by calculate_chart().
     """
     from app.astrology.bengali_date import BENGALI_MONTHS_EN
-    from app.astrology.calculations import resolve_location, get_timezone_from_coords
+    from app.astrology.calculations import resolve_location, get_timezone_from_coords, validate_coordinates
     
-    starts_dict = {}
     resolved_lat = None
     resolved_lon = None
     resolved_tz = None
@@ -292,9 +342,8 @@ def get_daily_lagna_timeline(
     # When dob is provided, compute dynamically using the exact coordinates
     # to guarantee 100% chart and timeline alignment for that date.
     if dob is not None:
-        if lat is not None and lon is not None:
-            resolved_lat = float(lat)
-            resolved_lon = float(lon)
+        if lat is not None or lon is not None:
+            resolved_lat, resolved_lon = validate_coordinates(lat, lon)
             if timezone_name and str(timezone_name).strip():
                 candidate_tz = str(timezone_name).strip()
                 try:
@@ -321,15 +370,48 @@ def get_daily_lagna_timeline(
                 "Silent fallback to Kolkata coordinates is prohibited."
             )
 
-        starts_dict = calculate_dynamic_lagna_starts(
+        events = calculate_dynamic_lagna_events(
             dob, resolved_lat, resolved_lon, use_sidereal, resolved_tz
         )
-    else:
-        # Fall back to static table if no dob provided (reference table for Kolkata)
-        table = load_lagna_table()
-        month_data = table.get(month_name, {})
-        day_data = month_data.get(str(day_num), {})
-        starts_dict = day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
+        if not events:
+            return []
+
+        tz = ZoneInfo(resolved_tz)
+        # Next day's first transition for wrapping end time
+        next_day_events = calculate_dynamic_lagna_events(
+            dob + timedelta(days=1), resolved_lat, resolved_lon, use_sidereal, resolved_tz
+        )
+
+        timeline = []
+        for i, ev in enumerate(events):
+            start_label = ev["start"]
+            if i < len(events) - 1:
+                next_utc = events[i + 1]["utc_datetime"]
+            elif next_day_events:
+                next_utc = next_day_events[0]["utc_datetime"]
+            else:
+                next_utc = ev["utc_datetime"] + timedelta(hours=2)
+
+            end_utc = next_utc - timedelta(minutes=1)
+            end_local = end_utc.astimezone(tz)
+            alt = end_local.replace(fold=1 - end_local.fold)
+            is_ambiguous = (end_local.astimezone(ZoneInfo("UTC")) != alt.astimezone(ZoneInfo("UTC")))
+            off_str = f" ({end_local:%z})" if is_ambiguous else ""
+            end_label = f"{end_local:%H:%M}{off_str}"
+
+            timeline.append({
+                "name_en": ev["name_en"],
+                "start": start_label,
+                "end": end_label,
+            })
+
+        return timeline
+
+    # Fall back to static table if no dob provided (reference table for Kolkata)
+    table = load_lagna_table()
+    month_data = table.get(month_name, {})
+    day_data = month_data.get(str(day_num), {})
+    starts_dict = day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
         
     if not starts_dict:
         return []
@@ -343,34 +425,25 @@ def get_daily_lagna_timeline(
         
     timeline.sort(key=lambda x: _timeline_sort_key(x["start"]))
     
-    # Compute duration intervals seamlessly:
-    # A sign that runs until the next sign starts at T ends at T - 1 minute.
-    # This guarantees that entering any minute within [start, end] returns this sign.
+    # Compute duration intervals seamlessly for static table
     for i in range(len(timeline)):
         if i < len(timeline) - 1:
             timeline[i]["end"] = subtract_one_minute(timeline[i+1]["start"])
         else:
-            # Wrap around to the start of the next day
+            table = load_lagna_table()
+            month_data = table.get(month_name, {})
+            next_day_num = day_num + 1
+            next_day_data = month_data.get(str(next_day_num))
+            if not next_day_data:
+                try:
+                    cur_idx = BENGALI_MONTHS_EN.index(month_name)
+                    next_month = BENGALI_MONTHS_EN[(cur_idx + 1) % 12]
+                    next_day_data = table.get(next_month, {}).get("1", {})
+                except Exception:
+                    pass
             next_starts = {}
-            if dob is not None and resolved_lat is not None and resolved_lon is not None:
-                from datetime import timedelta
-                next_starts = calculate_dynamic_lagna_starts(
-                    dob + timedelta(days=1), resolved_lat, resolved_lon, use_sidereal, resolved_tz
-                )
-            else:
-                table = load_lagna_table()
-                month_data = table.get(month_name, {})
-                next_day_num = day_num + 1
-                next_day_data = month_data.get(str(next_day_num))
-                if not next_day_data:
-                    try:
-                        cur_idx = BENGALI_MONTHS_EN.index(month_name)
-                        next_month = BENGALI_MONTHS_EN[(cur_idx + 1) % 12]
-                        next_day_data = table.get(next_month, {}).get("1", {})
-                    except Exception:
-                        pass
-                if next_day_data:
-                    next_starts = next_day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
+            if next_day_data:
+                next_starts = next_day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
             
             if next_starts:
                 next_sorted = sorted(next_starts.items(), key=lambda x: _timeline_sort_key(x[1]))

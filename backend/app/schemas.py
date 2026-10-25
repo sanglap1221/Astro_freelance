@@ -18,6 +18,7 @@ class ChartRequest(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     timezone: str | None = None
+    birth_time_fold: int | None = None
 
 
 class PlanetPosition(BaseModel):
@@ -66,6 +67,7 @@ class PdfRequest(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     timezone: str | None = None
+    birth_time_fold: int | None = None
 
 
 

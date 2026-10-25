@@ -180,8 +180,13 @@ def test_resolve_location_no_silent_kolkata_fallback():
     loc_tokyo = resolve_location(lat=35.6762, lon=139.6503)
     assert loc_tokyo.timezone == "Asia/Tokyo"
 
-    # Invalid coordinates that cannot resolve timezone should raise ValueError, not default to Kolkata
-    with pytest.raises(ValueError, match="Unable to determine timezone"):
+    # Coordinates that cannot resolve timezone should raise ValueError, not default to Kolkata
+    with patch("app.astrology.calculations.get_timezone_from_coords", return_value=None):
+        with pytest.raises(ValueError, match="Unable to determine timezone"):
+            resolve_location(lat=22.5726, lon=88.3639)
+
+    # Coordinates out of range should raise ValueError
+    with pytest.raises(ValueError, match="Latitude out of range"):
         resolve_location(lat=999.0, lon=999.0)
 
 

@@ -520,6 +520,26 @@ def translate_syllable(syl: str, lang: str) -> str:
     return BENGALI_TO_ENGLISH_SYLLABLES.get(syl, syl)
 
 
+def format_time_dot(t_str: str) -> str:
+    """Format HH:MM or HH:MM (+offset) into H.MM or H.MM (+offset).
+
+    Preserves numeric UTC offset suffixes without ValueError.
+    """
+    parts = t_str.strip().split()
+    if not parts:
+        return ""
+    time_part = parts[0]
+    suffix = (" " + " ".join(parts[1:])) if len(parts) > 1 else ""
+    if ":" in time_part:
+        h, m = time_part.split(":", 1)
+        try:
+            formatted_h = str(int(h))
+        except ValueError:
+            formatted_h = h
+        return f"{formatted_h}.{m}{suffix}"
+    return f"{time_part}{suffix}"
+
+
 class PdfReportResult:
     def __init__(self, pdf_url: str):
         self.pdf_url = pdf_url
@@ -574,6 +594,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         true_node=True,
         planet_overrides=planet_overrides,
         override_moon_longitude=override_moon_longitude,
+        birth_time_fold=getattr(payload, "birth_time_fold", None),
     )
 
     # 2. Generate report_no
@@ -1072,21 +1093,31 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         timezone_name=loc.timezone
     )
     
-    def format_time_dot(t_str: str) -> str:
-        parts = t_str.strip().split()
-        time_part = parts[0]
-        suffix = (" " + " ".join(parts[1:])) if len(parts) > 1 else ""
-        h, m = time_part.split(":")
-        return f"{int(h)}.{m}{suffix}"
-
     lagna_time_range = ""
-    for item in raw_timeline:
-        sign_idx = SIGN_TO_INDEX.get(item["name_en"], 0)
-        if sign_idx == chart.lagna_sign_index:
-            start_local = to_local_digits(format_time_dot(item["start"]), lang)
-            end_local = to_local_digits(format_time_dot(item["end"]), lang)
-            lagna_time_range = f"{start_local} - {end_local}"
-            break
+    matching_items = [item for item in raw_timeline if SIGN_TO_INDEX.get(item["name_en"], 0) == chart.lagna_sign_index]
+    if matching_items:
+        chosen_item = matching_items[0]
+        if len(matching_items) > 1 and hasattr(payload, 'dob') and hasattr(payload, 'time'):
+            fold = getattr(payload, 'birth_time_fold', 0) or 0
+            try:
+                b_dt = datetime.combine(payload.dob, payload.time, tzinfo=ZoneInfo(loc.timezone)).replace(fold=fold)
+                b_utc = b_dt.astimezone(ZoneInfo("UTC"))
+                from app.astrology.lagna_table import calculate_dynamic_lagna_events
+                evs = calculate_dynamic_lagna_events(payload.dob, loc.latitude, loc.longitude, True, loc.timezone)
+                for idx, ev in enumerate(evs):
+                    if ev["sign_index"] == chart.lagna_sign_index:
+                        start_u = ev["utc_datetime"]
+                        end_u = evs[idx + 1]["utc_datetime"] if idx + 1 < len(evs) else start_u + timedelta(hours=3)
+                        if start_u <= b_utc < end_u:
+                            if idx < len(raw_timeline):
+                                chosen_item = raw_timeline[idx]
+                            break
+            except Exception:
+                pass
+
+        start_local = to_local_digits(format_time_dot(chosen_item["start"]), lang)
+        end_local = to_local_digits(format_time_dot(chosen_item["end"]), lang)
+        lagna_time_range = f"{start_local} - {end_local}"
 
     lagna_lon = chart.ascendant_longitude % 360.0
     lagna_sign_idx_0b = int(lagna_lon // 30)

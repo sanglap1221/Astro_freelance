@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 import os
+import math
 import logging
 import urllib.request
 import urllib.parse
@@ -849,6 +850,44 @@ def geocode_online(place: str) -> Optional[GeocodeResult]:
     return None
 
 
+def validate_coordinates(lat: Any, lon: Any) -> tuple[float, float]:
+    """Validate latitude and longitude coordinates.
+
+    Rejects:
+    - None coordinates.
+    - Boolean values.
+    - Non-numeric types.
+    - NaN or infinite values.
+    - Latitude outside [-90.0, 90.0].
+    - Longitude outside [-180.0, 180.0].
+
+    Returns:
+        tuple[float, float]: (latitude, longitude)
+    Raises:
+        ValueError: with a clear descriptive message on invalid coordinates.
+    """
+    if lat is None or lon is None:
+        raise ValueError("Both latitude and longitude must be provided.")
+    if isinstance(lat, bool) or isinstance(lon, bool):
+        raise ValueError("Coordinates must be numeric, booleans are not allowed.")
+    try:
+        flat = float(lat)
+        flon = float(lon)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Non-numeric coordinates: lat={lat!r}, lon={lon!r}") from exc
+
+    if not (math.isfinite(flat) and math.isfinite(flon)):
+        raise ValueError(f"Coordinates must be finite numbers: lat={flat}, lon={flon}")
+
+    if not (-90.0 <= flat <= 90.0):
+        raise ValueError(f"Latitude out of range [-90, 90]: {flat}")
+
+    if not (-180.0 <= flon <= 180.0):
+        raise ValueError(f"Longitude out of range [-180, 180]: {flon}")
+
+    return flat, flon
+
+
 def resolve_location(
     place: Optional[str] = None,
     lat: Optional[float] = None,
@@ -859,7 +898,8 @@ def resolve_location(
     """Resolve location to a Location dataclass containing latitude, longitude, and IANA timezone.
     
     Rules:
-    1. If lat & lon are provided:
+    1. If coordinates are provided:
+       - Validate strictly with validate_coordinates.
        - If tz is provided and valid, use it.
        - Otherwise, determine tz from coordinates via timezonefinder.
        - Do NOT silently assume Asia/Kolkata for international coordinates.
@@ -882,9 +922,8 @@ def resolve_location(
         except Exception as exc:
             raise ValueError(f"Invalid IANA timezone '{candidate_tz}': {exc}") from exc
 
-    if lat is not None and lon is not None:
-        flat = float(lat)
-        flon = float(lon)
+    if lat is not None or lon is not None:
+        flat, flon = validate_coordinates(lat, lon)
         resolved_tz = validated_tz or get_timezone_from_coords(flat, flon)
         if not resolved_tz:
             raise ValueError(
@@ -1072,11 +1111,60 @@ def interpolate_angle(a1: float, a2: float, frac: float) -> float:
 
 
 def _is_valid_ascendant_table(table: Any) -> bool:
-    """Validate that table is a non-empty mapping with sufficient entries for interpolation."""
+    """Validate that table is a complete, non-empty mapping covering the full daily cycle.
+
+    Validates that:
+    - The object is a non-empty mapping with at least 50 entries.
+    - Every key is a valid 'HH:MM:SS' time in valid ranges.
+    - Every value is numeric (not bool), finite, and within [0.0, 360.0].
+    - Keys do not represent duplicate instants.
+    - Entries cover the full daily cycle adequately for interpolation, including midnight.
+    """
     if not isinstance(table, dict) or len(table) < 50:
         return False
-    sample_val = next(iter(table.values()), None)
-    return isinstance(sample_val, (int, float)) and 0.0 <= sample_val <= 360.0
+
+    parsed_seconds = set()
+    seconds_list = []
+
+    for key, value in table.items():
+        if not isinstance(key, str):
+            return False
+        parts = key.split(":")
+        if len(parts) != 3:
+            return False
+        try:
+            h = int(parts[0])
+            m = int(parts[1])
+            s = int(parts[2])
+        except (ValueError, TypeError):
+            return False
+
+        if not (0 <= h <= 23 and 0 <= m <= 59 and 0 <= s <= 59):
+            return False
+
+        total_sec = h * 3600 + m * 60 + s
+        if total_sec in parsed_seconds:
+            return False
+        parsed_seconds.add(total_sec)
+        seconds_list.append(total_sec)
+
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        fval = float(value)
+        if not math.isfinite(fval) or not (0.0 <= fval <= 360.0):
+            return False
+
+    seconds_list.sort()
+    MAX_PERMITTED_GAP_SECONDS = 3600  # 1 hour max gap between consecutive points
+    for i in range(len(seconds_list) - 1):
+        if seconds_list[i + 1] - seconds_list[i] > MAX_PERMITTED_GAP_SECONDS:
+            return False
+
+    midnight_gap = (86400 - seconds_list[-1]) + seconds_list[0]
+    if midnight_gap > MAX_PERMITTED_GAP_SECONDS:
+        return False
+
+    return True
 
 
 def _load_ascendant_table(latitude_index: int) -> Optional[dict[str, float]]:
@@ -1108,33 +1196,37 @@ def _lookup_time_table_value(table: Optional[dict[str, float]], target_minutes: 
     if not _is_valid_ascendant_table(table):
         return None
 
-    entries = sorted(
-        ((int(h), int(m), int(s), float(value)) for key, value in table.items() for h, m, s in [tuple(int(part) for part in key.split(":"))]),
-        key=lambda item: (item[0], item[1], item[2]),
-    )
-    if not entries:
+    try:
+        entries = sorted(
+            ((int(h), int(m), int(s), float(value)) for key, value in table.items() for h, m, s in [tuple(int(part) for part in key.split(":"))]),
+            key=lambda item: (item[0], item[1], item[2]),
+        )
+        if not entries:
+            return None
+
+        target_minutes = target_minutes % (24.0 * 60.0)
+        target_seconds = target_minutes * 60.0
+        timeline = [((h * 3600) + (m * 60) + s, value) for h, m, s, value in entries]
+
+        for index, (seconds, value) in enumerate(timeline):
+            if abs(seconds - target_seconds) < 0.5:
+                return value
+
+        extended = timeline + [(timeline[0][0] + 24 * 3600, timeline[0][1])]
+        for index in range(len(timeline)):
+            left_seconds, left_value = extended[index]
+            right_seconds, right_value = extended[index + 1]
+            if left_seconds <= target_seconds <= right_seconds:
+                span = right_seconds - left_seconds
+                if span <= 0:
+                    return left_value
+                fraction = (target_seconds - left_seconds) / span
+                return interpolate_angle(left_value, right_value, fraction)
+
+        return timeline[-1][1]
+    except Exception as exc:
+        logger.warning(f"Error during ascendant table lookup: {exc}")
         return None
-
-    target_minutes = target_minutes % (24.0 * 60.0)
-    target_seconds = target_minutes * 60.0
-    timeline = [((h * 3600) + (m * 60) + s, value) for h, m, s, value in entries]
-
-    for index, (seconds, value) in enumerate(timeline):
-        if abs(seconds - target_seconds) < 0.5:
-            return value
-
-    extended = timeline + [(timeline[0][0] + 24 * 3600, timeline[0][1])]
-    for index in range(len(timeline)):
-        left_seconds, left_value = extended[index]
-        right_seconds, right_value = extended[index + 1]
-        if left_seconds <= target_seconds <= right_seconds:
-            span = right_seconds - left_seconds
-            if span <= 0:
-                return left_value
-            fraction = (target_seconds - left_seconds) / span
-            return interpolate_angle(left_value, right_value, fraction)
-
-    return timeline[-1][1]
 
 
 def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
@@ -1146,6 +1238,7 @@ def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
       (Local Sidereal Time + 12h, Table at abs(latitude), Ascendant + 180°).
     - Polar latitudes (|lat| > 60°) or missing/corrupted tables: direct Swiss Ephemeris sidereal calculation.
     """
+    latitude, longitude = validate_coordinates(latitude, longitude)
     swe.set_sid_mode(swe.SIDM_LAHIRI)
 
     # For polar latitudes beyond table limits (60°), use Swiss Ephemeris direct sidereal houses
@@ -1732,14 +1825,16 @@ def calculate_chart(
     longitude: Optional[float] = None,
     timezone: Optional[str] = None,
     debug_trace: bool = False,
+    birth_time_fold: Optional[int] = None,
 ) -> ChartResult:
     """
     Calculate complete Vedic/Bengali birth chart.
 
     Args:
-        dob:        Date of birth
-        birth_time: Time of birth (local time of the place)
-        place:      City name (must be in PLACE_CONFIG)
+        dob:              Date of birth
+        birth_time:       Time of birth (local time of the place)
+        place:            City name (must be in PLACE_CONFIG)
+        birth_time_fold:  Disambiguation fold (0 or 1) for ambiguous fall-back DST times
 
     Returns:
         ChartResult with all fields filled
@@ -1748,7 +1843,41 @@ def calculate_chart(
 
     # --- Convert local birth time to UTC ---
     tz = ZoneInfo(location.timezone)
-    birth_dt = datetime.combine(dob, birth_time, tzinfo=tz)
+    if birth_time_fold is not None:
+        if birth_time_fold not in (0, 1):
+            raise ValueError(f"Invalid birth_time_fold: {birth_time_fold}. Must be 0 or 1.")
+
+    birth_dt_default = datetime.combine(dob, birth_time, tzinfo=tz)
+    utc_default = birth_dt_default.astimezone(ZoneInfo("UTC"))
+    back_local = utc_default.astimezone(tz)
+
+    # Detect nonexistent local time during spring-forward gap
+    is_gap = (back_local.hour, back_local.minute, back_local.second) != (
+        birth_time.hour,
+        birth_time.minute,
+        birth_time.second,
+    )
+    if is_gap:
+        raise ValueError(
+            f"Nonexistent local time {birth_time.strftime('%H:%M:%S')} on {dob} "
+            f"in timezone '{location.timezone}' due to daylight saving spring-forward transition."
+        )
+
+    # Detect ambiguous local time during autumn fall-back
+    dt0 = birth_dt_default.replace(fold=0)
+    dt1 = birth_dt_default.replace(fold=1)
+    is_ambiguous = (dt0.astimezone(ZoneInfo("UTC")) != dt1.astimezone(ZoneInfo("UTC")))
+    if is_ambiguous:
+        if birth_time_fold is None:
+            raise ValueError(
+                f"Ambiguous local time {birth_time.strftime('%H:%M:%S')} on {dob} "
+                f"in timezone '{location.timezone}' due to daylight saving fall-back transition. "
+                "Please specify birth_time_fold (0 or 1) to disambiguate."
+            )
+        birth_dt = birth_dt_default.replace(fold=birth_time_fold)
+    else:
+        birth_dt = birth_dt_default.replace(fold=birth_time_fold) if birth_time_fold is not None else birth_dt_default
+
     utc_dt = birth_dt.astimezone(ZoneInfo("UTC"))
 
     # --- Julian Day ---

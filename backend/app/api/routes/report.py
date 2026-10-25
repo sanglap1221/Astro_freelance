@@ -30,6 +30,7 @@ def generate_chart(payload: ChartRequest) -> ChartResponse:
             latitude=payload.latitude,
             longitude=payload.longitude,
             timezone=payload.timezone,
+            birth_time_fold=payload.birth_time_fold,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
