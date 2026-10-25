@@ -35,5 +35,5 @@ Update  JibonJiggasa.command
 
 desktop_app/jibon-jiggasa@1.0.0
 desktop_app/electron
-backend/tests
+backend/tests/__pycache__/
 frontend/.env.local

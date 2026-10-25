@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 import type { ReportInput } from "../types/report";
 import { BengaliDatePicker, formatBengaliDobString } from "./BengaliDatePicker";
+import { searchPlaces, type PlaceSuggestion } from "../services/api";
 
 type ReportFormProps = {
   value: ReportInput;
@@ -11,18 +12,28 @@ type ReportFormProps = {
   onSubmit: () => void;
 };
 
+interface LocationOption {
+  display_name: string;
+  lat: string | number;
+  lon: string | number;
+  timezone: string;
+}
+
 /* ─── Preset Locations ─── */
-const PRESET_LOCATIONS: { display_name: string; lat: string; lon: string }[] = [
-  { display_name: "Kolkata, West Bengal", lat: "22.5726", lon: "88.3639" },
-  { display_name: "Bongaon, West Bengal", lat: "23.0434", lon: "88.8235" },
-  { display_name: "Habra, West Bengal", lat: "22.8321", lon: "88.6315" },
-  { display_name: "Barasat, West Bengal", lat: "22.7200", lon: "88.4801" },
-  { display_name: "Barrackpore, West Bengal", lat: "22.7658", lon: "88.3784" },
-  { display_name: "Howrah, West Bengal", lat: "22.5958", lon: "88.2636" },
-  { display_name: "Durgapur, West Bengal", lat: "23.5204", lon: "87.3119" },
-  { display_name: "Siliguri, West Bengal", lat: "26.7271", lon: "88.3953" },
-  { display_name: "New Delhi, Delhi", lat: "28.6139", lon: "77.2090" },
-  { display_name: "Mumbai, Maharashtra", lat: "19.0760", lon: "72.8777" },
+const PRESET_LOCATIONS: LocationOption[] = [
+  { display_name: "Kolkata, West Bengal, India", lat: "22.5726", lon: "88.3639", timezone: "Asia/Kolkata" },
+  { display_name: "Howrah, West Bengal, India", lat: "22.5958", lon: "88.2636", timezone: "Asia/Kolkata" },
+  { display_name: "Bongaon, West Bengal, India", lat: "23.0434", lon: "88.8235", timezone: "Asia/Kolkata" },
+  { display_name: "Habra, West Bengal, India", lat: "22.8321", lon: "88.6315", timezone: "Asia/Kolkata" },
+  { display_name: "Barasat, West Bengal, India", lat: "22.7200", lon: "88.4801", timezone: "Asia/Kolkata" },
+  { display_name: "Barrackpore, West Bengal, India", lat: "22.7658", lon: "88.3784", timezone: "Asia/Kolkata" },
+  { display_name: "Durgapur, West Bengal, India", lat: "23.5204", lon: "87.3119", timezone: "Asia/Kolkata" },
+  { display_name: "Siliguri, West Bengal, India", lat: "26.7271", lon: "88.3953", timezone: "Asia/Kolkata" },
+  { display_name: "New Delhi, Delhi, India", lat: "28.6139", lon: "77.2090", timezone: "Asia/Kolkata" },
+  { display_name: "Mumbai, Maharashtra, India", lat: "19.0760", lon: "72.8777", timezone: "Asia/Kolkata" },
+  { display_name: "London, England, United Kingdom", lat: "51.5074", lon: "-0.1278", timezone: "Europe/London" },
+  { display_name: "New York, NY, United States", lat: "40.7128", lon: "-74.0060", timezone: "America/New_York" },
+  { display_name: "Sydney, NSW, Australia", lat: "-33.8688", lon: "151.2093", timezone: "Australia/Sydney" },
 ];
 
 function updateField(
@@ -45,7 +56,7 @@ function updateBooleanField(
 
 export function ReportForm({ value, loading = false, onChange, onSubmit }: ReportFormProps) {
   const [showAstrologer, setShowAstrologer] = useState(false);
-  const [suggestions, setSuggestions] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
+  const [suggestions, setSuggestions] = useState<LocationOption[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showingPresets, setShowingPresets] = useState(false);
@@ -73,19 +84,16 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
     setShowingPresets(false);
     setIsSearching(true);
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in`,
-        {
-          headers: {
-            "Accept-Language": "en"
-          }
-        }
+      const data = await searchPlaces(query, 5);
+      setSuggestions(
+        data.map((item) => ({
+          display_name: item.display_name,
+          lat: item.lat,
+          lon: item.lon,
+          timezone: item.timezone,
+        }))
       );
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestions(data);
-        setShowDropdown(data.length > 0);
-      }
+      setShowDropdown(data.length > 0);
     } catch (err) {
       console.error("Geocoding fetch failed:", err);
     } finally {
@@ -108,18 +116,13 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
     }
   };
 
-  const handleSelectSuggestion = (sug: { display_name: string; lat: string; lon: string }) => {
-    const parts = sug.display_name.split(",");
-    const cityName = parts[0]?.trim();
-    const stateName = parts[parts.length - 1]?.trim() || parts[1]?.trim();
-    const shortName = stateName ? `${cityName}, ${stateName}` : cityName;
-
+  const handleSelectSuggestion = (sug: LocationOption) => {
     onChange({
       ...value,
-      place: shortName,
-      latitude: parseFloat(sug.lat),
-      longitude: parseFloat(sug.lon),
-      timezone: "Asia/Kolkata", // Default timezone for India
+      place: sug.display_name,
+      latitude: typeof sug.lat === "number" ? sug.lat : parseFloat(sug.lat),
+      longitude: typeof sug.lon === "number" ? sug.lon : parseFloat(sug.lon),
+      timezone: sug.timezone,
     });
     setShowDropdown(false);
     setShowingPresets(false);
@@ -256,14 +259,21 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
               <li
                 key={idx}
                 onClick={() => handleSelectSuggestion(sug)}
-                className="cursor-pointer px-3 py-2.5 hover:bg-amber-50 transition-colors flex items-center gap-2 border-b border-[#f3e9d2] last:border-0"
+                className="cursor-pointer px-3 py-2 hover:bg-amber-50 transition-colors flex items-center justify-between gap-2 border-b border-[#f3e9d2] last:border-0"
               >
-                {showingPresets && (
-                  <span className="text-amber-600 text-[0.6875rem]">
-                    <i className="fa-solid fa-location-dot"></i>
+                <div className="flex items-center gap-2 min-w-0">
+                  {showingPresets && (
+                    <span className="text-amber-600 text-[0.6875rem] shrink-0">
+                      <i className="fa-solid fa-location-dot"></i>
+                    </span>
+                  )}
+                  <span className="font-medium truncate">{sug.display_name}</span>
+                </div>
+                {sug.timezone && (
+                  <span className="text-[0.625rem] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0 font-mono">
+                    {sug.timezone}
                   </span>
                 )}
-                <span className="font-medium">{sug.display_name}</span>
               </li>
             ))}
           </ul>

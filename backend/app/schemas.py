@@ -71,3 +71,13 @@ class PdfRequest(BaseModel):
 
 class PdfResponse(BaseModel):
     pdf_url: str
+
+
+class LocationSuggestion(BaseModel):
+    display_name: str
+    lat: float
+    lon: float
+    timezone: str
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None

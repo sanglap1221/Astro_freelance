@@ -191,3 +191,21 @@ export async function deleteReport(reportId: string) {
   if (!response.ok) throw new Error("Failed to delete report");
   return response.json();
 }
+
+export interface PlaceSuggestion {
+  display_name: string;
+  lat: number | string;
+  lon: number | string;
+  timezone: string;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+}
+
+export async function searchPlaces(query: string, limit: number = 5): Promise<PlaceSuggestion[]> {
+  const response = await fetch(`${API}/api/places/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+  if (!response.ok) {
+    throw new Error(`Failed to search places: ${response.statusText}`);
+  }
+  return response.json();
+}

@@ -5,8 +5,9 @@ from app.astrology.calculations import (
     calculate_chart,
     format_sign_compact_bn,
     format_sign_dms_bn,
+    search_locations,
 )
-from app.schemas import ChartRequest, ChartResponse, PlanetPosition
+from app.schemas import ChartRequest, ChartResponse, PlanetPosition, LocationSuggestion
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
@@ -74,3 +75,27 @@ def generate_chart(payload: ChartRequest) -> ChartResponse:
             )
         ],
     )
+
+
+@router.get("/places/search", response_model=list[LocationSuggestion])
+@router.get("/location/search", response_model=list[LocationSuggestion])
+def search_places_endpoint(q: str = "", limit: int = 5) -> list[LocationSuggestion]:
+    """Search worldwide places and return candidates with lat, lon, and IANA timezone."""
+    if not q or not q.strip():
+        return []
+    try:
+        results = search_locations(q.strip(), limit=max(1, min(limit, 20)))
+        return [
+            LocationSuggestion(
+                display_name=item["display_name"],
+                lat=item["lat"],
+                lon=item["lon"],
+                timezone=item["timezone"],
+                city=item.get("city"),
+                state=item.get("state"),
+                country=item.get("country"),
+            )
+            for item in results
+        ]
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Location search failed: {exc}") from exc

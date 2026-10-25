@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 import os
+import logging
+import urllib.request
+import urllib.parse
+import urllib.error
+import json
 from zoneinfo import ZoneInfo
 from typing import Any, Optional
 
@@ -566,71 +571,275 @@ class ChartResult:
 
 
 # ===========================================================================
-# HELPERS
-# ===========================================================================
+logger = logging.getLogger("astro_app.calculations")
+
+_tf_instance: Optional[Any] = None
+
+
+def get_timezone_finder() -> Any:
+    """Lazily load and return the TimezoneFinder singleton."""
+    global _tf_instance
+    if _tf_instance is None:
+        try:
+            from timezonefinder import TimezoneFinder
+            _tf_instance = TimezoneFinder()
+        except Exception as exc:
+            logger.warning(f"Failed to initialize TimezoneFinder: {exc}")
+            _tf_instance = None
+    return _tf_instance
+
+
+def get_timezone_from_coords(lat: float, lon: float) -> Optional[str]:
+    """Resolve an IANA timezone string from geographic coordinates (lat, lon) using timezonefinder."""
+    try:
+        tf = get_timezone_finder()
+        if tf is not None:
+            tz_name = tf.timezone_at(lat=float(lat), lng=float(lon))
+            if tz_name:
+                ZoneInfo(tz_name)  # validate that Python zoneinfo recognizes it
+                return tz_name
+    except Exception as exc:
+        logger.warning(f"Failed to resolve timezone for coordinates ({lat}, {lon}): {exc}")
+    return None
+
+
+_GEOCODE_CACHE: dict[str, list[dict[str, Any]]] = {}
+_CACHE_MAX_SIZE = 1000
+
+
+def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Search for worldwide locations using Geoapify Geocoding API with Nominatim fallback.
+    
+    Returns a list of dicts:
+    [
+        {
+            "display_name": "London, Greater London, England, United Kingdom",
+            "lat": 51.5074,
+            "lon": -0.1278,
+            "timezone": "Europe/London",
+            "city": "London",
+            "state": "England",
+            "country": "United Kingdom"
+        },
+        ...
+    ]
+    """
+    if not query or not query.strip():
+        return []
+
+    clean_query = query.strip()
+    cache_key = f"{clean_query.lower()}:{limit}"
+    if cache_key in _GEOCODE_CACHE:
+        return _GEOCODE_CACHE[cache_key]
+
+    results: list[dict[str, Any]] = []
+    api_key = os.getenv("GEOAPIFY_API_KEY", "").strip()
+
+    # 1. Primary: Geoapify Geocoding API
+    if api_key:
+        try:
+            encoded_q = urllib.parse.quote(clean_query)
+            encoded_key = urllib.parse.quote(api_key)
+            req_limit = max(1, min(limit, 20))
+            url = f"https://api.geoapify.com/v1/geocode/search?text={encoded_q}&format=json&apiKey={encoded_key}&limit={req_limit}"
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "AstroWorldwideSearch/1.0", "Accept": "application/json"}
+            )
+            
+            with urllib.request.urlopen(req, timeout=5) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode("utf-8"))
+                    raw_items = data.get("results") or []
+                    for item in raw_items:
+                        try:
+                            lat = float(item["lat"])
+                            lon = float(item["lon"])
+                        except (KeyError, ValueError, TypeError):
+                            continue
+
+                        country = item.get("country")
+                        city = item.get("city") or item.get("name")
+                        state = item.get("state")
+                        formatted = item.get("formatted") or ""
+
+                        # Ensure country is included in the displayed label
+                        if country and country.lower() not in formatted.lower():
+                            display_name = f"{formatted}, {country}".strip(", ")
+                        else:
+                            display_name = formatted or clean_query
+
+                        # Determine IANA timezone
+                        tz_name = None
+                        if isinstance(item.get("timezone"), dict):
+                            tz_name = item["timezone"].get("name")
+                        if tz_name:
+                            try:
+                                ZoneInfo(tz_name)
+                            except Exception:
+                                tz_name = None
+                        if not tz_name:
+                            tz_name = get_timezone_from_coords(lat, lon)
+
+                        if tz_name:
+                            results.append({
+                                "display_name": display_name,
+                                "lat": lat,
+                                "lon": lon,
+                                "timezone": tz_name,
+                                "city": city,
+                                "state": state,
+                                "country": country,
+                            })
+        except urllib.error.HTTPError as exc:
+            logger.warning(f"Geoapify API HTTP error {exc.code} for query '{clean_query}': {exc.reason}")
+        except Exception as exc:
+            logger.warning(f"Geoapify API request failed for query '{clean_query}': {exc}")
+
+    # 2. Fallback: Worldwide Nominatim with timezone resolution via timezonefinder
+    if not results:
+        try:
+            encoded_q = urllib.parse.quote(clean_query)
+            req_limit = max(1, min(limit, 20))
+            url = f"https://nominatim.openstreetmap.org/search?q={encoded_q}&format=json&limit={req_limit}&addressdetails=1"
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "AstroWorldwideSearch/1.0", "Accept": "application/json"}
+            )
+            
+            with urllib.request.urlopen(req, timeout=5) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode("utf-8"))
+                    if isinstance(data, list):
+                        for item in data:
+                            try:
+                                lat = float(item["lat"])
+                                lon = float(item["lon"])
+                            except (KeyError, ValueError, TypeError):
+                                continue
+
+                            address = item.get("address", {}) if isinstance(item.get("address"), dict) else {}
+                            country = address.get("country")
+                            city = address.get("city") or address.get("town") or address.get("village")
+                            state = address.get("state")
+                            raw_display = item.get("display_name", "")
+
+                            if country and country.lower() not in raw_display.lower():
+                                display_name = f"{raw_display}, {country}".strip(", ")
+                            else:
+                                display_name = raw_display or clean_query
+
+                            tz_name = get_timezone_from_coords(lat, lon)
+                            if tz_name:
+                                results.append({
+                                    "display_name": display_name,
+                                    "lat": lat,
+                                    "lon": lon,
+                                    "timezone": tz_name,
+                                    "city": city,
+                                    "state": state,
+                                    "country": country,
+                                })
+        except Exception as exc:
+            logger.warning(f"Worldwide Nominatim fallback failed for '{clean_query}': {exc}")
+
+    # 3. Fallback: Predefined PLACE_CONFIG check
+    if not results:
+        key = clean_query.lower()
+        if key in PLACE_CONFIG:
+            cfg = PLACE_CONFIG[key]
+            results.append({
+                "display_name": f"{clean_query.title()}, India",
+                "lat": cfg["lat"],
+                "lon": cfg["lon"],
+                "timezone": cfg["timezone"],
+                "city": clean_query.title(),
+                "state": None,
+                "country": "India",
+            })
+
+    if results:
+        # Cache results in memory
+        if len(_GEOCODE_CACHE) >= _CACHE_MAX_SIZE:
+            keys_to_evict = list(_GEOCODE_CACHE.keys())[:200]
+            for k in keys_to_evict:
+                _GEOCODE_CACHE.pop(k, None)
+        _GEOCODE_CACHE[cache_key] = results
+
+    return results
+
 
 def geocode_online(place: str) -> Optional[tuple[float, float, str]]:
-    """Query Nominatim API directly over the wire to get lat, lon and default to Asia/Kolkata timezone."""
-    import urllib.request
-    import urllib.parse
-    import json
-    
-    # 1. Search primarily in India
+    """Query location geocoding API to resolve latitude, longitude, and IANA timezone name."""
+    if not place or not place.strip():
+        return None
     try:
-        headers = {"User-Agent": "AstroReportGenerator/1.0"}
-        query = urllib.parse.quote(place)
-        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1&countrycodes=in"
-        req = urllib.request.Request(url, headers=headers)
-        
-        with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode())
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-                return lat, lon, "Asia/Kolkata"
-    except Exception:
-        pass
-        
-    # 2. Search globally as a fallback
-    try:
-        headers = {"User-Agent": "AstroReportGenerator/1.0"}
-        query = urllib.parse.quote(place)
-        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1"
-        req = urllib.request.Request(url, headers=headers)
-        
-        with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode())
-            if data:
-                lat = float(data[0]["lat"])
-                lon = float(data[0]["lon"])
-                return lat, lon, "Asia/Kolkata"
-    except Exception:
-        pass
-        
+        candidates = search_locations(place.strip(), limit=1)
+        if candidates:
+            first = candidates[0]
+            return float(first["lat"]), float(first["lon"]), str(first["timezone"])
+    except Exception as exc:
+        logger.warning(f"geocode_online failed for '{place}': {exc}")
     return None
 
 
 def resolve_location(
-    place: str,
+    place: Optional[str] = None,
     lat: Optional[float] = None,
     lon: Optional[float] = None,
-    tz: Optional[str] = None
+    tz: Optional[str] = None,
 ) -> Location:
+    """Resolve location to a Location dataclass containing latitude, longitude, and IANA timezone.
+    
+    Rules:
+    1. If lat & lon are provided:
+       - If tz is provided and valid, use it.
+       - Otherwise, determine tz from coordinates via timezonefinder.
+       - Do NOT silently assume Asia/Kolkata for international coordinates.
+    2. If coordinates are not provided:
+       - Check predefined PLACE_CONFIG.
+       - Otherwise, perform online geocoding lookup.
+       - If unresolved, raise ValueError.
+    """
     if lat is not None and lon is not None:
-        return Location(latitude=float(lat), longitude=float(lon), timezone=tz if tz else "Asia/Kolkata")
+        flat = float(lat)
+        flon = float(lon)
+        resolved_tz: Optional[str] = None
+        if tz and str(tz).strip():
+            candidate_tz = str(tz).strip()
+            try:
+                ZoneInfo(candidate_tz)
+                resolved_tz = candidate_tz
+            except Exception:
+                resolved_tz = None
+        if not resolved_tz:
+            resolved_tz = get_timezone_from_coords(flat, flon)
+        if not resolved_tz:
+            raise ValueError(
+                f"Unable to determine timezone for coordinates ({flat}, {flon}). "
+                "Please provide a valid IANA timezone."
+            )
+        return Location(latitude=flat, longitude=flon, timezone=resolved_tz)
 
-    key = place.strip().lower()
-    cfg = PLACE_CONFIG.get(key)
-    if cfg is not None:
-        return Location(latitude=cfg["lat"], longitude=cfg["lon"], timezone=cfg["timezone"])
+    if place and str(place).strip():
+        clean_place = str(place).strip()
+        key = clean_place.lower()
+        cfg = PLACE_CONFIG.get(key)
+        if cfg is not None:
+            return Location(latitude=cfg["lat"], longitude=cfg["lon"], timezone=cfg["timezone"])
 
-    # Fallback to dynamic online geocoding lookup
-    geo = geocode_online(place)
-    if geo is not None:
-        flat, flon, ftz = geo
-        return Location(latitude=flat, longitude=flon, timezone=ftz)
+        geo = geocode_online(clean_place)
+        if geo is not None:
+            flat, flon, ftz = geo
+            return Location(latitude=flat, longitude=flon, timezone=ftz)
 
-    raise ValueError(f"Unsupported place: '{place}'. Please select a valid location from the search autocomplete panel.")
+        raise ValueError(
+            f"Unsupported or unrecognized place: '{clean_place}'. "
+            "Please select a valid location from the search suggestions or provide latitude and longitude."
+        )
+
+    # Fallback to default Kolkata only when neither place nor coordinates are provided
+    return Location(latitude=22.5726, longitude=88.3639, timezone="Asia/Kolkata")
 
 
 def _normalize(lon: float) -> float:
