@@ -15,7 +15,7 @@ D:\My Projects\Astro_FreeLance\desktop_app\node_modules
 # Local Environment Variables
 backend/.env
 backend/.env.example
-
+.env
 # Test and verification scripts
 backend/scripts/test_storage.py
 backend/scripts/test_dynamic_location.py
@@ -32,3 +32,8 @@ Update & start.command
 Update.command
 .DS_Store
 Update  JibonJiggasa.command
+
+desktop_app/jibon-jiggasa@1.0.0
+desktop_app/electron
+backend/tests
+frontend/.env.local
