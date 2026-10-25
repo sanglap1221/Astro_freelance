@@ -850,6 +850,18 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     else:
         future_antardashas = flattened_antardashas[active_antardasha_index + 9:]
 
+    # Past Antardashas (completed periods), most recent first.
+    # Used ONLY to fill unused space in the Page 2 four-column ledger.
+    # future_antardashas is never truncated, reordered or removed by this block.
+    past_antardashas_all = list(reversed(flattened_antardashas[:active_antardasha_index]))
+
+    # Conservative capacity of the Page 2 four-column ledger (A4). Calibrated so
+    # older-person pages fill the available space without clipping; younger
+    # people whose future entries already fill the page get no past entries.
+    MAX_LEDGER_PERIODS = 52
+    remaining_slots = max(0, MAX_LEDGER_PERIODS - len(future_antardashas))
+    past_antardashas = past_antardashas_all[:remaining_slots]
+
     for row in current_antardashas:
         planet_major = row.get("major_lord", row.get("major_bn"))
         planet_lord = row.get("lord", row.get("lord_bn"))
@@ -864,6 +876,19 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         row["antardasha_bn"] = labels["planets"].get(planet_lord, planet_lord)
 
     for row in future_antardashas:
+        planet_major = row.get("major_lord", row.get("major_bn"))
+        planet_lord = row.get("lord", row.get("lord_bn"))
+        row["major_bn"] = labels["planet_abbr"].get(planet_major, planet_major)
+        row["lord_bn"] = labels["planet_abbr"].get(planet_lord, planet_lord)
+        row["start"] = to_local_digits(row["start_date"].strftime("%d-%m-%Y"), lang)
+        row["end"] = to_local_digits(row["end_date"].strftime("%d-%m-%Y"), lang)
+        row["dur_y"] = to_local_digits(str(row.get("dur_y", "")), lang) if row.get("dur_y") else to_local_digits(str(row.get("duration_years", "")), lang)
+        row["dur_m"] = to_local_digits(str(row.get("dur_m", "")), lang) if row.get("dur_m") else to_local_digits(str(row.get("duration_months", "")), lang)
+        row["dur_d"] = to_local_digits(str(row.get("dur_d", "")), lang) if row.get("dur_d") else to_local_digits(str(row.get("duration_days", "")), lang)
+        row["mahadasha_bn"] = labels["planets"].get(planet_major, planet_major)
+        row["antardasha_bn"] = labels["planets"].get(planet_lord, planet_lord)
+
+    for row in past_antardashas:
         planet_major = row.get("major_lord", row.get("major_bn"))
         planet_lord = row.get("lord", row.get("lord_bn"))
         row["major_bn"] = labels["planet_abbr"].get(planet_major, planet_major)
@@ -1087,6 +1112,7 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         "antardasha_display_rows": current_antardashas,
         "current_antardashas": current_antardashas,
         "future_antardashas": future_antardashas,
+        "past_antardashas": past_antardashas,
         "planet_coords": planet_coords,
         "remedies_list": remedies,
         "lagna_time_range": lagna_time_range,

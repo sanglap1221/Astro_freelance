@@ -1100,10 +1100,78 @@
               </div>
             </div>
             {% endfor %}
+
+            {# PAST ANTARDASHAS — appended only when ledger space remains #}
+            {% if past_antardashas %}
+            <div style="break-inside: avoid; margin-bottom: 4px;">
+              <div class="ledger-row"
+                style="color: #1a5276; font-weight: 900; font-size: 12px; height: 18px !important; line-height: 18px !important; border-top: 1.2px solid var(--border-color); padding-top: 2px;">
+                <span class="ledger-label" style="width: auto; color: #1a5276; border-bottom: none;">Past Antardashas</span>
+              </div>
+            </div>
+
+            {% for row in past_antardashas %}
+            {# Create a Mahadasha Header when starting a new major period #}
+            {% if row.mahadasha_bn != current_md.name %}
+            {% set current_md.name = row.mahadasha_bn %}
+            <div style="break-inside: avoid; margin-bottom: 3px;">
+              <div class="ledger-row" style="color: var(--brand-red); font-weight: 900; font-size: 11.5px; height: 18px !important; line-height: 18px !important;">
+                <span class="ledger-label"
+                  style="width: auto; color: var(--brand-red); border-bottom: 1.2px solid var(--brand-red);">
+                  {%- if lang == 'bn' -%}
+                  {%- if row.mahadasha_bn == 'রবি' -%}রবির
+                  {%- elif row.mahadasha_bn == 'চন্দ্র' -%}চন্দ্রের
+                  {%- elif row.mahadasha_bn == 'মঙ্গল' -%}মঙ্গলের
+                  {%- elif row.mahadasha_bn == 'বুধ' -%}বুধের
+                  {%- elif row.mahadasha_bn == 'বৃহস্পতি' -%}বৃহস্পতির
+                  {%- elif row.mahadasha_bn == 'শুক্র' -%}শুক্রের
+                  {%- elif row.mahadasha_bn == 'শনি' -%}শনির
+                  {%- elif row.mahadasha_bn == 'রাহু' -%}রাহুর
+                  {%- elif row.mahadasha_bn == 'কেতু' -%}কেতুর
+                  {%- else -%}{{ row.mahadasha_bn }}
+                  {%- endif -%}
+                  {%- else -%}
+                  {{ row.mahadasha_bn }}
+                  {%- endif %} {{ labels.mahadasha_title }}</span>
+              </div>
+              <div class="ledger-row" style="color: #27ae60; height: 15px !important; line-height: 15px !important;">
+                <span class="ledger-label" style="width: 40px;"></span>
+                <span class="ledger-math" style="font-size: 10.5px;">
+                  {{ to_bn_date_parts(row.start) }}
+                </span>
+              </div>
+            </div>
+            {% endif %}
+
+            <div style="break-inside: avoid; margin-bottom: 4px;">
+              <div class="ledger-row" style="height: 16px !important; line-height: 16px !important;">
+                <span class="ledger-label" style="width: 42px; font-size: 10.5px;"><span style="font-weight:700;">{{ row.major_bn }}/{{ row.lord_bn }}</span> -</span>
+                <span class="ledger-math" style="font-size: 10.5px;">
+                  <span class="math-part year" style="width: 22px;">{{ row.dur_y }}</span> —
+                  <span class="math-part month" style="width: 14px;">{{ row.dur_m }}</span> —
+                  <span class="math-part day" style="width: 14px;">{{ row.dur_d }}</span>
+                </span>
+              </div>
+              <div class="ledger-divider" style="width: 100%; margin: 1px 0;"></div>
+
+              {% set end_clean = row.end | string %}
+              {% set end_parts = end_clean.split('-') if '-' in end_clean else end_clean.split('/') %}
+              {% set end_year = end_parts[2]|int if end_parts|length == 3 else birth_year %}
+              {% set age_at_end = end_year - birth_year %}
+
+              <div class="ledger-row" style="font-weight: bold; color: #111; height: 16px !important; line-height: 16px !important;">
+                <span class="ledger-label" style="width: 42px;"></span>
+                <span class="ledger-math" style="font-size: 11px; flex-grow: 1;">
+                  {{ to_bn_date_parts(row.end) }}
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
           </div>
         </div>
       </div>
-      {% endif %}
+    {% endif %}
 
       <!-- 2. REMEDIES SECTION (pinned to bottom) -->
       <div class="remedy-section"
