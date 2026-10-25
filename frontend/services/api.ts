@@ -200,6 +200,8 @@ export interface PlaceSuggestion {
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  is_approximate?: boolean;
+  result_type?: string;
 }
 
 export async function searchPlaces(query: string, limit: number = 5): Promise<PlaceSuggestion[]> {

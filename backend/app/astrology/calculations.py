@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.error
 import json
 from zoneinfo import ZoneInfo
-from typing import Any, Optional
+from typing import Any, Optional, NamedTuple
 
 try:
     # pyrefly: ignore [missing-import]
@@ -472,6 +472,18 @@ class Location:
     latitude: float
     longitude: float
     timezone: str
+    is_approximate: bool = False
+    location_type: str = "city"
+    name: str = ""
+
+
+class GeocodeResult(NamedTuple):
+    lat: float
+    lon: float
+    timezone: str
+    is_approximate: bool = False
+    location_type: str = "city"
+    display_name: str = ""
 
 
 @dataclass(frozen=True)
@@ -682,6 +694,25 @@ def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
                             tz_name = get_timezone_from_coords(lat, lon)
 
                         if tz_name:
+                            result_type = str(item.get("result_type") or "").lower()
+                            is_approx = False
+                            if result_type in ("state", "administrative", "country", "region", "county", "province"):
+                                is_approx = True
+                            elif not city and (state or country):
+                                is_approx = True
+
+                            loc_type = "city"
+                            if result_type in ("state", "province"):
+                                loc_type = "state"
+                            elif result_type in ("country",):
+                                loc_type = "country"
+                            elif result_type in ("county", "region", "administrative"):
+                                loc_type = "region"
+                            elif not city and state:
+                                loc_type = "state"
+                            elif not city and country:
+                                loc_type = "country"
+
                             results.append({
                                 "display_name": display_name,
                                 "lat": lat,
@@ -690,6 +721,8 @@ def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
                                 "city": city,
                                 "state": state,
                                 "country": country,
+                                "is_approximate": is_approx,
+                                "result_type": loc_type,
                             })
         except urllib.error.HTTPError as exc:
             logger.warning(f"Geoapify API HTTP error {exc.code} for query '{clean_query}': {exc.reason}")
@@ -731,6 +764,28 @@ def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
 
                             tz_name = get_timezone_from_coords(lat, lon)
                             if tz_name:
+                                addresstype = str(item.get("addresstype") or item.get("type") or "").lower()
+                                osm_class = str(item.get("class") or "").lower()
+
+                                is_approx = False
+                                if addresstype in ("state", "country", "region", "administrative", "county", "province") or osm_class == "boundary":
+                                    if not city:
+                                        is_approx = True
+                                elif not city and (state or country):
+                                    is_approx = True
+
+                                loc_type = "city"
+                                if addresstype in ("state", "province"):
+                                    loc_type = "state"
+                                elif addresstype in ("country",):
+                                    loc_type = "country"
+                                elif addresstype in ("county", "region", "administrative"):
+                                    loc_type = "region"
+                                elif not city and state:
+                                    loc_type = "state"
+                                elif not city and country:
+                                    loc_type = "country"
+
                                 results.append({
                                     "display_name": display_name,
                                     "lat": lat,
@@ -739,6 +794,8 @@ def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
                                     "city": city,
                                     "state": state,
                                     "country": country,
+                                    "is_approximate": is_approx,
+                                    "result_type": loc_type,
                                 })
         except Exception as exc:
             logger.warning(f"Worldwide Nominatim fallback failed for '{clean_query}': {exc}")
@@ -756,6 +813,8 @@ def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
                 "city": clean_query.title(),
                 "state": None,
                 "country": "India",
+                "is_approximate": False,
+                "result_type": "city",
             })
 
     if results:
@@ -769,15 +828,22 @@ def search_locations(query: str, limit: int = 5) -> list[dict[str, Any]]:
     return results
 
 
-def geocode_online(place: str) -> Optional[tuple[float, float, str]]:
-    """Query location geocoding API to resolve latitude, longitude, and IANA timezone name."""
+def geocode_online(place: str) -> Optional[GeocodeResult]:
+    """Query location geocoding API to resolve latitude, longitude, IANA timezone name, and location precision."""
     if not place or not place.strip():
         return None
     try:
         candidates = search_locations(place.strip(), limit=1)
         if candidates:
             first = candidates[0]
-            return float(first["lat"]), float(first["lon"]), str(first["timezone"])
+            return GeocodeResult(
+                lat=float(first["lat"]),
+                lon=float(first["lon"]),
+                timezone=str(first["timezone"]),
+                is_approximate=bool(first.get("is_approximate", False)),
+                location_type=str(first.get("result_type", "city")),
+                display_name=str(first.get("display_name", "")),
+            )
     except Exception as exc:
         logger.warning(f"geocode_online failed for '{place}': {exc}")
     return None
@@ -788,6 +854,7 @@ def resolve_location(
     lat: Optional[float] = None,
     lon: Optional[float] = None,
     tz: Optional[str] = None,
+    allow_approximate: bool = False,
 ) -> Location:
     """Resolve location to a Location dataclass containing latitude, longitude, and IANA timezone.
     
@@ -796,10 +863,15 @@ def resolve_location(
        - If tz is provided and valid, use it.
        - Otherwise, determine tz from coordinates via timezonefinder.
        - Do NOT silently assume Asia/Kolkata for international coordinates.
+       - Return Location(latitude=flat, longitude=flon, timezone=resolved_tz, name=str(place or ""))
     2. If coordinates are not provided:
        - Check predefined PLACE_CONFIG.
        - Otherwise, perform online geocoding lookup.
        - If unresolved, raise ValueError.
+       - If resolved location is a state or broad administrative region and not allow_approximate,
+         raise ValueError requiring a specific city or town.
+    3. If neither coordinates nor place are provided:
+       - Raise ValueError (never silently fall back to Kolkata).
     """
     if lat is not None and lon is not None:
         flat = float(lat)
@@ -819,27 +891,54 @@ def resolve_location(
                 f"Unable to determine timezone for coordinates ({flat}, {flon}). "
                 "Please provide a valid IANA timezone."
             )
-        return Location(latitude=flat, longitude=flon, timezone=resolved_tz)
+        return Location(
+            latitude=flat,
+            longitude=flon,
+            timezone=resolved_tz,
+            is_approximate=False,
+            location_type="city",
+            name=str(place or ""),
+        )
 
     if place and str(place).strip():
         clean_place = str(place).strip()
         key = clean_place.lower()
         cfg = PLACE_CONFIG.get(key)
         if cfg is not None:
-            return Location(latitude=cfg["lat"], longitude=cfg["lon"], timezone=cfg["timezone"])
+            return Location(
+                latitude=cfg["lat"],
+                longitude=cfg["lon"],
+                timezone=cfg["timezone"],
+                is_approximate=False,
+                location_type="city",
+                name=clean_place,
+            )
 
         geo = geocode_online(clean_place)
         if geo is not None:
-            flat, flon, ftz = geo
-            return Location(latitude=flat, longitude=flon, timezone=ftz)
+            if geo.is_approximate and not allow_approximate:
+                raise ValueError(
+                    f"Location '{clean_place}' resolves to a {geo.location_type} or broad region rather than a specific city or town. "
+                    f"Accurate Lagna calculation requires a specific city or town (e.g., 'Lucknow, {clean_place}')."
+                )
+            return Location(
+                latitude=geo.lat,
+                longitude=geo.lon,
+                timezone=geo.timezone,
+                is_approximate=geo.is_approximate,
+                location_type=geo.location_type,
+                name=geo.display_name or clean_place,
+            )
 
         raise ValueError(
             f"Unsupported or unrecognized place: '{clean_place}'. "
             "Please select a valid location from the search suggestions or provide latitude and longitude."
         )
 
-    # Fallback to default Kolkata only when neither place nor coordinates are provided
-    return Location(latitude=22.5726, longitude=88.3639, timezone="Asia/Kolkata")
+    raise ValueError(
+        "Place or geographic coordinates must be provided. "
+        "Silent fallback to default coordinates is not allowed."
+    )
 
 
 def _normalize(lon: float) -> float:

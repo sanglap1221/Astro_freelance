@@ -81,3 +81,5 @@ class LocationSuggestion(BaseModel):
     city: str | None = None
     state: str | None = None
     country: str | None = None
+    is_approximate: bool = False
+    result_type: str = "city"

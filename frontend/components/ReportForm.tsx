@@ -17,23 +17,25 @@ interface LocationOption {
   lat: string | number;
   lon: string | number;
   timezone: string;
+  is_approximate?: boolean;
+  result_type?: string;
 }
 
 /* ─── Preset Locations ─── */
 const PRESET_LOCATIONS: LocationOption[] = [
-  { display_name: "Kolkata, West Bengal, India", lat: "22.5726", lon: "88.3639", timezone: "Asia/Kolkata" },
-  { display_name: "Howrah, West Bengal, India", lat: "22.5958", lon: "88.2636", timezone: "Asia/Kolkata" },
-  { display_name: "Bongaon, West Bengal, India", lat: "23.0434", lon: "88.8235", timezone: "Asia/Kolkata" },
-  { display_name: "Habra, West Bengal, India", lat: "22.8321", lon: "88.6315", timezone: "Asia/Kolkata" },
-  { display_name: "Barasat, West Bengal, India", lat: "22.7200", lon: "88.4801", timezone: "Asia/Kolkata" },
-  { display_name: "Barrackpore, West Bengal, India", lat: "22.7658", lon: "88.3784", timezone: "Asia/Kolkata" },
-  { display_name: "Durgapur, West Bengal, India", lat: "23.5204", lon: "87.3119", timezone: "Asia/Kolkata" },
-  { display_name: "Siliguri, West Bengal, India", lat: "26.7271", lon: "88.3953", timezone: "Asia/Kolkata" },
-  { display_name: "New Delhi, Delhi, India", lat: "28.6139", lon: "77.2090", timezone: "Asia/Kolkata" },
-  { display_name: "Mumbai, Maharashtra, India", lat: "19.0760", lon: "72.8777", timezone: "Asia/Kolkata" },
-  { display_name: "London, England, United Kingdom", lat: "51.5074", lon: "-0.1278", timezone: "Europe/London" },
-  { display_name: "New York, NY, United States", lat: "40.7128", lon: "-74.0060", timezone: "America/New_York" },
-  { display_name: "Sydney, NSW, Australia", lat: "-33.8688", lon: "151.2093", timezone: "Australia/Sydney" },
+  { display_name: "Kolkata, West Bengal, India", lat: "22.5726", lon: "88.3639", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Howrah, West Bengal, India", lat: "22.5958", lon: "88.2636", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Bongaon, West Bengal, India", lat: "23.0434", lon: "88.8235", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Habra, West Bengal, India", lat: "22.8321", lon: "88.6315", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Barasat, West Bengal, India", lat: "22.7200", lon: "88.4801", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Barrackpore, West Bengal, India", lat: "22.7658", lon: "88.3784", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Durgapur, West Bengal, India", lat: "23.5204", lon: "87.3119", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Siliguri, West Bengal, India", lat: "26.7271", lon: "88.3953", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "New Delhi, Delhi, India", lat: "28.6139", lon: "77.2090", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "Mumbai, Maharashtra, India", lat: "19.0760", lon: "72.8777", timezone: "Asia/Kolkata", is_approximate: false, result_type: "city" },
+  { display_name: "London, England, United Kingdom", lat: "51.5074", lon: "-0.1278", timezone: "Europe/London", is_approximate: false, result_type: "city" },
+  { display_name: "New York, NY, United States", lat: "40.7128", lon: "-74.0060", timezone: "America/New_York", is_approximate: false, result_type: "city" },
+  { display_name: "Sydney, NSW, Australia", lat: "-33.8688", lon: "151.2093", timezone: "Australia/Sydney", is_approximate: false, result_type: "city" },
 ];
 
 function updateField(
@@ -62,7 +64,29 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
   const [showingPresets, setShowingPresets] = useState(false);
 
   const handlePlaceChange = async (query: string) => {
-    updateField(value, onChange, "place", query);
+    // Check if typed place exactly matches a known preset
+    const exactPreset = PRESET_LOCATIONS.find(
+      (p) => p.display_name.toLowerCase() === query.trim().toLowerCase()
+    );
+
+    if (exactPreset) {
+      onChange({
+        ...value,
+        place: exactPreset.display_name,
+        latitude: typeof exactPreset.lat === "number" ? exactPreset.lat : parseFloat(String(exactPreset.lat)),
+        longitude: typeof exactPreset.lon === "number" ? exactPreset.lon : parseFloat(String(exactPreset.lon)),
+        timezone: exactPreset.timezone,
+      });
+    } else {
+      // Clear old coordinates immediately so previous coordinates are NEVER submitted with a newly typed place!
+      onChange({
+        ...value,
+        place: query,
+        latitude: undefined,
+        longitude: undefined,
+        timezone: undefined,
+      });
+    }
     
     if (query.trim().length < 3) {
       // Show filtered presets if user typed 1-2 chars
@@ -91,6 +115,8 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
           lat: item.lat,
           lon: item.lon,
           timezone: item.timezone,
+          is_approximate: item.is_approximate,
+          result_type: item.result_type,
         }))
       );
       setShowDropdown(data.length > 0);
@@ -120,8 +146,8 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
     onChange({
       ...value,
       place: sug.display_name,
-      latitude: typeof sug.lat === "number" ? sug.lat : parseFloat(sug.lat),
-      longitude: typeof sug.lon === "number" ? sug.lon : parseFloat(sug.lon),
+      latitude: typeof sug.lat === "number" ? sug.lat : parseFloat(String(sug.lat)),
+      longitude: typeof sug.lon === "number" ? sug.lon : parseFloat(String(sug.lon)),
       timezone: sug.timezone,
     });
     setShowDropdown(false);
@@ -130,6 +156,24 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!value.place || !value.place.trim()) {
+      return;
+    }
+    // If coordinates are still missing, check if it partially matches any preset
+    if (value.latitude === undefined || value.longitude === undefined) {
+      const match = PRESET_LOCATIONS.find((p) =>
+        p.display_name.toLowerCase().includes(value.place.trim().toLowerCase())
+      );
+      if (match) {
+        onChange({
+          ...value,
+          place: match.display_name,
+          latitude: typeof match.lat === "number" ? match.lat : parseFloat(String(match.lat)),
+          longitude: typeof match.lon === "number" ? match.lon : parseFloat(String(match.lon)),
+          timezone: match.timezone,
+        });
+      }
+    }
     onSubmit();
   }
 
@@ -248,6 +292,21 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
             </span>
           )}
         </div>
+        {value.place.trim().length > 0 && (
+          <div className="mt-0.5">
+            {value.latitude !== undefined && value.longitude !== undefined ? (
+              <div className="flex items-center gap-1.5 text-[0.6875rem] text-emerald-700 font-medium">
+                <i className="fa-solid fa-circle-check text-emerald-600"></i>
+                <span>Exact coordinates linked ({Number(value.latitude).toFixed(4)}, {Number(value.longitude).toFixed(4)}) &bull; {value.timezone}</span>
+              </div>
+            ) : value.place.trim().length >= 3 ? (
+              <div className="flex items-center gap-1.5 text-[0.6875rem] text-amber-700 font-medium">
+                <i className="fa-solid fa-circle-info text-amber-600"></i>
+                <span>Please select a specific city from the dropdown for exact Lagna calculation.</span>
+              </div>
+            ) : null}
+          </div>
+        )}
         {showDropdown && (
           <ul className="absolute z-50 left-0 right-0 top-[4.25rem] mt-1 max-h-60 overflow-auto rounded-xl border border-[#e3d0ab] bg-white py-1 shadow-xl text-slate-700 text-xs">
             {showingPresets && (
@@ -262,18 +321,33 @@ export function ReportForm({ value, loading = false, onChange, onSubmit }: Repor
                 className="cursor-pointer px-3 py-2 hover:bg-amber-50 transition-colors flex items-center justify-between gap-2 border-b border-[#f3e9d2] last:border-0"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {showingPresets && (
+                  {showingPresets ? (
                     <span className="text-amber-600 text-[0.6875rem] shrink-0">
                       <i className="fa-solid fa-location-dot"></i>
+                    </span>
+                  ) : sug.is_approximate ? (
+                    <span className="text-amber-600 text-[0.6875rem] shrink-0" title="State or broad region">
+                      <i className="fa-solid fa-triangle-exclamation"></i>
+                    </span>
+                  ) : (
+                    <span className="text-emerald-600 text-[0.6875rem] shrink-0">
+                      <i className="fa-solid fa-city"></i>
                     </span>
                   )}
                   <span className="font-medium truncate">{sug.display_name}</span>
                 </div>
-                {sug.timezone && (
-                  <span className="text-[0.625rem] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0 font-mono">
-                    {sug.timezone}
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {sug.is_approximate && (
+                    <span className="text-[0.625rem] text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded font-medium">
+                      {sug.result_type === "state" ? "State (pick city)" : "Broad Region"}
+                    </span>
+                  )}
+                  {sug.timezone && (
+                    <span className="text-[0.625rem] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono">
+                      {sug.timezone}
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

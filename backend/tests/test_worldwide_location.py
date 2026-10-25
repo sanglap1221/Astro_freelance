@@ -247,3 +247,146 @@ def test_geoapify_parsing_with_mock():
             assert item["timezone"] == "Europe/London"
             # Must ensure country is included in display_name
             assert "United Kingdom" in item["display_name"]
+            assert item["is_approximate"] is False
+            assert item["result_type"] == "city"
+
+
+def test_regression_kolkata_lucknow_varanasi_1989():
+    """Verify Kolkata, Lucknow, and Varanasi chart calculations and timeline intervals for 23 July 1989 at 09:30 AM IST.
+    
+    Astronomical Ground Truth (Lahiri Nirayana):
+    - Kolkata (88.36° E): Ascendant ~155.58° -> Kanya (5), Timeline [09:06 - 11:16]
+    - Lucknow (80.95° E): Ascendant ~148.98° -> Simha (4), Timeline [07:20 - 09:34]
+    - Varanasi (82.97° E): Ascendant ~150.73° -> Kanya (5), Timeline [09:27 - 11:39]
+    """
+    from app.astrology.lagna_table import get_daily_lagna_timeline, SIGN_TO_INDEX
+
+    dob = date(1989, 7, 23)
+    bt = time(9, 30)
+
+    test_cases = [
+        {
+            "name": "Kolkata",
+            "lat": 22.5726,
+            "lon": 88.3639,
+            "expected_sign": "Kanya",
+            "expected_sign_index": 5,
+            "expected_start": "09:06",
+            "expected_end": "11:16",
+        },
+        {
+            "name": "Lucknow",
+            "lat": 26.8467,
+            "lon": 80.9462,
+            "expected_sign": "Simha",
+            "expected_sign_index": 4,
+            "expected_start": "07:20",
+            "expected_end": "09:34",
+        },
+        {
+            "name": "Varanasi",
+            "lat": 25.3176,
+            "lon": 82.9739,
+            "expected_sign": "Kanya",
+            "expected_sign_index": 5,
+            "expected_start": "09:27",
+            "expected_end": "11:39",
+        },
+    ]
+
+    for tc in test_cases:
+        loc = resolve_location(place=tc["name"], lat=tc["lat"], lon=tc["lon"])
+        assert loc.timezone == "Asia/Kolkata"
+        assert loc.latitude == pytest.approx(tc["lat"], abs=0.0001)
+        assert loc.longitude == pytest.approx(tc["lon"], abs=0.0001)
+
+        # 1. Chart calculation
+        chart = calculate_chart(
+            dob=dob,
+            birth_time=bt,
+            place=tc["name"],
+            latitude=loc.latitude,
+            longitude=loc.longitude,
+            timezone=loc.timezone,
+        )
+
+        assert chart.lagna_sign == tc["expected_sign"], (
+            f"{tc['name']}: expected {tc['expected_sign']}, got {chart.lagna_sign}"
+        )
+        assert chart.lagna_sign_index == tc["expected_sign_index"]
+
+        # 2. Timeline calculation using the exact same coordinates and date
+        tl = get_daily_lagna_timeline(
+            "Sravana",
+            7,
+            use_sidereal=True,
+            dob=dob,
+            lat=loc.latitude,
+            lon=loc.longitude,
+            timezone_name=loc.timezone,
+        )
+
+        # 3. Verify timeline interval matches chart Lagna
+        matching_interval = None
+        for item in tl:
+            s_idx = SIGN_TO_INDEX.get(item["name_en"])
+            if s_idx == chart.lagna_sign_index:
+                matching_interval = item
+                break
+
+        assert matching_interval is not None, f"No timeline interval found for {tc['name']} Lagna"
+        assert matching_interval["name_en"] == tc["expected_sign"]
+        assert matching_interval["start"] == tc["expected_start"], (
+            f"{tc['name']}: expected start {tc['expected_start']}, got {matching_interval['start']}"
+        )
+        assert matching_interval["end"] == tc["expected_end"], (
+            f"{tc['name']}: expected end {tc['expected_end']}, got {matching_interval['end']}"
+        )
+
+        # 4. Verify 09:30 AM is strictly inside [start, end]
+        bt_minutes = 9 * 60 + 30
+        sh, sm = map(int, matching_interval["start"].split(":"))
+        eh, em = map(int, matching_interval["end"].split(":"))
+        start_min = sh * 60 + sm
+        end_min = eh * 60 + em
+        assert start_min <= bt_minutes <= end_min, (
+            f"Birth time 09:30 ({bt_minutes}m) outside interval [{start_min}m, {end_min}m] for {tc['name']}"
+        )
+
+
+def test_state_centroid_resolution_rejected():
+    """Ensure broad state/region searches are NOT silently resolved to centroid coordinates without warning."""
+    # Searching for Uttar Pradesh without coordinates must raise ValueError
+    with pytest.raises(ValueError, match="resolves to a state or broad region"):
+        resolve_location(place="Uttar Pradesh, India")
+
+    with pytest.raises(ValueError, match="resolves to a state or broad region"):
+        resolve_location(place="California, USA")
+
+    # If explicitly allowed with allow_approximate=True, it should mark is_approximate=True
+    loc_approx = resolve_location(place="Uttar Pradesh, India", allow_approximate=True)
+    assert loc_approx.is_approximate is True
+    assert loc_approx.location_type in ("state", "region")
+
+
+def test_empty_location_rejected():
+    """Ensure resolve_location raises ValueError when neither place nor coordinates are provided."""
+    with pytest.raises(ValueError, match="Place or geographic coordinates must be provided"):
+        resolve_location()
+
+    with pytest.raises(ValueError, match="Place or geographic coordinates must be provided"):
+        resolve_location(place="", lat=None, lon=None)
+
+
+def test_search_locations_includes_precision_metadata():
+    """Ensure search_locations marks states as approximate and cities as non-approximate."""
+    state_results = search_locations("Uttar Pradesh, India", limit=1)
+    if state_results:
+        assert state_results[0]["is_approximate"] is True
+        assert state_results[0]["result_type"] in ("state", "region")
+
+    city_results = search_locations("Lucknow, Uttar Pradesh, India", limit=1)
+    if city_results:
+        assert city_results[0]["is_approximate"] is False
+        assert city_results[0]["result_type"] == "city"
+

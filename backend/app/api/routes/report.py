@@ -94,6 +94,8 @@ def search_places_endpoint(q: str = "", limit: int = 5) -> list[LocationSuggesti
                 city=item.get("city"),
                 state=item.get("state"),
                 country=item.get("country"),
+                is_approximate=bool(item.get("is_approximate", False)),
+                result_type=str(item.get("result_type", "city")),
             )
             for item in results
         ]
