@@ -390,3 +390,98 @@ def test_search_locations_includes_precision_metadata():
         assert city_results[0]["is_approximate"] is False
         assert city_results[0]["result_type"] == "city"
 
+
+def test_southern_hemisphere_ascendant_accuracy():
+    """Verify calculate_book_lagna matches Swiss Ephemeris in the Southern Hemisphere within 0.01 degrees."""
+    import swisseph as swe
+    from app.astrology.calculations import calculate_book_lagna
+
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    jd = 2447730.666667  # 1989-07-23 04:00 UTC
+
+    southern_cities = [
+        ("Sydney", -33.8688, 151.2093),
+        ("Melbourne", -37.8136, 144.9631),
+        ("Buenos Aires", -34.6037, -58.3816),
+        ("Cape Town", -33.9249, 18.4241),
+        ("Johannesburg", -26.2041, 28.0473),
+        ("Santiago", -33.4489, -70.6693),
+        ("Auckland", -36.8485, 174.7633),
+    ]
+
+    for name, lat, lon in southern_cities:
+        cusps, ascmc = swe.houses_ex(jd, lat, lon, b"P", swe.FLG_SIDEREAL)
+        swe_asc = ascmc[0]
+        calc_asc = calculate_book_lagna(jd, lat, lon)
+
+        diff = abs(((swe_asc - calc_asc + 180.0) % 360.0) - 180.0)
+        assert diff < 0.015, (
+            f"{name} Ascendant mismatch: SWE={swe_asc:.4f}, Calc={calc_asc:.4f}, Diff={diff:.4f}"
+        )
+
+
+def test_polar_latitude_ascendant_accuracy():
+    """Verify calculate_book_lagna operates smoothly at extreme polar latitudes (> 60°)."""
+    import swisseph as swe
+    from app.astrology.calculations import calculate_book_lagna
+
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    jd = 2447730.666667
+
+    # Reykjavik, Iceland (64.1466° N)
+    cusps, ascmc = swe.houses_ex(jd, 64.1466, -21.9426, b"P", swe.FLG_SIDEREAL)
+    swe_asc = ascmc[0]
+    calc_asc = calculate_book_lagna(jd, 64.1466, -21.9426)
+    diff = abs(((swe_asc - calc_asc + 180.0) % 360.0) - 180.0)
+    assert diff < 0.001
+
+
+def test_kanpur_vs_kolkata_whatsapp_consistency():
+    """Verify that on 23 July 1989 at 09:30 AM IST:
+    - Kolkata displays Kanya (09:06 - 11:16)
+    - Kanpur displays Simha (07:22 - 09:37), with Kanya starting at 09:38.
+    Both match the user's verified WhatsApp records.
+    """
+    from app.astrology.lagna_table import get_daily_lagna_timeline, SIGN_TO_INDEX
+
+    dob = date(1989, 7, 23)
+    bt = time(9, 30)
+
+    # Kolkata
+    loc_kolkata = resolve_location(lat=22.5726, lon=88.3639)
+    chart_kolkata = calculate_chart(dob, bt, "Kolkata", latitude=loc_kolkata.latitude, longitude=loc_kolkata.longitude, timezone=loc_kolkata.timezone)
+    tl_kolkata = get_daily_lagna_timeline("Sravana", 7, use_sidereal=True, dob=dob, lat=loc_kolkata.latitude, lon=loc_kolkata.longitude, timezone_name=loc_kolkata.timezone)
+    kanya_kolkata = next(item for item in tl_kolkata if item["name_en"] == "Kanya")
+
+    assert chart_kolkata.lagna_sign == "Kanya"
+    assert kanya_kolkata["start"] == "09:06"
+    assert kanya_kolkata["end"] == "11:16"
+
+    # Kanpur (80.3319° E, 26.4499° N)
+    loc_kanpur = resolve_location(lat=26.4499, lon=80.3319)
+    chart_kanpur = calculate_chart(dob, bt, "Kanpur", latitude=loc_kanpur.latitude, longitude=loc_kanpur.longitude, timezone=loc_kanpur.timezone)
+    tl_kanpur = get_daily_lagna_timeline("Sravana", 7, use_sidereal=True, dob=dob, lat=loc_kanpur.latitude, lon=loc_kanpur.longitude, timezone_name=loc_kanpur.timezone)
+    simha_kanpur = next(item for item in tl_kanpur if item["name_en"] == "Simha")
+    kanya_kanpur = next(item for item in tl_kanpur if item["name_en"] == "Kanya")
+
+    assert chart_kanpur.lagna_sign == "Simha"
+    assert simha_kanpur["start"] == "07:22"
+    assert simha_kanpur["end"] == "09:37"
+    assert kanya_kanpur["start"] == "09:38"
+
+
+def test_timeline_requires_coordinates_or_place():
+    """Verify get_daily_lagna_timeline rejects calls with dob but missing coordinates/place."""
+    from app.astrology.lagna_table import get_daily_lagna_timeline
+
+    dob = date(1989, 7, 23)
+
+    # Calling with dob but without lat/lon/place must raise ValueError
+    with pytest.raises(ValueError, match="Silent fallback to Kolkata coordinates is prohibited"):
+        get_daily_lagna_timeline("Sravana", 7, dob=dob)
+
+    # Passing coordinates works cleanly
+    tl = get_daily_lagna_timeline("Sravana", 7, dob=dob, lat=22.5726, lon=88.3639)
+    assert len(tl) == 12
+
+

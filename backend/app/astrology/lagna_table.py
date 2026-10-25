@@ -149,7 +149,7 @@ def calculate_dynamic_lagna_starts(
     lat: float, 
     lon: float, 
     is_sidereal: bool = True,
-    timezone_name: str = "Asia/Kolkata"
+    timezone_name: Optional[str] = None
 ) -> dict[str, str]:
     """
     Calculate the starting time (HH:MM) of each Lagna sign during the day.
@@ -160,12 +160,24 @@ def calculate_dynamic_lagna_starts(
     import swisseph as swe
     from zoneinfo import ZoneInfo
     from datetime import datetime, timedelta
-    from app.astrology.calculations import ZODIAC_SIGNS, calculate_book_lagna, _sign_index
+    from app.astrology.calculations import ZODIAC_SIGNS, calculate_book_lagna, _sign_index, get_timezone_from_coords
     
-    try:
-        tz = ZoneInfo(timezone_name)
-    except Exception:
-        tz = ZoneInfo("Asia/Kolkata")
+    tz = None
+    if timezone_name and str(timezone_name).strip():
+        try:
+            tz = ZoneInfo(str(timezone_name).strip())
+        except Exception:
+            tz = None
+            
+    if tz is None:
+        resolved_tz_str = get_timezone_from_coords(lat, lon)
+        if resolved_tz_str:
+            tz = ZoneInfo(resolved_tz_str)
+        else:
+            raise ValueError(
+                f"Unable to determine timezone for coordinates ({lat}, {lon}). "
+                "Please provide a valid IANA timezone."
+            )
         
     start_dt = datetime.combine(dob, datetime.min.time(), tzinfo=tz)
     
@@ -223,10 +235,11 @@ def get_daily_lagna_timeline(
     month_name: str,
     day_num: int,
     use_sidereal: bool = True,
-    dob: date = None,
-    lat: float = 22.5726,
-    lon: float = 88.3639,
-    timezone_name: str = "Asia/Kolkata"
+    dob: Optional[date] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+    timezone_name: Optional[str] = None,
+    place: Optional[str] = None,
 ) -> list[dict]:
     """
     Returns the daily Lagna timeline with consistent, non-overlapping intervals.
@@ -235,15 +248,45 @@ def get_daily_lagna_timeline(
     consistently returns that sign when evaluated by calculate_chart().
     """
     from app.astrology.bengali_date import BENGALI_MONTHS_EN
+    from app.astrology.calculations import resolve_location, get_timezone_from_coords
     
     starts_dict = {}
+    resolved_lat = None
+    resolved_lon = None
+    resolved_tz = None
     
-    # When dob is provided, compute dynamically using the exact unified calculation
+    # When dob is provided, compute dynamically using the exact coordinates
     # to guarantee 100% chart and timeline alignment for that date.
     if dob is not None:
-        starts_dict = calculate_dynamic_lagna_starts(dob, lat, lon, use_sidereal, timezone_name)
+        if lat is not None and lon is not None:
+            resolved_lat = float(lat)
+            resolved_lon = float(lon)
+            if timezone_name and str(timezone_name).strip():
+                resolved_tz = str(timezone_name).strip()
+            else:
+                resolved_tz = get_timezone_from_coords(resolved_lat, resolved_lon)
+                if not resolved_tz:
+                    raise ValueError(
+                        f"Unable to determine timezone for coordinates ({resolved_lat}, {resolved_lon}). "
+                        "Please provide a valid IANA timezone."
+                    )
+        elif place and str(place).strip():
+            loc = resolve_location(place=place, lat=lat, lon=lon, tz=timezone_name)
+            resolved_lat = loc.latitude
+            resolved_lon = loc.longitude
+            resolved_tz = loc.timezone
+        else:
+            raise ValueError(
+                "Latitude and longitude (or a specific place) must be explicitly provided "
+                "when computing daily lagna timeline for a birth date. "
+                "Silent fallback to Kolkata coordinates is prohibited."
+            )
+
+        starts_dict = calculate_dynamic_lagna_starts(
+            dob, resolved_lat, resolved_lon, use_sidereal, resolved_tz
+        )
     else:
-        # Fall back to static table if no dob provided
+        # Fall back to static table if no dob provided (reference table for Kolkata)
         table = load_lagna_table()
         month_data = table.get(month_name, {})
         day_data = month_data.get(str(day_num), {})
@@ -270,9 +313,11 @@ def get_daily_lagna_timeline(
         else:
             # Wrap around to the start of the next day
             next_starts = {}
-            if dob is not None:
+            if dob is not None and resolved_lat is not None and resolved_lon is not None:
                 from datetime import timedelta
-                next_starts = calculate_dynamic_lagna_starts(dob + timedelta(days=1), lat, lon, use_sidereal, timezone_name)
+                next_starts = calculate_dynamic_lagna_starts(
+                    dob + timedelta(days=1), resolved_lat, resolved_lon, use_sidereal, resolved_tz
+                )
             else:
                 table = load_lagna_table()
                 month_data = table.get(month_name, {})

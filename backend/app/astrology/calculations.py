@@ -1129,29 +1129,44 @@ def _lookup_time_table_value(table: dict[str, float], target_minutes: float) -> 
 
 
 def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
-    """Calculate Lagna safely using absolute astronomical Julian Day.
+    """Calculate Lagna safely using absolute astronomical Julian Day and Table of Ascendants.
 
-    Accepts the pre-computed Julian Day directly instead of a datetime,
-    avoiding timezone/date-shift bugs that occur when extracting .day
-    from a shifted UTC datetime object.
+    Supports worldwide locations across both Northern and Southern hemispheres:
+    - Northern hemisphere (0° <= lat <= 60°): standard Table of Ascendants lookup.
+    - Southern hemisphere (-60° <= lat < 0°): classic Table of Ascendants inversion rule
+      (Local Sidereal Time + 12h, Table at abs(latitude), Ascendant + 180°).
+    - Polar latitudes (|lat| > 60°): direct Swiss Ephemeris sidereal house calculation.
     """
-    # Pure sidereal-time approximation from Julian Day; avoids relying on Swiss houses.
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+
+    # For polar latitudes beyond table limits (60°), use Swiss Ephemeris direct sidereal houses
+    if abs(latitude) > 60.0:
+        cusps, ascmc = swe.houses_ex(jd, latitude, longitude, b"P", swe.FLG_SIDEREAL)
+        return ascmc[0] % 360.0
+
     t = (jd - 2451545.0) / 36525.0
     gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * (t ** 2) - (t ** 3) / 38710000.0
     lst_hours = ((gmst % 360.0) / 15.0 + longitude / 15.0) % 24.0
 
+    is_south = (latitude < 0.0)
     lat_abs = min(60.0, max(0.0, abs(latitude)))
     lower_lat = int(lat_abs)
     upper_lat = min(60, lower_lat + 1)
     lat_fraction = lat_abs - lower_lat
 
+    # Southern hemisphere inversion rule: add 12 hours (180°) to LST
+    table_lst = (lst_hours + 12.0) % 24.0 if is_south else lst_hours
+
     lower_table = _load_ascendant_table(lower_lat)
     upper_table = _load_ascendant_table(upper_lat)
-    lower_value = _lookup_time_table_value(lower_table, lst_hours * 60.0)
-    upper_value = _lookup_time_table_value(upper_table, lst_hours * 60.0)
+    lower_value = _lookup_time_table_value(lower_table, table_lst * 60.0)
+    upper_value = _lookup_time_table_value(upper_table, table_lst * 60.0)
 
     val = interpolate_angle(lower_value, upper_value, lat_fraction)
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    # Southern hemisphere inversion rule: add 180° to resulting tropical Ascendant
+    if is_south:
+        val = (val + 180.0) % 360.0
+
     ayanamsa = swe.get_ayanamsa_ut(jd)
     return (val - ayanamsa) % 360.0
 
