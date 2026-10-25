@@ -1072,13 +1072,17 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
         timezone_name=loc.timezone
     )
     
+    def format_time_dot(t_str: str) -> str:
+        parts = t_str.strip().split()
+        time_part = parts[0]
+        suffix = (" " + " ".join(parts[1:])) if len(parts) > 1 else ""
+        h, m = time_part.split(":")
+        return f"{int(h)}.{m}{suffix}"
+
     lagna_time_range = ""
     for item in raw_timeline:
         sign_idx = SIGN_TO_INDEX.get(item["name_en"], 0)
         if sign_idx == chart.lagna_sign_index:
-            def format_time_dot(t_str: str) -> str:
-                h, m = t_str.split(":")
-                return f"{int(h)}.{m}"
             start_local = to_local_digits(format_time_dot(item["start"]), lang)
             end_local = to_local_digits(format_time_dot(item["end"]), lang)
             lagna_time_range = f"{start_local} - {end_local}"

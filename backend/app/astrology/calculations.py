@@ -873,19 +873,19 @@ def resolve_location(
     3. If neither coordinates nor place are provided:
        - Raise ValueError (never silently fall back to Kolkata).
     """
+    validated_tz: Optional[str] = None
+    if tz is not None and str(tz).strip():
+        candidate_tz = str(tz).strip()
+        try:
+            ZoneInfo(candidate_tz)
+            validated_tz = candidate_tz
+        except Exception as exc:
+            raise ValueError(f"Invalid IANA timezone '{candidate_tz}': {exc}") from exc
+
     if lat is not None and lon is not None:
         flat = float(lat)
         flon = float(lon)
-        resolved_tz: Optional[str] = None
-        if tz and str(tz).strip():
-            candidate_tz = str(tz).strip()
-            try:
-                ZoneInfo(candidate_tz)
-                resolved_tz = candidate_tz
-            except Exception:
-                resolved_tz = None
-        if not resolved_tz:
-            resolved_tz = get_timezone_from_coords(flat, flon)
+        resolved_tz = validated_tz or get_timezone_from_coords(flat, flon)
         if not resolved_tz:
             raise ValueError(
                 f"Unable to determine timezone for coordinates ({flat}, {flon}). "
@@ -908,7 +908,7 @@ def resolve_location(
             return Location(
                 latitude=cfg["lat"],
                 longitude=cfg["lon"],
-                timezone=cfg["timezone"],
+                timezone=validated_tz or cfg["timezone"],
                 is_approximate=False,
                 location_type="city",
                 name=clean_place,
@@ -1071,40 +1071,49 @@ def interpolate_angle(a1: float, a2: float, frac: float) -> float:
     return (a1 + diff * frac) % 360.0
 
 
-def _load_ascendant_table(latitude_index: int) -> dict[str, float]:
+def _is_valid_ascendant_table(table: Any) -> bool:
+    """Validate that table is a non-empty mapping with sufficient entries for interpolation."""
+    if not isinstance(table, dict) or len(table) < 50:
+        return False
+    sample_val = next(iter(table.values()), None)
+    return isinstance(sample_val, (int, float)) and 0.0 <= sample_val <= 360.0
+
+
+def _load_ascendant_table(latitude_index: int) -> Optional[dict[str, float]]:
     latitude_index = max(0, min(60, int(latitude_index)))
     cached = _ASCENDANT_TABLE_CACHE.get(latitude_index)
     if cached is not None:
-        return cached
+        return cached if _is_valid_ascendant_table(cached) else None
 
     import json
     from pathlib import Path
 
     table_path = Path(__file__).parent / "data" / "ascendant_tables" / f"{latitude_index}.json"
     if not table_path.exists():
-        _ASCENDANT_TABLE_CACHE[latitude_index] = {}
-        return _ASCENDANT_TABLE_CACHE[latitude_index]
+        return None
 
     try:
         with open(table_path, "r", encoding="utf-8") as handle:
             data = json.load(handle)
-    except Exception:
-        data = {}
+        if _is_valid_ascendant_table(data):
+            _ASCENDANT_TABLE_CACHE[latitude_index] = data
+            return data
+    except Exception as exc:
+        logger.warning(f"Failed to load ascendant table for latitude {latitude_index}: {exc}")
 
-    _ASCENDANT_TABLE_CACHE[latitude_index] = data
-    return data
+    return None
 
 
-def _lookup_time_table_value(table: dict[str, float], target_minutes: float) -> float:
-    if not table:
-        return 0.0
+def _lookup_time_table_value(table: Optional[dict[str, float]], target_minutes: float) -> Optional[float]:
+    if not _is_valid_ascendant_table(table):
+        return None
 
     entries = sorted(
         ((int(h), int(m), int(s), float(value)) for key, value in table.items() for h, m, s in [tuple(int(part) for part in key.split(":"))]),
         key=lambda item: (item[0], item[1], item[2]),
     )
     if not entries:
-        return 0.0
+        return None
 
     target_minutes = target_minutes % (24.0 * 60.0)
     target_seconds = target_minutes * 60.0
@@ -1135,7 +1144,7 @@ def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
     - Northern hemisphere (0° <= lat <= 60°): standard Table of Ascendants lookup.
     - Southern hemisphere (-60° <= lat < 0°): classic Table of Ascendants inversion rule
       (Local Sidereal Time + 12h, Table at abs(latitude), Ascendant + 180°).
-    - Polar latitudes (|lat| > 60°): direct Swiss Ephemeris sidereal house calculation.
+    - Polar latitudes (|lat| > 60°) or missing/corrupted tables: direct Swiss Ephemeris sidereal calculation.
     """
     swe.set_sid_mode(swe.SIDM_LAHIRI)
 
@@ -1159,8 +1168,18 @@ def calculate_book_lagna(jd: float, latitude: float, longitude: float) -> float:
 
     lower_table = _load_ascendant_table(lower_lat)
     upper_table = _load_ascendant_table(upper_lat)
+
     lower_value = _lookup_time_table_value(lower_table, table_lst * 60.0)
     upper_value = _lookup_time_table_value(upper_table, table_lst * 60.0)
+
+    # If any required table is missing or invalid, calculate using Swiss Ephemeris directly
+    if lower_value is None or upper_value is None:
+        logger.warning(
+            f"Ascendant table data unavailable for latitude {lower_lat} or {upper_lat}. "
+            "Falling back to direct Swiss Ephemeris sidereal houses."
+        )
+        cusps, ascmc = swe.houses_ex(jd, latitude, longitude, b"P", swe.FLG_SIDEREAL)
+        return ascmc[0] % 360.0
 
     val = interpolate_angle(lower_value, upper_value, lat_fraction)
     # Southern hemisphere inversion rule: add 180° to resulting tropical Ascendant

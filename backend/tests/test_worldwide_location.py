@@ -485,3 +485,190 @@ def test_timeline_requires_coordinates_or_place():
     assert len(tl) == 12
 
 
+def test_kolkata_kanpur_exact_degree_and_timeline_agreement():
+    """Verify exact Lahiri Sidereal Ascendant degree and timeline boundaries on 23 July 1989 at 09:30 AM IST.
+
+    Astronomical Reference (Swiss Ephemeris with Lahiri sidereal mode):
+    - Kolkata (22.5726° N, 88.3639° E): Ascendant ~ 155.584° (Virgo / Kanya)
+      Timeline interval: Kanya [09:06 - 11:16], containing 09:30 AM.
+    - Kanpur (26.4499° N, 80.3319° E): Ascendant ~ 148.407° (Leo / Simha)
+      Timeline interval: Simha [07:22 - 09:37], containing 09:30 AM; Kanya begins at 09:38.
+    """
+    import swisseph as swe
+    from app.astrology.lagna_table import get_daily_lagna_timeline
+
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    dob = date(1989, 7, 23)
+    bt = time(9, 30)
+
+    # 1. Kolkata
+    loc_kolkata = resolve_location(lat=22.5726, lon=88.3639)
+    chart_kolkata = calculate_chart(
+        dob, bt, "Kolkata",
+        latitude=loc_kolkata.latitude,
+        longitude=loc_kolkata.longitude,
+        timezone=loc_kolkata.timezone,
+    )
+    # Swiss Ephemeris ground truth for Kolkata
+    cusps_kolkata, ascmc_kolkata = swe.houses_ex(chart_kolkata.julian_day, 22.5726, 88.3639, b"P", swe.FLG_SIDEREAL)
+    swe_asc_kolkata = ascmc_kolkata[0] % 360.0
+
+    assert chart_kolkata.lagna_sign == "Kanya"
+    assert chart_kolkata.ascendant_longitude == pytest.approx(155.584, abs=0.05)
+    assert chart_kolkata.ascendant_longitude == pytest.approx(swe_asc_kolkata, abs=0.02)
+
+    tl_kolkata = get_daily_lagna_timeline("Sravana", 7, use_sidereal=True, dob=dob, lat=loc_kolkata.latitude, lon=loc_kolkata.longitude, timezone_name=loc_kolkata.timezone)
+    kanya_item = next(item for item in tl_kolkata if item["name_en"] == "Kanya")
+    assert kanya_item["start"] == "09:06"
+    assert kanya_item["end"] == "11:16"
+
+    # 2. Kanpur
+    loc_kanpur = resolve_location(lat=26.4499, lon=80.3319)
+    chart_kanpur = calculate_chart(
+        dob, bt, "Kanpur",
+        latitude=loc_kanpur.latitude,
+        longitude=loc_kanpur.longitude,
+        timezone=loc_kanpur.timezone,
+    )
+    # Swiss Ephemeris ground truth for Kanpur
+    cusps_kanpur, ascmc_kanpur = swe.houses_ex(chart_kanpur.julian_day, 26.4499, 80.3319, b"P", swe.FLG_SIDEREAL)
+    swe_asc_kanpur = ascmc_kanpur[0] % 360.0
+
+    assert chart_kanpur.lagna_sign == "Simha"
+    assert chart_kanpur.ascendant_longitude == pytest.approx(148.407, abs=0.05)
+    assert chart_kanpur.ascendant_longitude == pytest.approx(swe_asc_kanpur, abs=0.02)
+
+    tl_kanpur = get_daily_lagna_timeline("Sravana", 7, use_sidereal=True, dob=dob, lat=loc_kanpur.latitude, lon=loc_kanpur.longitude, timezone_name=loc_kanpur.timezone)
+    simha_item = next(item for item in tl_kanpur if item["name_en"] == "Simha")
+    kanya_item_kanpur = next(item for item in tl_kanpur if item["name_en"] == "Kanya")
+    assert simha_item["start"] == "07:22"
+    assert simha_item["end"] == "09:37"
+    assert kanya_item_kanpur["start"] == "09:38"
+
+    # Direct agreement: birth time 09:30 AM must be within matching timeline interval
+    bt_min = 9 * 60 + 30
+    assert 9 * 60 + 6 <= bt_min <= 11 * 60 + 16  # Kolkata Virgo
+    assert 7 * 60 + 22 <= bt_min <= 9 * 60 + 37  # Kanpur Leo
+
+
+def test_missing_or_corrupted_ascendant_table_fallback():
+    """Verify that absent or corrupted ascendant tables trigger Swiss Ephemeris direct fallback and never return 0.0."""
+    import swisseph as swe
+    from app.astrology.calculations import (
+        calculate_book_lagna,
+        _is_valid_ascendant_table,
+        calculate_chart,
+    )
+
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    jd = 2447730.666667
+    lat = 22.5726
+    lon = 88.3639
+
+    # 1. Validation function tests
+    assert _is_valid_ascendant_table(None) is False
+    assert _is_valid_ascendant_table({}) is False
+    assert _is_valid_ascendant_table("invalid") is False
+    assert _is_valid_ascendant_table({str(i): float(i) for i in range(10)}) is False  # < 50 entries
+    assert _is_valid_ascendant_table({"00:00:00": "string_value"}) is False
+
+    # 2. Simulate missing table by mocking _load_ascendant_table to return None
+    with patch("app.astrology.calculations._load_ascendant_table", return_value=None):
+        calc_asc = calculate_book_lagna(jd, lat, lon)
+        assert calc_asc != 0.0
+        # Must match Swiss Ephemeris direct Lahiri sidereal houses
+        cusps, ascmc = swe.houses_ex(jd, lat, lon, b"P", swe.FLG_SIDEREAL)
+        swe_asc = ascmc[0] % 360.0
+        diff = abs(((swe_asc - calc_asc + 180.0) % 360.0) - 180.0)
+        assert diff < 0.001, f"Fallback did not match Swiss Ephemeris: diff={diff}"
+
+        # Deployed calculate_chart must safely complete without error and return correct Lagna
+        chart = calculate_chart(
+            dob=date(1989, 7, 23),
+            birth_time=time(9, 30),
+            place="Kolkata",
+            latitude=lat,
+            longitude=lon,
+            timezone="Asia/Kolkata",
+        )
+        assert chart.lagna_sign == "Kanya"
+        assert chart.ascendant_longitude > 0.0
+
+
+def test_dst_spring_forward_and_autumn_fallback_timelines():
+    """Verify 23-hour and 25-hour days around daylight-saving changes."""
+    from app.astrology.lagna_table import get_daily_lagna_timeline, calculate_dynamic_lagna_starts
+
+    # 1. London Spring-Forward: 31 March 2024 (23-hour day, clocks jump 01:00 -> 02:00)
+    spring_starts = calculate_dynamic_lagna_starts(
+        dob=date(2024, 3, 31),
+        lat=51.5074,
+        lon=-0.1278,
+        is_sidereal=True,
+        timezone_name="Europe/London",
+    )
+    assert len(spring_starts) == 12
+    # Verify no start time falls in the non-existent 01:xx hour
+    for sign, t_str in spring_starts.items():
+        assert not t_str.startswith("01:"), f"Spring DST day produced invalid time in skipped hour: {sign}={t_str}"
+
+    spring_tl = get_daily_lagna_timeline(
+        "Chaitra", 17, use_sidereal=True,
+        dob=date(2024, 3, 31), lat=51.5074, lon=-0.1278, timezone_name="Europe/London"
+    )
+    assert len(spring_tl) == 12
+
+    # Check agreement before and after clock change
+    # 00:30 GMT
+    c_0030 = calculate_chart(date(2024, 3, 31), time(0, 30), "London", 51.5074, -0.1278, "Europe/London")
+    # 02:30 BST
+    c_0230 = calculate_chart(date(2024, 3, 31), time(2, 30), "London", 51.5074, -0.1278, "Europe/London")
+    assert c_0030.lagna_sign == "Vrischika"
+    assert c_0230.lagna_sign == "Dhanu"
+
+    # 2. London Autumn Fall-Back: 27 October 2024 (25-hour day, 01:00 repeated)
+    autumn_starts = calculate_dynamic_lagna_starts(
+        dob=date(2024, 10, 27),
+        lat=51.5074,
+        lon=-0.1278,
+        is_sidereal=True,
+        timezone_name="Europe/London",
+    )
+    assert len(autumn_starts) == 12
+    # Simha occurs in repeated 01:xx hour with BST offset (+0100)
+    assert "Simha" in autumn_starts
+    assert "(+0100)" in autumn_starts["Simha"]
+
+    autumn_tl = get_daily_lagna_timeline(
+        "Kartik", 10, use_sidereal=True,
+        dob=date(2024, 10, 27), lat=51.5074, lon=-0.1278, timezone_name="Europe/London"
+    )
+    assert len(autumn_tl) == 12
+    simha_tl = next(item for item in autumn_tl if item["name_en"] == "Simha")
+    assert "(+0100)" in simha_tl["start"]
+
+
+def test_invalid_timezone_and_missing_coordinates():
+    """Verify that invalid timezones and missing coordinates raise clear errors."""
+    from app.astrology.lagna_table import get_daily_lagna_timeline
+
+    dob = date(1989, 7, 23)
+
+    # 1. Invalid timezone in resolve_location
+    with pytest.raises(ValueError, match="Invalid IANA timezone"):
+        resolve_location(lat=22.5726, lon=88.3639, tz="Invalid/Fake_Timezone")
+
+    # 2. Invalid timezone in calculate_chart
+    with pytest.raises(ValueError, match="Invalid IANA timezone"):
+        calculate_chart(dob, time(9, 30), "Kolkata", latitude=22.5726, longitude=88.3639, timezone="Invalid/Fake_Timezone")
+
+    # 3. Invalid timezone in get_daily_lagna_timeline
+    with pytest.raises(ValueError, match="Invalid IANA timezone"):
+        get_daily_lagna_timeline("Sravana", 7, dob=dob, lat=22.5726, lon=88.3639, timezone_name="Invalid/Fake_Timezone")
+
+    # 4. Missing coordinates in get_daily_lagna_timeline
+    with pytest.raises(ValueError, match="Silent fallback to Kolkata coordinates is prohibited"):
+        get_daily_lagna_timeline("Sravana", 7, dob=dob)
+
+
+

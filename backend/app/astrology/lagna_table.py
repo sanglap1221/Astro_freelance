@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
-from datetime import time, date
+from datetime import time, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 # Static mapping from sign name to index
@@ -74,7 +75,7 @@ def lookup_table_lagna(month_name: str, day_num: int, birth_time: time, use_side
     # Parse table start times into minutes from midnight
     timeline = []
     for sign_name, start_time_str in starts_dict.items():
-        h, m = map(int, start_time_str.split(":"))
+        h, m = map(int, start_time_str.split()[0].split(":"))
         start_minutes = h * 60 + m
         sign_idx = SIGN_TO_INDEX[sign_name]
         timeline.append((start_minutes, sign_idx, sign_name))
@@ -123,7 +124,7 @@ def lookup_table_lagna(month_name: str, day_num: int, birth_time: time, use_side
             )
             if prev_starts:
                 def _parse_min(t_str: str) -> int:
-                    hh, mm = map(int, t_str.split(":"))
+                    hh, mm = map(int, t_str.split()[0].split(":"))
                     return hh * 60 + mm
                 prev_timeline = sorted(
                     [(_parse_min(v), SIGN_TO_INDEX[k]) for k, v in prev_starts.items()]
@@ -138,10 +139,29 @@ def lookup_table_lagna(month_name: str, day_num: int, birth_time: time, use_side
 
 
 def subtract_one_minute(t_str: str) -> str:
-    """Subtract one minute from HH:MM string, wrapping across midnight."""
-    h, m = map(int, t_str.split(":"))
+    """Subtract one minute from HH:MM string, wrapping across midnight and preserving any offset suffix."""
+    parts = t_str.strip().split()
+    time_part = parts[0]
+    suffix = (" " + " ".join(parts[1:])) if len(parts) > 1 else ""
+    h, m = map(int, time_part.split(":"))
     total_m = (h * 60 + m - 1) % (24 * 60)
-    return f"{total_m // 60:02d}:{total_m % 60:02d}"
+    return f"{total_m // 60:02d}:{total_m % 60:02d}{suffix}"
+
+
+def _timeline_sort_key(t_str: str) -> float:
+    """Sort key that accurately orders times chronologically across the day, including UTC offset suffixes."""
+    parts = t_str.strip().split()
+    hh, mm = map(int, parts[0].split(":"))
+    if len(parts) > 1:
+        off_part = parts[1].strip("()")
+        if off_part.startswith("+") or off_part.startswith("-"):
+            sign = -1 if off_part.startswith("-") else 1
+            raw_off = off_part.lstrip("+-")
+            off_h = int(raw_off[:2])
+            off_m = int(raw_off[2:]) if len(raw_off) > 2 else 0
+            offset_minutes = sign * (off_h * 60 + off_m)
+            return (hh * 60 + mm) - offset_minutes
+    return hh * 60 + mm
 
 
 def calculate_dynamic_lagna_starts(
@@ -154,6 +174,7 @@ def calculate_dynamic_lagna_starts(
     """
     Calculate the starting time (HH:MM) of each Lagna sign during the day.
     Uses unified calculate_book_lagna() for sidereal mode to strictly match calculate_chart(),
+    iterating through actual UTC instants spanning the local calendar day,
     and performs numerical search (bisection) to accurately locate sign boundaries.
     """
     # pyrefly: ignore [missing-import]
@@ -164,10 +185,11 @@ def calculate_dynamic_lagna_starts(
     
     tz = None
     if timezone_name and str(timezone_name).strip():
+        candidate_tz = str(timezone_name).strip()
         try:
-            tz = ZoneInfo(str(timezone_name).strip())
-        except Exception:
-            tz = None
+            tz = ZoneInfo(candidate_tz)
+        except Exception as exc:
+            raise ValueError(f"Invalid IANA timezone '{candidate_tz}': {exc}") from exc
             
     if tz is None:
         resolved_tz_str = get_timezone_from_coords(lat, lon)
@@ -179,13 +201,17 @@ def calculate_dynamic_lagna_starts(
                 "Please provide a valid IANA timezone."
             )
         
-    start_dt = datetime.combine(dob, datetime.min.time(), tzinfo=tz)
+    local_start = datetime.combine(dob, datetime.min.time(), tzinfo=tz)
+    local_end = datetime.combine(dob + timedelta(days=1), datetime.min.time(), tzinfo=tz)
+    utc_start = local_start.astimezone(ZoneInfo("UTC"))
+    utc_end = local_end.astimezone(ZoneInfo("UTC"))
+    total_minutes = int(round((utc_end - utc_start).total_seconds() / 60.0))
+    is_autumn_25h = (total_minutes > 1440)
     
-    def _calc_asc(dt: datetime) -> float:
-        utc_dt = dt.astimezone(ZoneInfo("UTC"))
+    def _calc_asc(u_dt: datetime) -> float:
         jd = swe.julday(
-            utc_dt.year, utc_dt.month, utc_dt.day,
-            utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0 + utc_dt.microsecond / 3600000000.0
+            u_dt.year, u_dt.month, u_dt.day,
+            u_dt.hour + u_dt.minute / 60.0 + u_dt.second / 3600.0 + u_dt.microsecond / 3600000000.0
         )
         if is_sidereal:
             return calculate_book_lagna(jd, lat, lon)
@@ -193,30 +219,29 @@ def calculate_dynamic_lagna_starts(
             cusps, ascmc = swe.houses(jd, lat, lon, b'P')
             return ascmc[0] % 360.0
 
-    # 1. Evaluate sign at each whole minute of the day (0 to 1439)
+    # 1. Evaluate sign at each whole minute of the day across UTC instants
     minute_signs = []
-    for m in range(24 * 60):
-        dt = start_dt + timedelta(minutes=m)
-        asc_lon = _calc_asc(dt)
+    for m in range(total_minutes):
+        u_dt = utc_start + timedelta(minutes=m)
+        asc_lon = _calc_asc(u_dt)
         minute_signs.append(_sign_index(asc_lon))
 
     # 2. Identify sign transitions and refine exact boundary
     lagna_starts = {}
-    for m in range(24 * 60):
-        prev_m = (m - 1) % (24 * 60)
+    for m in range(total_minutes):
+        prev_m = (m - 1) % total_minutes
         curr_s = minute_signs[m]
         prev_s = minute_signs[prev_m]
         if curr_s != prev_s:
-            # Transition occurred between (m-1) and m.
-            # Perform numerical search (bisection) on [t_prev, t_curr] for sub-second boundary
-            dt_prev = start_dt + timedelta(minutes=prev_m if m > 0 else -1)
+            # Transition occurred between (m-1) and m in UTC
+            u_prev = utc_start + timedelta(minutes=prev_m if m > 0 else -1)
             target_cusp = float(curr_s * 30.0)
             low_sec = 0.0
             high_sec = 60.0
             for _ in range(20):
                 mid_sec = (low_sec + high_sec) / 2.0
-                dt_mid = dt_prev + timedelta(seconds=mid_sec)
-                mid_asc = _calc_asc(dt_mid)
+                u_mid = u_prev + timedelta(seconds=mid_sec)
+                mid_asc = _calc_asc(u_mid)
                 diff = (mid_asc - target_cusp + 180.0) % 360.0 - 180.0
                 if diff < 0:
                     low_sec = mid_sec
@@ -224,9 +249,18 @@ def calculate_dynamic_lagna_starts(
                     high_sec = mid_sec
 
             # Minute m is the first integer minute returning curr_s in calculate_chart()
-            dt_curr = start_dt + timedelta(minutes=m)
+            u_curr = utc_start + timedelta(minutes=m)
+            local_curr = u_curr.astimezone(tz)
+            base_time = local_curr.strftime("%H:%M")
+            alt = local_curr.replace(fold=1 - local_curr.fold)
+            is_ambiguous = (local_curr.astimezone(ZoneInfo("UTC")) != alt.astimezone(ZoneInfo("UTC")))
+            if is_ambiguous:
+                time_label = f"{base_time} ({local_curr.strftime('%z')})"
+            else:
+                time_label = base_time
+
             sign_name = ZODIAC_SIGNS[curr_s]
-            lagna_starts[sign_name] = dt_curr.strftime("%H:%M")
+            lagna_starts[sign_name] = time_label
             
     return lagna_starts
 
@@ -262,7 +296,12 @@ def get_daily_lagna_timeline(
             resolved_lat = float(lat)
             resolved_lon = float(lon)
             if timezone_name and str(timezone_name).strip():
-                resolved_tz = str(timezone_name).strip()
+                candidate_tz = str(timezone_name).strip()
+                try:
+                    ZoneInfo(candidate_tz)
+                    resolved_tz = candidate_tz
+                except Exception as exc:
+                    raise ValueError(f"Invalid IANA timezone '{candidate_tz}': {exc}") from exc
             else:
                 resolved_tz = get_timezone_from_coords(resolved_lat, resolved_lon)
                 if not resolved_tz:
@@ -302,7 +341,7 @@ def get_daily_lagna_timeline(
             "start": start_time_str
         })
         
-    timeline.sort(key=lambda x: x["start"])
+    timeline.sort(key=lambda x: _timeline_sort_key(x["start"]))
     
     # Compute duration intervals seamlessly:
     # A sign that runs until the next sign starts at T ends at T - 1 minute.
@@ -334,7 +373,7 @@ def get_daily_lagna_timeline(
                     next_starts = next_day_data.get("sidereal_lagna_starts" if use_sidereal else "tropical_lagna_starts", {})
             
             if next_starts:
-                next_sorted = sorted(next_starts.items(), key=lambda x: x[1])
+                next_sorted = sorted(next_starts.items(), key=lambda x: _timeline_sort_key(x[1]))
                 timeline[i]["end"] = subtract_one_minute(next_sorted[0][1])
             else:
                 timeline[i]["end"] = subtract_one_minute(timeline[0]["start"])
