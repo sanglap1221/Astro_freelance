@@ -871,17 +871,22 @@ def build_report_context(payload: PdfRequest) -> dict[str, Any]:
     else:
         future_antardashas = flattened_antardashas[active_antardasha_index + 9:]
 
-    # Past Antardashas (completed periods), most recent first.
+    # Past Antardashas (completed periods), in chronological increasing order.
     # Used ONLY to fill unused space in the Page 2 four-column ledger.
     # future_antardashas is never truncated, reordered or removed by this block.
-    past_antardashas_all = list(reversed(flattened_antardashas[:active_antardasha_index]))
+    past_candidates = flattened_antardashas[:active_antardasha_index]
 
     # Conservative capacity of the Page 2 four-column ledger (A4). Calibrated so
     # older-person pages fill the available space without clipping; younger
     # people whose future entries already fill the page get no past entries.
     MAX_LEDGER_PERIODS = 52
     remaining_slots = max(0, MAX_LEDGER_PERIODS - len(future_antardashas))
-    past_antardashas = past_antardashas_all[:remaining_slots]
+    if remaining_slots <= 0:
+        past_antardashas = []
+    elif len(past_candidates) <= remaining_slots:
+        past_antardashas = past_candidates
+    else:
+        past_antardashas = past_candidates[-remaining_slots:]
 
     for row in current_antardashas:
         planet_major = row.get("major_lord", row.get("major_bn"))

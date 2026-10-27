@@ -1110,6 +1110,7 @@
               </div>
             </div>
 
+            {% set current_md.name = '' %}
             {% for row in past_antardashas %}
             {# Create a Mahadasha Header when starting a new major period #}
             {% if row.mahadasha_bn != current_md.name %}
